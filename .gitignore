@@ -3,6 +3,7 @@
 *.dll
 *.so
 *.dylib
+brightbox-cloud-controller-manager
 
 # Test binary, build with `go test -c`
 *.test
