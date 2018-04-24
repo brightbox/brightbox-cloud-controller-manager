@@ -26,10 +26,61 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  name = "github.com/aws/aws-sdk-go"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/shareddefaults"
+  ]
+  revision = "bd40d9f476190b2bd95120911312160641dba41e"
+  version = "v1.13.35"
+
+[[projects]]
+  name = "github.com/aws/aws-sdk-go-v2"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/ec2rolecreds",
+    "aws/endpointcreds",
+    "aws/endpoints",
+    "aws/external",
+    "aws/signer/v4",
+    "aws/stscreds",
+    "internal/awsutil",
+    "internal/sdk",
+    "private/protocol",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/xml/xmlutil",
+    "service/sts"
+  ]
+  revision = "3383499f1024e86a3c68200f9bdc6759ee20eb70"
+  version = "v2.0.0-preview.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/brightbox/gobrightbox"
+  packages = ["."]
+  revision = "0568c18262b716b6942ba748096fcb7ae3f3e24d"
 
 [[projects]]
   name = "github.com/cloudflare/cfssl"
@@ -126,6 +177,12 @@
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  revision = "6529cf7c58879c08d927016dde4477f18a0634cb"
+  version = "v1.36.0"
 
 [[projects]]
   branch = "master"
@@ -241,6 +298,11 @@
   version = "v1.0"
 
 [[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "0b12d6b5"
+
+[[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
   revision = "ca39e5af3ece67bbcda3d0f4f56a8e24d9f2dad4"
@@ -330,6 +392,12 @@
   packages = ["."]
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/tomnomnom/linkheader"
+  packages = ["."]
+  revision = "6953a30d444317754766fccdd3f7f000edc874f6"
+  version = "0.1.0"
 
 [[projects]]
   name = "github.com/ugorji/go"
@@ -867,6 +935,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5e89dcd8b8fa9199e0485d63c4c83229f0b34a4d46471478986a5f63e4015293"
+  inputs-digest = "02c8d5319a8fb32c081754d407f13108ca30a1d95a37e4c14594d8e01434a8c3"
   solver-name = "gps-cdcl"
   solver-version = 1
