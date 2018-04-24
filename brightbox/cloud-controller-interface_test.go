@@ -16,16 +16,15 @@ package brightbox
 
 import (
 	"io"
+	"k8s.io/kubernetes/pkg/cloudprovider"
 	"strings"
 	"testing"
-	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 const (
 	config_const = "dummy"
-	provider = "brightbox"
+	provider     = "brightbox"
 )
-
 
 func interfaceProviderName(impl cloudprovider.Interface) func(*testing.T) {
 	return func(t *testing.T) {
@@ -37,8 +36,8 @@ func interfaceProviderName(impl cloudprovider.Interface) func(*testing.T) {
 
 func interfaceHasClusterID(impl cloudprovider.Interface) func(*testing.T) {
 	return func(t *testing.T) {
-		if impl.HasClusterID() {
-			t.Errorf("HasClusterID should return false")
+		if !impl.HasClusterID() {
+			t.Errorf("HasClusterID should return true")
 		}
 	}
 }
@@ -61,16 +60,31 @@ func interfaceClusters(impl cloudprovider.Interface) func(*testing.T) {
 	}
 }
 
+func interfaceZones(impl cloudprovider.Interface) func(*testing.T) {
+	return func(t *testing.T) {
+		client, supported := impl.Zones()
+		if !supported {
+			t.Errorf("Zones should return true")
+		}
+		switch client.(type) {
+		case (*cloud):
+		default:
+			t.Errorf("Zones returned incorrect client interface")
+		}
+	}
+}
+
 func TestInterfaceAdaption(t *testing.T) {
 	var config io.Reader = strings.NewReader(config_const)
 	var interface_tests = []struct {
 		name string
-		fn func(cloudprovider.Interface) func(*testing.T)
+		fn   func(cloudprovider.Interface) func(*testing.T)
 	}{
 		{"ProviderName", interfaceProviderName},
 		{"HasClusterID", interfaceHasClusterID},
 		{"Routes", interfaceRoutes},
 		{"Clusters", interfaceClusters},
+		{"Zones", interfaceZones},
 	}
 
 	cloud, err := cloudprovider.GetCloudProvider(provider, config)
@@ -83,4 +97,3 @@ func TestInterfaceAdaption(t *testing.T) {
 		t.Run(example.name, example.fn(cloud))
 	}
 }
-

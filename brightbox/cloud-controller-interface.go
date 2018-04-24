@@ -17,15 +17,14 @@ package brightbox
 import (
 	"io"
 
+	"github.com/brightbox/gobrightbox"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
-const (
-	providerName = "brightbox"
-)
-
 type cloud struct {
+	client              *brightbox.Client
+	metadataClientCache EC2Metadata
 }
 
 // Initialize provides the cloud with a kubernetes client builder and
@@ -49,7 +48,7 @@ func (c *cloud) Instances() (cloudprovider.Instances, bool) {
 // Zones returns a zones interface. Also returns true if the interface
 // is supported, false otherwise.
 func (c *cloud) Zones() (cloudprovider.Zones, bool) {
-	return nil, false
+	return c, true
 }
 
 // Clusters returns a clusters interface.  Also returns true if the
@@ -71,7 +70,7 @@ func (c *cloud) ProviderName() string {
 
 // HasClusterID returns true if a ClusterID is required and set
 func (c *cloud) HasClusterID() bool {
-	return false
+	return true
 }
 
 // Register this provider's creation function with the manager
@@ -79,8 +78,7 @@ func init() {
 	cloudprovider.RegisterCloudProvider(providerName, newCloudConnection)
 }
 
-// 
+//
 func newCloudConnection(config io.Reader) (cloudprovider.Interface, error) {
 	return &cloud{}, nil
 }
-
