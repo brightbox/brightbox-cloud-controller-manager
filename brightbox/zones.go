@@ -61,17 +61,8 @@ func createZone(zoneName string) (cloudprovider.Zone, error) {
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
-	client, err := c.cloudClient()
-	if err != nil {
-		return emptyZone, err
-	}
 	serverID := mapProviderIDToServerID(providerID)
-	server, err := client.Server(serverID)
-	if err != nil {
-		return emptyZone, err
-	}
-	zoneName := server.Zone.Handle
-	return createZone(zoneName)
+	return c.getZoneByServerID(ctx, serverID)
 }
 
 // GetZoneByNodeName returns the Zone containing the current zone
@@ -79,12 +70,17 @@ func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
+	serverID := mapNodeNameToServerID(nodeName)
+	return c.getZoneByServerID(ctx, serverID)
+}
+
+// Common function that gets the zone via a standard Brightbox serverid
+func (c *cloud) getZoneByServerID(ctx context.Context, identifier string) (cloudprovider.Zone, error) {
 	client, err := c.cloudClient()
 	if err != nil {
 		return emptyZone, err
 	}
-	serverID := mapNodeNameToServerID(nodeName)
-	server, err := client.Server(serverID)
+	server, err := client.Server(identifier)
 	if err != nil {
 		return emptyZone, err
 	}
