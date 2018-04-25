@@ -17,30 +17,42 @@ package brightbox
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go-v2/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
+var (
+	emptyZone = cloudprovider.Zone{}
+)
+
 // GetZone returns the Zone containing the current failure zone
-// and locality region that the program is running in In most cases,
+// and locality region that the program is running in. In most cases,
 // this method is called from the kubelet querying a local metadata
 // service to acquire its zone.  For the case of external cloud
 // providers, use GetZoneByProviderID or GetZoneByNodeName since
 // GetZone can no longer be called from the kubelets.
 func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
-	client, err := c.metadataClient(ctx)
+	client, err := c.metadataClient()
 	if err != nil {
-		return cloudprovider.Zone{}, err
+		return emptyZone, err
 	}
 	resp, err := client.GetMetadata("placement/availability-zone")
 	if err != nil {
-		return cloudprovider.Zone{}, err
+		return emptyZone, err
 	}
+	return createZone(resp)
+}
+
+//Create a Zone object from a zone name string
+func createZone(zoneName string) (cloudprovider.Zone, error) {
+	respRegion, err := mapZoneHandleToRegion(zoneName)
+	if err != nil {
+		return emptyZone, err
+	}
+
 	return cloudprovider.Zone{
-		FailureDomain: resp,
-		Region:        mapZoneHandleToRegion(resp),
+		FailureDomain: zoneName,
+		Region:        respRegion,
 	}, err
 }
 
@@ -49,7 +61,17 @@ func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
-	return cloudprovider.Zone{}, nil
+	client, err := c.cloudClient()
+	if err != nil {
+		return emptyZone, err
+	}
+	serverID := mapProviderIDToServerID(providerID)
+	server, err := client.Server(serverID)
+	if err != nil {
+		return emptyZone, err
+	}
+	zoneName := server.Zone.Handle
+	return createZone(zoneName)
 }
 
 // GetZoneByNodeName returns the Zone containing the current zone
@@ -57,18 +79,15 @@ func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
-	return cloudprovider.Zone{}, nil
-}
-
-// Obtain a metadata client
-func (c *cloud) metadataClient(ctx context.Context) (EC2Metadata, error) {
-	if c.metadataClientCache == nil {
-		cfg, err := external.LoadDefaultAWSConfig()
-		if err != nil {
-			return nil, err
-		}
-		c.metadataClientCache = ec2metadata.New(cfg)
+	client, err := c.cloudClient()
+	if err != nil {
+		return emptyZone, err
 	}
-
-	return c.metadataClientCache, nil
+	serverID := mapNodeNameToServerID(nodeName)
+	server, err := client.Server(serverID)
+	if err != nil {
+		return emptyZone, err
+	}
+	zoneName := server.Zone.Handle
+	return createZone(zoneName)
 }

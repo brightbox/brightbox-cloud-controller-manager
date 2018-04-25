@@ -56,12 +56,20 @@ func TestMapZoneHandleToRegion(t *testing.T) {
 			zoneHandle: "gb1-b",
 			expected:   "gb1",
 		},
+		"dodgy zone": {
+			zoneHandle: "fred",
+			expected:   "",
+		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			result := mapZoneHandleToRegion(tc.zoneHandle)
-			if result != tc.expected {
+			result, err := mapZoneHandleToRegion(tc.zoneHandle)
+			if err != nil {
+				if tc.expected != "" {
+					t.Errorf(err.Error())
+				}
+			} else if result != tc.expected {
 				t.Errorf("Expected server id %q, but got %q", tc.expected, result)
 			}
 		})

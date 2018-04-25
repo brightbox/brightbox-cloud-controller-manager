@@ -17,15 +17,9 @@ package brightbox
 import (
 	"io"
 
-	"github.com/brightbox/gobrightbox"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 	"k8s.io/kubernetes/pkg/controller"
 )
-
-type cloud struct {
-	client              *brightbox.Client
-	metadataClientCache EC2Metadata
-}
 
 // Initialize provides the cloud with a kubernetes client builder and
 // may spawn goroutines to perform housekeeping activities within the

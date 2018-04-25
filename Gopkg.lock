@@ -26,26 +26,6 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  name = "github.com/aws/aws-sdk-go"
-  packages = [
-    "aws",
-    "aws/awserr",
-    "aws/awsutil",
-    "aws/client",
-    "aws/client/metadata",
-    "aws/corehandlers",
-    "aws/credentials",
-    "aws/ec2metadata",
-    "aws/endpoints",
-    "aws/request",
-    "internal/sdkio",
-    "internal/sdkrand",
-    "internal/shareddefaults"
-  ]
-  revision = "bd40d9f476190b2bd95120911312160641dba41e"
-  version = "v1.13.35"
-
-[[projects]]
   name = "github.com/aws/aws-sdk-go-v2"
   packages = [
     "aws",
@@ -935,6 +915,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "02c8d5319a8fb32c081754d407f13108ca30a1d95a37e4c14594d8e01434a8c3"
+  inputs-digest = "e9ae23538ac6604df25b1c0c9ad1e9e450a7f14472a85e7d2dbd879df2273138"
   solver-name = "gps-cdcl"
   solver-version = 1

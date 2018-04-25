@@ -15,19 +15,16 @@
 package brightbox
 
 import (
+	"fmt"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
 	providerName   = "brightbox"
 	providerPrefix = providerName + "://"
 )
-
-// EC2Metadata is an abstraction over the AWS metadata service.
-type EC2Metadata interface {
-	// Query the EC2 metadata service (used to discover instance-id etc)
-	GetMetadata(path string) (string, error)
-}
 
 // Parse the provider id string and return a string that should be a server id
 // Should be no need for  error checking here, since the input string
@@ -40,6 +37,18 @@ func mapProviderIDToServerID(providerID string) string {
 }
 
 // Parse the zone handle and return the embedded region id
-func mapZoneHandleToRegion(zoneHandle string) string {
-	return zoneHandle[:len(zoneHandle)-2]
+// Zone names are of the form: ${region-name}-${ix}
+// So we look for the last '-' and trim just before that
+func mapZoneHandleToRegion(zoneHandle string) (string, error) {
+	ix := strings.LastIndex(zoneHandle, "-")
+	if ix == -1 {
+		return "", fmt.Errorf("unexpected zone: %s", zoneHandle)
+	}
+	return zoneHandle[:ix], nil
+}
+
+// mapNodeNameToServerID maps a k8s NodeName to a Brightbox Server ID
+// This is a simple string cast.
+func mapNodeNameToServerID(nodeName types.NodeName) string {
+	return string(nodeName)
 }
