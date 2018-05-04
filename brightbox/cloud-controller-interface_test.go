@@ -74,6 +74,20 @@ func interfaceZones(impl cloudprovider.Interface) func(*testing.T) {
 	}
 }
 
+func interfaceInstances(impl cloudprovider.Interface) func(*testing.T) {
+	return func(t *testing.T) {
+		client, supported := impl.Instances()
+		if !supported {
+			t.Errorf("Instances should return true")
+		}
+		switch client.(type) {
+		case (*cloud):
+		default:
+			t.Errorf("Instances returned incorrect client interface")
+		}
+	}
+}
+
 func TestInterfaceAdaption(t *testing.T) {
 	var config io.Reader = strings.NewReader(config_const)
 	var interface_tests = []struct {

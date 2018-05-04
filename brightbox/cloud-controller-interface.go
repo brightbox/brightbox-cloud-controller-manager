@@ -36,7 +36,7 @@ func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) Instances() (cloudprovider.Instances, bool) {
-	return nil, false
+	return c, true
 }
 
 // Zones returns a zones interface. Also returns true if the interface

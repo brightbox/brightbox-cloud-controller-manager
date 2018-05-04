@@ -30,7 +30,7 @@ const (
 func interfaceGetZone(zoneName string) func(*testing.T) {
 	return func(t *testing.T) {
 		client := &cloud{
-			metadataClientCache: fakeMetadataClient(zoneName),
+			metadataClientCache: fakeZoneMetadataClient(zoneName),
 		}
 		zone, err := client.GetZone(context.TODO())
 		if err != nil {
@@ -135,19 +135,19 @@ func TestGetZoneByNodeName(t *testing.T) {
 	}
 }
 
-type fakeMetadata struct {
+type fakeZoneMetadata struct {
 	fail bool
 	zone string
 }
 
-func fakeMetadataClient(zoneName string) *fakeMetadata {
-	return &fakeMetadata{
+func fakeZoneMetadataClient(zoneName string) *fakeZoneMetadata {
+	return &fakeZoneMetadata{
 		fail: zoneName == "",
 		zone: zoneName,
 	}
 }
 
-func (f *fakeMetadata) GetMetadata(target string) (string, error) {
+func (f *fakeZoneMetadata) GetMetadata(target string) (string, error) {
 	if f.fail {
 		return "", fmt.Errorf("metadata deactivated")
 	}
