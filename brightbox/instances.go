@@ -16,6 +16,8 @@ package brightbox
 
 import (
 	"context"
+	"fmt"
+	"net"
 
 	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
@@ -28,7 +30,39 @@ import (
 // returns the address of the calling instance. We should do a rename to
 // make this clearer.
 func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
-	return nil, cloudprovider.NotImplemented
+	glog.V(4).Infof("NodeAddresses called for '%q'", name)
+	srv, err := c.getServer(ctx, mapNodeNameToServerID(name))
+	if err != nil {
+		return nil, err
+	}
+	addresses := []v1.NodeAddress{
+		{Type: v1.NodeHostName, Address: srv.Hostname},
+		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
+	}
+	for _, iface := range srv.Interfaces {
+		ip := net.ParseIP(iface.IPv4Address)
+		if ip == nil {
+			return nil, fmt.Errorf("Server has invalid IPv4 address: %s (%q)", srv.Id, iface.IPv4Address)
+		}
+		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
+		ip = net.ParseIP(iface.IPv6Address)
+		if ip == nil {
+			return nil, fmt.Errorf("Server has invalid IPv6 address: %s (%q)", srv.Id, iface.IPv6Address)
+		}
+		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
+	}
+	for _, cip := range srv.CloudIPs {
+		ip := net.ParseIP(cip.PublicIP)
+		if ip == nil {
+			return nil, fmt.Errorf("Cloud IP has invalid IPv4 address: %s (%q)", cip.Id, cip.PublicIP)
+		}
+		addresses = append(
+			addresses,
+			v1.NodeAddress{Type: v1.NodeExternalIP, Address: ip.String()},
+			v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn},
+		)
+	}
+	return addresses, nil
 }
 
 // NodeAddressesByProviderID returns the addresses of the specified instance.
@@ -37,8 +71,8 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 // from the node whose nodeaddresses are being queried. i.e. local metadata
 // services cannot be used in this method to obtain nodeaddresses
 func (c *cloud) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
-	return nil, cloudprovider.NotImplemented
-	return nil, nil
+	glog.V(4).Infof("NodeAddressesByProviderID called for '%q'", providerID)
+	return c.NodeAddresses(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // InstanceID returns the cloud provider ID of the node with the specified NodeName.
@@ -73,11 +107,7 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 // InstanceTypeByProviderID returns the type of the specified instance.
 func (c *cloud) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
 	glog.V(4).Infof("InstanceTypeByProviderID called for '%q'", providerID)
-	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
-	if err != nil {
-		return "", err
-	}
-	return srv.Zone.Handle, nil
+	return c.InstanceType(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
@@ -91,7 +121,7 @@ func (c *cloud) AddSSHKeyToAllInstances(ctx context.Context, user string, keyDat
 // On most clouds (e.g. GCE) this is the hostname, so we provide the hostname
 func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
 	glog.V(4).Infof("CurrentNodeName(%q) called", hostname)
-	return types.NodeName(hostname), nil
+	return mapServerIDToNodeName(hostname), nil
 }
 
 // InstanceExistsByProviderID returns true if the instance for the given provider id still is running.
@@ -128,4 +158,3 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 	}
 	return false, nil
 }
-

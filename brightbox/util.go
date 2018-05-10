@@ -52,3 +52,13 @@ func mapZoneHandleToRegion(zoneHandle string) (string, error) {
 func mapNodeNameToServerID(nodeName types.NodeName) string {
 	return string(nodeName)
 }
+
+// mapServerIDToNodeName maps a Brightbox Server ID to a nodename
+// Again a simpl string cast
+func mapServerIDToNodeName(name string) types.NodeName {
+	return types.NodeName(name)
+}
+
+func mapProviderIDToNodeName(providerID string) types.NodeName {
+	return mapServerIDToNodeName(mapProviderIDToServerID(providerID))
+}

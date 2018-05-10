@@ -19,16 +19,71 @@ import (
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 const (
-	serverExist = "srv-exist"
-	serverMissing = "srv-missy"
-	serverShutdown = "srv-downy"
-	zoneHandle = "gb1s-a"
+	serverExist                = "srv-exist"
+	serverMissing              = "srv-missy"
+	serverShutdown             = "srv-downy"
+	zoneHandle                 = "gb1s-a"
+	regionRoot                 = ".brightbox.com"
+	serverExistIP              = "81.15.16.17"
+	serverExistIPv6            = "64:ff9b::510f:1011"
+	serverShutdownIP           = "81.15.16.21"
+	serverShutdownIPv6         = "64:ff9b::510f:1015"
+	serverShutdownExternalIP   = "109.107.50.0"
+	serverShutdownExternalName = "cip-k4a25"
+)
 
+var (
+	domain                     = currentDomain()
+	expectedExistNodeAddresses = []v1.NodeAddress{
+		{
+			Type:    v1.NodeHostName,
+			Address: serverExist,
+		},
+		{
+			Type:    v1.NodeInternalDNS,
+			Address: serverExist + "." + domain,
+		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverExistIP,
+		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverExistIPv6,
+		},
+	}
+	expectedShutdownNodeAddresses = []v1.NodeAddress{
+		{
+			Type:    v1.NodeHostName,
+			Address: serverShutdown,
+		},
+		{
+			Type:    v1.NodeInternalDNS,
+			Address: serverShutdown + "." + domain,
+		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverShutdownIP,
+		},
+		{
+			Type:    v1.NodeExternalIP,
+			Address: serverShutdownExternalIP,
+		},
+		{
+			Type:    v1.NodeExternalDNS,
+			Address: serverShutdownExternalName + "." + domain,
+		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverShutdownIPv6,
+		},
+	}
 )
 
 func TestCurrentNodeName(t *testing.T) {
@@ -59,23 +114,23 @@ func TestNodeNameChecks(t *testing.T) {
 	client := &cloud{
 		client: fakeInstanceCloudClient(context.TODO()),
 	}
-	var instance_tests = []struct{
+	var instance_tests = []struct {
 		name string
-		fn func(* testing.T)
+		fn   func(*testing.T)
 	}{
 		{
 			"ExternalID",
-			 nodeNameTestFactory(client.ExternalID,
-			                serverExist,
-					serverMissing,
-					serverExist),
+			nodeNameTestFactory(client.ExternalID,
+				serverExist,
+				serverMissing,
+				serverExist),
 		},
 		{
 			"InstanceID",
-			 nodeNameTestFactory(client.InstanceID,
-			                serverExist,
-					serverMissing,
-					serverExist),
+			nodeNameTestFactory(client.InstanceID,
+				serverExist,
+				serverMissing,
+				serverExist),
 		},
 		{
 			"InstanceType",
@@ -83,17 +138,57 @@ func TestNodeNameChecks(t *testing.T) {
 				serverExist,
 				serverMissing,
 				zoneHandle),
-			},
+		},
 		{
 			"InstanceTypeByProviderID",
 			providerIdTestFactory(client.InstanceTypeByProviderID,
-				providerPrefix + serverExist,
-				providerPrefix + serverMissing,
+				providerPrefix+serverExist,
+				providerPrefix+serverMissing,
 				zoneHandle),
-			},
-		}
+		},
+	}
 	for _, example := range instance_tests {
 		t.Run(example.name, example.fn)
+	}
+}
+
+func TestNodeAddresses(t *testing.T) {
+	client := &cloud{
+		client: fakeInstanceCloudClient(context.TODO()),
+	}
+	var instance_tests = []struct {
+		server                types.NodeName
+		expectedNodeAddresses []v1.NodeAddress
+	}{
+		{
+			server:                serverExist,
+			expectedNodeAddresses: expectedExistNodeAddresses,
+		},
+		{
+			server:                serverShutdown,
+			expectedNodeAddresses: expectedShutdownNodeAddresses,
+		},
+	}
+	for _, example := range instance_tests {
+		t.Run(
+			mapNodeNameToServerID(example.server),
+			func(t *testing.T) {
+				addresses, err := client.NodeAddresses(context.TODO(), example.server)
+				if err != nil {
+					t.Fatalf(err.Error())
+				}
+				len_expected := len(example.expectedNodeAddresses)
+				len_addresses := len(addresses)
+				if len_addresses != len_expected {
+					t.Errorf("Expected %d items, got %d", len_expected, len_addresses)
+				}
+				for _, expected := range example.expectedNodeAddresses {
+					if !containsNodeAddress(addresses, expected) {
+						t.Errorf("Expected node is missing: %+v, got %+v", expected, addresses)
+					}
+				}
+			},
+		)
 	}
 }
 
@@ -101,19 +196,19 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 	client := &cloud{
 		client: fakeInstanceCloudClient(context.TODO()),
 	}
-	exists, err := client.InstanceExistsByProviderID(context.TODO(), providerPrefix + serverExist)
+	exists, err := client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverExist)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !exists {
 		t.Errorf("expected Instance to exist")
 	}
-	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix + serverMissing)
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverMissing)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if exists {
 		t.Errorf("expected Instance to be missing")
 	}
-	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix + serverShutdown)
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverShutdown)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if exists {
@@ -125,28 +220,25 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 	client := &cloud{
 		client: fakeInstanceCloudClient(context.TODO()),
 	}
-	down, err := client.InstanceShutdownByProviderID(context.TODO(), providerPrefix + serverExist)
+	down, err := client.InstanceShutdownByProviderID(context.TODO(), providerPrefix+serverExist)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
 		t.Errorf("expected Instance to be active not down")
 	}
-	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix + serverMissing)
+	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix+serverMissing)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
 		t.Errorf("expected Instance to be missing not down")
 	}
-	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix + serverShutdown)
+	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix+serverShutdown)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !down {
 		t.Errorf("expected Instance to be down")
 	}
 }
-
-
-
 
 func nodeNameTestFactory(testFunction func(context.Context, types.NodeName) (string, error), sourceExist types.NodeName, sourceMissing types.NodeName, expected string) func(*testing.T) {
 	return func(t *testing.T) {
@@ -182,6 +274,14 @@ func providerIdTestFactory(testFunction func(context.Context, string) (string, e
 	}
 }
 
+func currentDomain() string {
+	region, err := mapZoneHandleToRegion(zoneHandle)
+	if err != nil {
+		return ""
+	}
+	return region + regionRoot
+}
+
 type fakeInstanceCloud struct {
 }
 
@@ -190,23 +290,57 @@ func fakeInstanceCloudClient(ctx context.Context) *fakeInstanceCloud {
 }
 
 func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error) {
+	region, err := mapZoneHandleToRegion(zoneHandle)
+	if err != nil {
+		return nil, err
+	}
+	domain := region + ".brightbox.com"
 	switch identifier {
 	case serverExist:
 		return &brightbox.Server{
-			Id: identifier,
-			Status: "active",
+			Id:       identifier,
+			Status:   "active",
+			Hostname: serverExist,
+			Fqdn:     serverExist + "." + domain,
 			Zone: brightbox.Zone{
-				Id: "zon-testy",
+				Id:     "zon-testy",
 				Handle: zoneHandle,
 			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42k",
+					MacAddress:  "02:24:19:00:00:ee",
+					IPv4Address: serverExistIP,
+					IPv6Address: serverExistIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{},
 		}, nil
 	case serverShutdown:
 		return &brightbox.Server{
-			Id: identifier,
-			Status: "inactive",
+			Id:       identifier,
+			Status:   "inactive",
+			Hostname: serverShutdown,
+			Fqdn:     serverShutdown + "." + domain,
 			Zone: brightbox.Zone{
-				Id: "zon-testy",
+				Id:     "zon-testy",
 				Handle: zoneHandle,
+			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42l",
+					MacAddress:  "02:24:19:00:00:ef",
+					IPv4Address: serverShutdownIP,
+					IPv6Address: serverShutdownIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{
+				{
+					Id:         serverShutdownExternalName,
+					PublicIP:   serverShutdownExternalIP,
+					Fqdn:       serverShutdownExternalName + "." + domain,
+					ReverseDns: "",
+				},
 			},
 		}, nil
 	default:
@@ -215,4 +349,13 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Status:     "404 Not Found",
 		}
 	}
+}
+
+func containsNodeAddress(list []v1.NodeAddress, item v1.NodeAddress) bool {
+	for _, v := range list {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }

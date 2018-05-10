@@ -18,8 +18,8 @@ import (
 	"context"
 	"net/http"
 
-	"k8s.io/kubernetes/pkg/cloudprovider"
 	"github.com/brightbox/gobrightbox"
+	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -40,4 +40,3 @@ func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, er
 func isNotFound(e brightbox.ApiError) bool {
 	return e.StatusCode == http.StatusNotFound
 }
-
