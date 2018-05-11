@@ -28,6 +28,7 @@ const (
 	serverExist                = "srv-exist"
 	serverMissing              = "srv-missy"
 	serverShutdown             = "srv-downy"
+	serverBust                 = "srv-busty"
 	zoneHandle                 = "gb1s-a"
 	regionRoot                 = ".brightbox.com"
 	serverExistIP              = "81.15.16.17"
@@ -36,6 +37,12 @@ const (
 	serverShutdownIPv6         = "64:ff9b::510f:1015"
 	serverShutdownExternalIP   = "109.107.50.0"
 	serverShutdownExternalName = "cip-k4a25"
+	serverDodgy4		   = "srv-dodg4"
+	serverDodgy6		   = "srv-dodg6"
+	serverDodgyCIP		   = "srv-dodgc"
+	serverDodgyIPv6		   = "bust::edfe"
+	serverDodgyIPv4		   = "::ffff:256.156.256.256"
+	serverDodgyCIPv4	   = "300.30.300.30"
 )
 
 var (
@@ -192,6 +199,28 @@ func TestNodeAddresses(t *testing.T) {
 	}
 }
 
+func TestNodeAddressesByProviderID(t *testing.T) {
+	client := &cloud{
+		client: fakeInstanceCloudClient(context.TODO()),
+	}
+	addresses, err := client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverBust)
+	if err == nil {
+		t.Errorf("Expected error, got %+v", addresses)
+	}
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgy4)
+	if err == nil {
+		t.Errorf("Expected error, got %+v", addresses)
+	}
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgy6)
+	if err == nil {
+		t.Errorf("Expected error, got %+v", addresses)
+	}
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgyCIP)
+	if err == nil {
+		t.Errorf("Expected error, got %+v", addresses)
+	}
+}
+
 func TestInstanceExistsByProviderID(t *testing.T) {
 	client := &cloud{
 		client: fakeInstanceCloudClient(context.TODO()),
@@ -213,6 +242,12 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 		t.Errorf(err.Error())
 	} else if exists {
 		t.Errorf("expected Instance to be missing")
+	}
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverBust)
+	if err == nil {
+		t.Errorf("expected Instance to fail")
+	} else if err == cloudprovider.InstanceNotFound {
+		t.Errorf("Got Instance not found error rather than failure")
 	}
 }
 
@@ -338,6 +373,79 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				{
 					Id:         serverShutdownExternalName,
 					PublicIP:   serverShutdownExternalIP,
+					Fqdn:       serverShutdownExternalName + "." + domain,
+					ReverseDns: "",
+				},
+			},
+		}, nil
+	case serverBust:
+		return nil, brightbox.ApiError{
+			StatusCode: 500,
+			Status:     "Internal Server Error",
+		}
+	case serverDodgy4:
+		return &brightbox.Server{
+			Id:       identifier,
+			Status:   "active",
+			Hostname: serverDodgy4,
+			Fqdn:     serverDodgy4 + "." + domain,
+			Zone: brightbox.Zone{
+				Id:     "zon-testy",
+				Handle: zoneHandle,
+			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42k",
+					MacAddress:  "02:24:19:00:00:ee",
+					IPv4Address: serverDodgyIPv4,
+					IPv6Address: serverExistIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{},
+		}, nil
+	case serverDodgy6:
+		return &brightbox.Server{
+			Id:       identifier,
+			Status:   "active",
+			Hostname: serverDodgy6,
+			Fqdn:     serverDodgy6 + "." + domain,
+			Zone: brightbox.Zone{
+				Id:     "zon-testy",
+				Handle: zoneHandle,
+			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42k",
+					MacAddress:  "02:24:19:00:00:ee",
+					IPv4Address: serverExistIP,
+					IPv6Address: serverDodgyIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{},
+		}, nil
+
+	case serverDodgyCIP:
+		return &brightbox.Server{
+			Id:       identifier,
+			Status:   "inactive",
+			Hostname: serverShutdown,
+			Fqdn:     serverShutdown + "." + domain,
+			Zone: brightbox.Zone{
+				Id:     "zon-testy",
+				Handle: zoneHandle,
+			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42l",
+					MacAddress:  "02:24:19:00:00:ef",
+					IPv4Address: serverShutdownIP,
+					IPv6Address: serverShutdownIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{
+				{
+					Id:         serverShutdownExternalName,
+					PublicIP:   serverDodgyCIPv4,
 					Fqdn:       serverShutdownExternalName + "." + domain,
 					ReverseDns: "",
 				},

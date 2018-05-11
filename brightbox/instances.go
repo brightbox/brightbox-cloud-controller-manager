@@ -40,27 +40,22 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
 	}
 	for _, iface := range srv.Interfaces {
-		ip := net.ParseIP(iface.IPv4Address)
-		if ip == nil {
-			return nil, fmt.Errorf("Server has invalid IPv4 address: %s (%q)", srv.Id, iface.IPv4Address)
+		ipv4_node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
+		if err != nil {
+			return nil, err
 		}
-		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
-		ip = net.ParseIP(iface.IPv6Address)
-		if ip == nil {
-			return nil, fmt.Errorf("Server has invalid IPv6 address: %s (%q)", srv.Id, iface.IPv6Address)
+		ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeInternalIP)
+		if err != nil {
+			return nil, err
 		}
-		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
+		addresses = append(addresses, *ipv4_node, *ipv6_node)
 	}
 	for _, cip := range srv.CloudIPs {
-		ip := net.ParseIP(cip.PublicIP)
-		if ip == nil {
-			return nil, fmt.Errorf("Cloud IP has invalid IPv4 address: %s (%q)", cip.Id, cip.PublicIP)
+		ipv4_node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
+		if err != nil {
+			return nil, err
 		}
-		addresses = append(
-			addresses,
-			v1.NodeAddress{Type: v1.NodeExternalIP, Address: ip.String()},
-			v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn},
-		)
+		addresses = append(addresses, *ipv4_node, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn})
 	}
 	return addresses, nil
 }
@@ -128,23 +123,16 @@ func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.Nod
 // If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
 func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
 	glog.V(4).Infof("InstanceExistsByProviderID called for '%q'", providerID)
-	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
-	if err != nil {
-		if err == cloudprovider.InstanceNotFound {
-			return false, nil
-		}
-		return false, err
-	}
-	if srv.Status != "active" {
-		glog.Warningf("the instance %s is not active", srv.Id)
-		return false, nil
-	}
-	return true, nil
+	return c.instanceTestByProviderID(ctx, providerID, false)
 }
 
 // InstanceShutdownByProviderID returns true if the instance is shutdown in cloudprovider
 func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
 	glog.V(4).Infof("InstanceShutdownByProviderID called for '%q'", providerID)
+	return c.instanceTestByProviderID(ctx, providerID, true)
+}
+
+func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string, active_value bool) (bool, error) {
 	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {
@@ -154,7 +142,16 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 	}
 	if srv.Status != "active" {
 		glog.Warningf("the instance %s is not active", srv.Id)
-		return true, nil
+		return active_value, nil
 	}
-	return false, nil
+	return !active_value, nil
+}
+
+func parseIPString(ipString string, ipType string, objectId string,
+	objectType string, nodeType v1.NodeAddressType) (*v1.NodeAddress, error) {
+	ip := net.ParseIP(ipString)
+	if ip == nil {
+		return nil, fmt.Errorf("%s has invalid %s address: %s (%q)", objectType, ipType, objectId, ipString)
+	}
+	return &v1.NodeAddress{Type: nodeType, Address: ip.String()}, nil
 }

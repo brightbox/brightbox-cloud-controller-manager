@@ -99,6 +99,7 @@ func TestInterfaceAdaption(t *testing.T) {
 		{"Routes", interfaceRoutes},
 		{"Clusters", interfaceClusters},
 		{"Zones", interfaceZones},
+		{"Instances", interfaceInstances},
 	}
 
 	cloud, err := cloudprovider.GetCloudProvider(provider, config)
