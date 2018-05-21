@@ -37,12 +37,12 @@ const (
 	serverShutdownIPv6         = "64:ff9b::510f:1015"
 	serverShutdownExternalIP   = "109.107.50.0"
 	serverShutdownExternalName = "cip-k4a25"
-	serverDodgy4		   = "srv-dodg4"
-	serverDodgy6		   = "srv-dodg6"
-	serverDodgyCIP		   = "srv-dodgc"
-	serverDodgyIPv6		   = "bust::edfe"
-	serverDodgyIPv4		   = "::ffff:256.156.256.256"
-	serverDodgyCIPv4	   = "300.30.300.30"
+	serverDodgy4               = "srv-dodg4"
+	serverDodgy6               = "srv-dodg6"
+	serverDodgyCIP             = "srv-dodgc"
+	serverDodgyIPv6            = "bust::edfe"
+	serverDodgyIPv4            = "::ffff:256.156.256.256"
+	serverDodgyCIPv4           = "300.30.300.30"
 )
 
 var (
@@ -203,19 +203,19 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 	client := &cloud{
 		client: fakeInstanceCloudClient(context.TODO()),
 	}
-	addresses, err := client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverBust)
+	addresses, err := client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverBust)
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgy4)
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgy4)
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgy6)
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgy6)
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix + serverDodgyCIP)
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgyCIP)
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
@@ -272,6 +272,18 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 		t.Errorf(err.Error())
 	} else if !down {
 		t.Errorf("expected Instance to be down")
+	}
+}
+
+func TestGetInstanceCloudClientFailure(t *testing.T) {
+	resetAuthEnvironment()
+	defer resetAuthEnvironment()
+	client := &cloud{}
+	instance, err := client.InstanceID(context.TODO(), types.NodeName("srv-duffy"))
+	if err == nil {
+		t.Errorf("Expected error")
+	} else if instance != "" {
+		t.Errorf("Expected empty instance, got %+v", instance)
 	}
 }
 

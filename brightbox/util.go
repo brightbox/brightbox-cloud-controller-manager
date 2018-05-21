@@ -16,6 +16,7 @@ package brightbox
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -61,4 +62,15 @@ func mapServerIDToNodeName(name string) types.NodeName {
 
 func mapProviderIDToNodeName(providerID string) types.NodeName {
 	return mapServerIDToNodeName(mapProviderIDToServerID(providerID))
+}
+
+// getEnvVarWithDefault retrieves the value of the environment variable
+// named by the key. If the variable is not present, return the default
+//value instead.
+func getenvWithDefault(key string, defaultValue string) string {
+	if val, exists := os.LookupEnv(key); !exists {
+		return defaultValue
+	} else {
+		return val
+	}
 }

@@ -34,10 +34,14 @@ func interfaceGetZone(zoneName string) func(*testing.T) {
 		}
 		zone, err := client.GetZone(context.TODO())
 		if err != nil {
-			if zoneName != "" {
+			if zoneName != "" && zoneName != "dummy" {
 				t.Errorf("Failed to obtain zone: %s", err.Error())
 			}
+			if zone != emptyZone {
+				t.Errorf("Unexpected zone return on error, got %+v", zone)
+			}
 			// zoneName is blank triggers an expected metadata failure
+			// zoneName of dummy triggers expected metadata failure
 		} else {
 			if zone.FailureDomain != zoneName {
 				t.Errorf("Expected %v, got %v", zoneName, zone.FailureDomain)
@@ -106,7 +110,7 @@ func interfaceGetZoneByNodeName(NodeName types.NodeName, zoneName string) func(*
 }
 
 func TestGetZone(t *testing.T) {
-	testCases := []string{"", "gb1s-a", "gb1s-b", "gb1-a", "gb1-b"}
+	testCases := []string{"", "dummy", "gb1s-a", "gb1s-b", "gb1-a", "gb1-b"}
 	for _, tc := range testCases {
 		t.Run(tc, interfaceGetZone(tc))
 	}
@@ -132,6 +136,18 @@ func TestGetZoneByNodeName(t *testing.T) {
 	for name, zone := range testCases {
 		node := types.NodeName(name)
 		t.Run(name, interfaceGetZoneByNodeName(node, zone))
+	}
+}
+
+func TestGetZoneCloudClientFailure(t *testing.T) {
+	resetAuthEnvironment()
+	defer resetAuthEnvironment()
+	client := &cloud{}
+	zone, err := client.GetZoneByNodeName(context.TODO(), types.NodeName("srv-duffy"))
+	if err == nil {
+		t.Errorf("Expected error")
+	} else if zone != emptyZone {
+		t.Errorf("Expected empty zone, got %+v", zone)
 	}
 }
 

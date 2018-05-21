@@ -16,9 +16,11 @@ package brightbox
 
 import (
 	"io"
-	"k8s.io/kubernetes/pkg/cloudprovider"
 	"strings"
 	"testing"
+
+	"k8s.io/kubernetes/pkg/cloudprovider"
+	"k8s.io/kubernetes/pkg/controller"
 )
 
 const (
@@ -47,6 +49,15 @@ func interfaceRoutes(impl cloudprovider.Interface) func(*testing.T) {
 		_, supported := impl.Routes()
 		if supported {
 			t.Errorf("Routes should return false")
+		}
+	}
+}
+
+func interfaceLoadBalancer(impl cloudprovider.Interface) func(*testing.T) {
+	return func(t *testing.T) {
+		_, supported := impl.LoadBalancer()
+		if supported {
+			t.Errorf("Load Balancers should return false")
 		}
 	}
 }
@@ -100,15 +111,32 @@ func TestInterfaceAdaption(t *testing.T) {
 		{"Clusters", interfaceClusters},
 		{"Zones", interfaceZones},
 		{"Instances", interfaceInstances},
+		{"LoadBalancer", interfaceLoadBalancer},
 	}
 
+	ts := getAuthEnvTokenHandler(t)
+	defer resetAuthEnvironment()
+	defer ts.Close()
 	cloud, err := cloudprovider.GetCloudProvider(provider, config)
-	if cloud == nil {
-		t.Fatalf("Failed to initialise %s provider", provider)
-	} else if err != nil {
+	if err != nil {
 		t.Fatalf("Failed to obtain cloud structure: %v", err)
+	} else if cloud == nil {
+		t.Fatalf("Failed to initialise %s provider", provider)
 	}
+	cloud.Initialize(controller.SimpleControllerClientBuilder{})
 	for _, example := range interface_tests {
 		t.Run(example.name, example.fn(cloud))
+	}
+}
+
+func TestGetCloudProviderFailure(t *testing.T) {
+	var config io.Reader = strings.NewReader(config_const)
+	resetAuthEnvironment()
+	defer resetAuthEnvironment()
+	cloud, err := cloudprovider.GetCloudProvider(provider, config)
+	if err == nil {
+		t.Errorf("Expected error, didn't get one")
+	} else if cloud != nil {
+		t.Errorf("Expected nil cloud provider, got %+v", cloud)
 	}
 }

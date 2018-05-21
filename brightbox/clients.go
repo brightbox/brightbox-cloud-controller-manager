@@ -17,19 +17,12 @@ package brightbox
 import (
 	"github.com/aws/aws-sdk-go-v2/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/brightbox/gobrightbox"
 )
 
 // EC2Metadata is an abstraction over the AWS metadata service.
 type EC2Metadata interface {
 	// Query the EC2 metadata service (used to discover instance-id etc)
 	GetMetadata(path string) (string, error)
-}
-
-// CloudAccess is an abstraction over the Brightbox API to allow testing
-type CloudAccess interface {
-	//Fetch a server
-	Server(identifier string) (*brightbox.Server, error)
 }
 
 type cloud struct {
@@ -50,10 +43,10 @@ func (c *cloud) metadataClient() (EC2Metadata, error) {
 	return c.metadataClientCache, nil
 }
 
-// Obtain a cloud client
+// Fetch the cloud client from cache or anew
 func (c *cloud) cloudClient() (CloudAccess, error) {
 	if c.client == nil {
-		client, err := brightbox.NewClient("", "", nil)
+		client, err := obtainCloudClient()
 		if err != nil {
 			return nil, err
 		}
