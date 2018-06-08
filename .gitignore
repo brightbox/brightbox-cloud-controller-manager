@@ -16,3 +16,6 @@ brightbox-cloud-controller-manager
 
 # Vi
 *.swp
+
+#goreleaser artefacts
+dist

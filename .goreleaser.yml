@@ -1,0 +1,27 @@
+builds:
+  -
+    goos:
+      - linux
+    env:
+      - CGO_ENABLED=0
+    ignore:
+      - goos: darwin
+    ldflags: -s -w -X main.version={{.Version}} -X main.build={{.Commit}}
+archive:
+  replacements:
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+sign:
+   artifacts: checksum
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+release:
+  prerelease: true
