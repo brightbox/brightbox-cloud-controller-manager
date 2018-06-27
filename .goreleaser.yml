@@ -25,3 +25,5 @@ changelog:
     - '^test:'
 release:
   prerelease: true
+dockers:
+  - image: brightbox/brightbox-cloud-controller-manager
