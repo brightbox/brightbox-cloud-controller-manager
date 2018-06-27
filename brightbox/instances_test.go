@@ -30,6 +30,7 @@ const (
 	serverShutdown             = "srv-downy"
 	serverBust                 = "srv-busty"
 	zoneHandle                 = "gb1s-a"
+	typeHandle		   = "1gb.ssd"
 	regionRoot                 = ".brightbox.com"
 	serverExistIP              = "81.15.16.17"
 	serverExistIPv6            = "64:ff9b::510f:1011"
@@ -144,14 +145,14 @@ func TestNodeNameChecks(t *testing.T) {
 			nodeNameTestFactory(client.InstanceType,
 				serverExist,
 				serverMissing,
-				zoneHandle),
+				typeHandle),
 		},
 		{
 			"InstanceTypeByProviderID",
 			providerIdTestFactory(client.InstanceTypeByProviderID,
 				providerPrefix+serverExist,
 				providerPrefix+serverMissing,
-				zoneHandle),
+				typeHandle),
 		},
 	}
 	for _, example := range instance_tests {
@@ -353,6 +354,10 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Id:     "zon-testy",
 				Handle: zoneHandle,
 			},
+			ServerType: brightbox.ServerType{
+				Id: "typ-8985i",
+				Handle: typeHandle,
+			},
 			Interfaces: []brightbox.ServerInterface{
 				{
 					Id:          "int-ds42k",
@@ -372,6 +377,10 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Zone: brightbox.Zone{
 				Id:     "zon-testy",
 				Handle: zoneHandle,
+			},
+			ServerType: brightbox.ServerType{
+				Id: "typ-wusvn",
+				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -405,6 +414,10 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Id:     "zon-testy",
 				Handle: zoneHandle,
 			},
+			ServerType: brightbox.ServerType{
+				Id: "typ-wusvn",
+				Handle: "2gb.ssd",
+			},
 			Interfaces: []brightbox.ServerInterface{
 				{
 					Id:          "int-ds42k",
@@ -424,6 +437,10 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Zone: brightbox.Zone{
 				Id:     "zon-testy",
 				Handle: zoneHandle,
+			},
+			ServerType: brightbox.ServerType{
+				Id: "typ-wusvn",
+				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -445,6 +462,10 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Zone: brightbox.Zone{
 				Id:     "zon-testy",
 				Handle: zoneHandle,
+			},
+			ServerType: brightbox.ServerType{
+				Id: "typ-wusvn",
+				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{

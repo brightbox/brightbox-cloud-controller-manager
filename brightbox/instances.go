@@ -96,7 +96,7 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 	if err != nil {
 		return "", err
 	}
-	return srv.Zone.Handle, nil
+	return srv.ServerType.Handle, nil
 }
 
 // InstanceTypeByProviderID returns the type of the specified instance.
