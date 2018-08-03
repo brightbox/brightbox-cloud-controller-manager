@@ -19,6 +19,8 @@ GOOS ?= linux
 ARCH ?= amd64
 SRC := $(git ls-files "*.go" | grep -v vendor)
 BIN := brightbox-cloud-controller-manager
+PKG := github.com/brightbox/${BIN}
+LDFLAGS := $(shell KUBE_ROOT="." KUBE_GO_PACKAGE=${PKG} hack/version.sh)
 
 .PHONY: all
 all: clean check build
@@ -31,7 +33,7 @@ clean:
 compile: ${BIN}
 ${BIN}:
 	CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${ARCH} go build \
-	    -ldflags "-s -w -X main.version=${VERSION} -X main.build=${BUILD}" \
+	    -ldflags "-s -w ${LDFLAGS}" \
 	    -o ${BIN}
 
 .PHONY: version
