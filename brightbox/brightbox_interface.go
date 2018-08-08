@@ -53,6 +53,8 @@ type authdetails struct {
 type CloudAccess interface {
 	//Fetch a server
 	Server(identifier string) (*brightbox.Server, error)
+	//Fetch a list of LoadBalancers
+	LoadBalancers() ([]brightbox.LoadBalancer, error)
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -73,6 +75,31 @@ func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, er
 
 func isNotFound(e brightbox.ApiError) bool {
 	return e.StatusCode == http.StatusNotFound
+}
+
+func isActive(lb *brightbox.LoadBalancer) bool {
+	return lb.Status == "Active"
+}
+
+// get a loadbalancer by name
+func (c *cloud) getLoadBalancerByName(lbName string) (*brightbox.LoadBalancer, error) {
+	glog.V(4).Infof("getLoadBalancerByName called for %q", lbName)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	lbList, err := client.LoadBalancers()
+	if err != nil {
+		return nil, err
+	}
+	var result *brightbox.LoadBalancer
+	for i := range lbList {
+		if isActive(&lbList[i]) && lbName == lbList[i].Name {
+			result = &lbList[i]
+			break
+		}
+	}
+	return result, nil
 }
 
 // Obtain a Brightbox cloud client anew

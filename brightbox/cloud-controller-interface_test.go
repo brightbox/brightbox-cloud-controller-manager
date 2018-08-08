@@ -55,9 +55,14 @@ func interfaceRoutes(impl cloudprovider.Interface) func(*testing.T) {
 
 func interfaceLoadBalancer(impl cloudprovider.Interface) func(*testing.T) {
 	return func(t *testing.T) {
-		_, supported := impl.LoadBalancer()
-		if supported {
-			t.Errorf("Load Balancers should return false")
+		client, supported := impl.LoadBalancer()
+		if !supported {
+			t.Errorf("Instances should return true")
+		}
+		switch client.(type) {
+		case (*cloud):
+		default:
+			t.Errorf("Instances returned incorrect client interface")
 		}
 	}
 }

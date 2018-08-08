@@ -186,6 +186,10 @@ func fakeZoneCloudClient(ctx context.Context) *fakeZoneCloud {
 	}
 }
 
+func (f *fakeZoneCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
+	return nil, nil
+}
+
 func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 	result := f.serverzone[identifier]
 	if result == "" {

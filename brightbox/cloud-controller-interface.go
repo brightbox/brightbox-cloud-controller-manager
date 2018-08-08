@@ -33,7 +33,7 @@ func (c *cloud) Initialize(clientBuilder controller.ControllerClientBuilder) {
 // interface is supported, false otherwise.
 func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 	glog.V(4).Infof("LoadBalancer called")
-	return nil, false
+	return c, true
 }
 
 // Instances returns an instances interface. Also returns true if the

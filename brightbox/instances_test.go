@@ -30,7 +30,7 @@ const (
 	serverShutdown             = "srv-downy"
 	serverBust                 = "srv-busty"
 	zoneHandle                 = "gb1s-a"
-	typeHandle		   = "1gb.ssd"
+	typeHandle                 = "1gb.ssd"
 	regionRoot                 = ".brightbox.com"
 	serverExistIP              = "81.15.16.17"
 	serverExistIPv6            = "64:ff9b::510f:1011"
@@ -355,7 +355,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id: "typ-8985i",
+				Id:     "typ-8985i",
 				Handle: typeHandle,
 			},
 			Interfaces: []brightbox.ServerInterface{
@@ -379,7 +379,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id: "typ-wusvn",
+				Id:     "typ-wusvn",
 				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
@@ -415,7 +415,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id: "typ-wusvn",
+				Id:     "typ-wusvn",
 				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
@@ -439,7 +439,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id: "typ-wusvn",
+				Id:     "typ-wusvn",
 				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
@@ -464,7 +464,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id: "typ-wusvn",
+				Id:     "typ-wusvn",
 				Handle: "2gb.ssd",
 			},
 			Interfaces: []brightbox.ServerInterface{
