@@ -33,6 +33,9 @@ const (
 	publicIP2  = "190.190.190.190"
 	fqdn2      = "cip-190-190-190-190.gb1.brightbox.com"
 	reverseDNS = "k8s-lb.example.com"
+	foundLba   = "lba-12345"
+	newUID     = "9d85099c-227c-46c0-a373-e954ec8eee2e"
+	newlbname  = "a9d85099c227c46c0a373e954ec8eee2"
 )
 
 //Constant variables you can take the address of!
@@ -190,7 +193,7 @@ func TestGetLoadBalancer(t *testing.T) {
 		"missing": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					UID: "9d85099c-227c-46c0-a373-e954ec8eee2e",
+					UID: newUID,
 				},
 				Spec: v1.ServiceSpec{
 					Type:            v1.ServiceTypeLoadBalancer,
@@ -428,12 +431,189 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 	}
 }
 
+func TestBuildEnsureLoadBalancer(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		nodes   []*v1.Node
+		lbopts  *brightbox.LoadBalancer
+	}{
+		"found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancer{
+				Id:     foundLba,
+				Name:   lbname,
+				Status: "Active",
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-gdqms",
+					},
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type: loadBalancerTcpProtocol,
+					Port: 31347,
+				},
+			},
+		},
+		"notfound": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeLocal,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-gdprt",
+					},
+					Spec: v1.NodeSpec{},
+				},
+				&v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-230b7",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancer{
+				Name:   newlbname,
+				Status: "Active",
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+
+			lbopts, err := client.ensureLoadBalancerFromService(tc.service, tc.nodes)
+			if err != nil {
+				t.Errorf("Error when not expected")
+			} else if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	return nil, nil
+	return f.UpdateLoadBalancer(newLB)
 }
 
 func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	return nil, nil
+	server_list := make([]brightbox.Server, len(*newLB.Nodes))
+	for i, v := range *newLB.Nodes {
+		server_list[i].Id = v.Node
+	}
+	return &brightbox.LoadBalancer{
+		Id:          newLB.Id,
+		Name:        *newLB.Name,
+		Status:      "Active",
+		Nodes:       server_list,
+		Listeners:   *newLB.Listeners,
+		Healthcheck: *newLB.Healthcheck,
+	}, nil
 }
 
 func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
@@ -445,7 +625,7 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			CloudIPs: nil,
 		},
 		{
-			Id:     "lba-test2",
+			Id:     foundLba,
 			Name:   lbname,
 			Status: "Active",
 			CloudIPs: []brightbox.CloudIP{
