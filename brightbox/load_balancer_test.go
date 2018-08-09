@@ -117,6 +117,7 @@ func TestValidateService(t *testing.T) {
 		"session affinity": {
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
 					Ports: []v1.ServicePort{
 						v1.ServicePort{},
 					},
@@ -128,6 +129,7 @@ func TestValidateService(t *testing.T) {
 		"empty ports": {
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
+					Type:            v1.ServiceTypeLoadBalancer,
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
@@ -136,6 +138,7 @@ func TestValidateService(t *testing.T) {
 		"udp ports": {
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
@@ -190,6 +193,7 @@ func TestGetLoadBalancer(t *testing.T) {
 					UID: "9d85099c-227c-46c0-a373-e954ec8eee2e",
 				},
 				Spec: v1.ServiceSpec{
+					Type:            v1.ServiceTypeLoadBalancer,
 					Ports:           nil,
 					SessionAffinity: "None",
 					LoadBalancerIP:  "",
@@ -204,6 +208,7 @@ func TestGetLoadBalancer(t *testing.T) {
 					UID: lbuid,
 				},
 				Spec: v1.ServiceSpec{
+					Type:            v1.ServiceTypeLoadBalancer,
 					Ports:           nil,
 					SessionAffinity: "None",
 					LoadBalancerIP:  "",
@@ -255,6 +260,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					UID: lbuid,
 				},
 				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
@@ -273,7 +279,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
 					LoadBalancerIP:        publicIP,
-					ExternalTrafficPolicy: "Cluster",
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
 			},
@@ -301,19 +307,89 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: &[]brightbox.LoadBalancerListener{
 					{
-						Protocol: "tcp",
+						Protocol: loadBalancerTcpProtocol,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: "tcp",
+						Protocol: loadBalancerTcpProtocol,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type: "tcp",
+					Type: loadBalancerTcpProtocol,
 					Port: 31347,
+				},
+			},
+		},
+		"httphealthcheck": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeLocal,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &lbname,
+				Nodes: &[]brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: &[]brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
 				},
 			},
 		},
