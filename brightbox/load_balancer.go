@@ -153,13 +153,13 @@ func buildLoadBalancerNodes(nodes []*v1.Node) *[]brightbox.LoadBalancerNode {
 	if len(nodes) <= 0 {
 		return nil
 	}
-	result := make([]brightbox.LoadBalancerNode, len(nodes))
+	result := make([]brightbox.LoadBalancerNode, 0, len(nodes))
 	for i := range nodes {
 		if nodes[i].Spec.ProviderID == "" {
 			glog.Warningf("node %q did not have providerID set", nodes[i].Name)
 			continue
 		}
-		result[i].Node = mapProviderIDToServerID(nodes[i].Spec.ProviderID)
+		result = append(result, brightbox.LoadBalancerNode{Node: mapProviderIDToServerID(nodes[i].Spec.ProviderID)})
 	}
 	return &result
 }

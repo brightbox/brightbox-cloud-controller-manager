@@ -354,11 +354,15 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			nodes: []*v1.Node{
 				&v1.Node{
-					Spec: v1.NodeSpec{
-						ProviderID: "brightbox://srv-gdqms",
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-gdprt",
 					},
+					Spec: v1.NodeSpec{},
 				},
 				&v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-230b7",
+					},
 					Spec: v1.NodeSpec{
 						ProviderID: "brightbox://srv-230b7",
 					},
@@ -367,9 +371,6 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &lbname,
 				Nodes: &[]brightbox.LoadBalancerNode{
-					{
-						Node: "srv-gdqms",
-					},
 					{
 						Node: "srv-230b7",
 					},
@@ -390,6 +391,29 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Type:    loadBalancerHttpProtocol,
 					Port:    8080,
 					Request: "/healthz",
+				},
+			},
+		},
+		"empty": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type:                  v1.ServiceTypeLoadBalancer,
+					Ports:                 []v1.ServicePort{},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &lbname,
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type: loadBalancerTcpProtocol,
+					Port: 80,
 				},
 			},
 		},
