@@ -16,12 +16,14 @@ package brightbox
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
+	"github.com/go-test/deep"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
@@ -31,6 +33,12 @@ const (
 	publicIP2  = "190.190.190.190"
 	fqdn2      = "cip-190-190-190-190.gb1.brightbox.com"
 	reverseDNS = "k8s-lb.example.com"
+)
+
+//Constant variables you can take the address of!
+var (
+	lbuid  types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname string    = "a9bde5f3313794b8c877a777f5da4d76"
 )
 
 func TestLoadBalancerStatus(t *testing.T) {
@@ -93,8 +101,8 @@ func TestLoadBalancerStatus(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			result := toLoadBalancerStatus(tc.lb)
-			if !reflect.DeepEqual(result, tc.status) {
-				t.Errorf("Expected status %v, but got %v", tc.status, result)
+			if diff := deep.Equal(result, tc.status); diff != nil {
+				t.Error(diff)
 			}
 		})
 	}
@@ -125,6 +133,37 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "requested load balancer with no ports",
 		},
+		"udp ports": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "dns",
+							Protocol:   "udp",
+							Port:       53,
+							TargetPort: intstr.FromInt(1024),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "UDP nodeports are not supported",
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -148,7 +187,7 @@ func TestGetLoadBalancer(t *testing.T) {
 		"missing": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					UID: "9bde5f33-1379-4b8c-877a-777f5da4d766",
+					UID: "9d85099c-227c-46c0-a373-e954ec8eee2e",
 				},
 				Spec: v1.ServiceSpec{
 					Ports:           nil,
@@ -162,7 +201,7 @@ func TestGetLoadBalancer(t *testing.T) {
 		"found": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					UID: "9d85099c-227c-46c0-a373-e954ec8eee2e",
+					UID: lbuid,
 				},
 				Spec: v1.ServiceSpec{
 					Ports:           nil,
@@ -197,24 +236,117 @@ func TestGetLoadBalancer(t *testing.T) {
 				t.Errorf("Error when none expected")
 			} else if tc.exists != exists {
 				t.Errorf("Exists status wrong, got %v, expected %v for %v", exists, tc.exists, cloudprovider.GetLoadBalancerName(tc.service))
-			} else if !reflect.DeepEqual(lb, tc.lbstatus) {
-				t.Errorf("Got LB status %v, expected %v", lb, tc.lbstatus)
+			} else if diff := deep.Equal(lb, tc.lbstatus); diff != nil {
+				t.Error(diff)
 			}
 		})
 	}
+}
+
+func TestBuildLoadBalancerOptions(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		nodes   []*v1.Node
+		lbopts  *brightbox.LoadBalancerOptions
+	}{
+		"standard": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: "Cluster",
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &lbname,
+				Nodes: &[]brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: &[]brightbox.LoadBalancerListener{
+					{
+						Protocol: "tcp",
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: "tcp",
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type: "tcp",
+					Port: 31347,
+				},
+			},
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			lbopts := buildLoadBalancerOptions(tc.service, tc.nodes)
+			if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+	return nil, nil
+}
+
+func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+	return nil, nil
 }
 
 func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 	return []brightbox.LoadBalancer{
 		{
 			Id:       "lba-test1",
-			Name:     "a9d85099c227c46c0a373e954ec8eee2",
+			Name:     lbname,
 			Status:   "Deleted",
 			CloudIPs: nil,
 		},
 		{
 			Id:     "lba-test2",
-			Name:   "a9d85099c227c46c0a373e954ec8eee2",
+			Name:   lbname,
 			Status: "Active",
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{

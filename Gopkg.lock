@@ -171,6 +171,12 @@
   version = "0.15.0"
 
 [[projects]]
+  name = "github.com/go-test/deep"
+  packages = ["."]
+  revision = "6592d9cc0a499ad2d5f574fde80a2b5c5cc3b4f5"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -882,6 +888,7 @@
     "pkg/api/service",
     "pkg/api/v1/node",
     "pkg/api/v1/pod",
+    "pkg/api/v1/service",
     "pkg/apis/autoscaling",
     "pkg/apis/componentconfig",
     "pkg/apis/componentconfig/v1alpha1",
@@ -938,6 +945,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f7d9fecd37885ddbb06585686561a3628b4e46a5fdfb949354b77b5a2f5ac8bd"
+  inputs-digest = "b937e5440f4d2d5d09a6307dd7b95ac31385dcd42219ca95ae9282ecd558a987"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -55,6 +55,10 @@ type CloudAccess interface {
 	Server(identifier string) (*brightbox.Server, error)
 	//Fetch a list of LoadBalancers
 	LoadBalancers() ([]brightbox.LoadBalancer, error)
+	//Creates a new load balancer
+	CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
+	//Updates an existing load balancer
+	UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -100,6 +104,24 @@ func (c *cloud) getLoadBalancerByName(lbName string) (*brightbox.LoadBalancer, e
 		}
 	}
 	return result, nil
+}
+
+func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+	glog.V(4).Infof("createLoadBalancer called for %q", newLB.Name)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CreateLoadBalancer(newLB)
+}
+
+func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+	glog.V(4).Infof("updateLoadBalancer called for (%q, %q)", newLB.Id, newLB.Name)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.UpdateLoadBalancer(newLB)
 }
 
 // Obtain a Brightbox cloud client anew
