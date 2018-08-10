@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/brightbox/gobrightbox"
 	"github.com/golang/glog"
+	"github.com/lestrrat-go/backoff"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/kubernetes/pkg/cloudprovider"
@@ -36,6 +38,8 @@ const (
 	passwordEnvVar      = "BRIGHTBOX_PASSWORD"
 	accountEnvVar       = "BRIGHTBOX_ACCOUNT"
 	apiUrlEnvVar        = "BRIGHTBOX_API_URL"
+
+	defaultTimeoutSeconds = 10
 )
 
 var infrastructureScope = []string{"infrastructure"}
@@ -59,6 +63,7 @@ type CloudAccess interface {
 	CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 	//Updates an existing load balancer
 	UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
+	MapCloudIP(identifier string, destination string) error
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -122,6 +127,35 @@ func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 		return nil, err
 	}
 	return client.UpdateLoadBalancer(newLB)
+}
+
+// backoff retry mapping the cloudip to a load balancer
+func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
+	if alreadyMapped(lb, cip) {
+		return nil
+	}
+	glog.V(4).Infof("ensureMappedCip called for (%q, %q)", lb.Id, cip.Id)
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
+		glog.V(4).Infof("attempting to map CloudIP %q", cip.Id)
+		return client.MapCloudIP(cip.Id, lb.Id)
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
+	defer cancel()
+	p := backoff.NewExponential()
+	return backoff.Retry(ctx, p, retryFunc)
+}
+
+func alreadyMapped(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) bool {
+	for i := range lb.CloudIPs {
+		if lb.CloudIPs[i].Id == cip.Id {
+			return true
+		}
+	}
+	return false
 }
 
 // Obtain a Brightbox cloud client anew

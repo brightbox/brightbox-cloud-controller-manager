@@ -196,6 +196,10 @@ func (f *fakeZoneCloud) UpdateLoadBalancer(lb *brightbox.LoadBalancerOptions) (*
 	return nil, nil
 }
 
+func (f *fakeZoneCloud) MapCloudIP(identifier string, destination string) error {
+	return nil
+}
+
 func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 	result := f.serverzone[identifier]
 	if result == "" {

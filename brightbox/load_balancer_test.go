@@ -16,6 +16,7 @@ package brightbox
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
@@ -595,6 +596,59 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEnsureMappedCip(t *testing.T) {
+	testCases := map[string]struct {
+		lb  *brightbox.LoadBalancer
+		cip *brightbox.CloudIP
+	}{
+		"mapped": {
+			lb: &brightbox.LoadBalancer{
+				Id: "lba-testy",
+				CloudIPs: []brightbox.CloudIP{
+					{
+						Id: "cip-testy",
+					},
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id: "cip-testy",
+			},
+		},
+		"unmapped": {
+			lb: &brightbox.LoadBalancer{
+				Id:       "lba-testy",
+				CloudIPs: []brightbox.CloudIP{},
+			},
+			cip: &brightbox.CloudIP{
+				Id: "cip-testy",
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+
+			err := client.ensureMappedCip(tc.lb, tc.cip)
+			if err != nil {
+				t.Errorf("Error when not expected")
+			}
+		})
+	}
+}
+
+var cloudIpCount = 0
+
+func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) error {
+	cloudIpCount++
+	if cloudIpCount%3 == 0 {
+		return nil
+	}
+	return errors.New(`mapping failed`)
 }
 
 func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {

@@ -275,6 +275,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/lestrrat-go/backoff"
+  packages = ["."]
+  revision = "828830ec1d9a363a7891cc6924f1acbebc62ecce"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mailru/easyjson"
   packages = [
     "buffer",
@@ -324,6 +330,12 @@
   packages = ["."]
   revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
   version = "v2.0.1"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/prometheus/client_golang"
@@ -945,6 +957,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b937e5440f4d2d5d09a6307dd7b95ac31385dcd42219ca95ae9282ecd558a987"
+  inputs-digest = "337f5ed7234e745e37212a5b12107828660939e4860d575db81dfef610a818fb"
   solver-name = "gps-cdcl"
   solver-version = 1

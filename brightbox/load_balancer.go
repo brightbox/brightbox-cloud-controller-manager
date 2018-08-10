@@ -48,16 +48,19 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
-	_, err := c.ensureAllocatedCip(apiservice)
+	cip, err := c.ensureAllocatedCip(apiservice)
 	if err != nil {
 		return nil, err
 	}
 	lb, err := c.ensureLoadBalancerFromService(apiservice, nodes)
 	if err != nil {
 		return nil, err
-	} else {
-		return toLoadBalancerStatus(lb), nil
 	}
+	err = c.ensureMappedCip(lb, cip)
+	if err != nil {
+		return nil, err
+	}
+	return toLoadBalancerStatus(lb), nil
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
