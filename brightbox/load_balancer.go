@@ -42,6 +42,9 @@ func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiserv
 	return toLoadBalancerStatus(lb), true, nil
 }
 
+// Make sure we have a cloud ip before asking for a load balancer. Try
+// to get one matching the LoadBalancerIP spec in the service, and error
+// if that isn't in the cloudip list.
 func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	glog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v, %v, %v)",
 		clusterName, apiservice.UID, apiservice.Namespace, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)

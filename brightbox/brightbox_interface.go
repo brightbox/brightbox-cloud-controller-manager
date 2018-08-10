@@ -138,6 +138,8 @@ func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
 	if alreadyMapped(lb, cip) {
 		return nil
+	} else if cip.Status == "mapped" {
+		return fmt.Errorf("Unexplained mapping of %q (%q)", cip.Id, cip.PublicIP)
 	}
 	glog.V(4).Infof("ensureMappedCip called for (%q, %q)", lb.Id, cip.Id)
 	client, err := c.cloudClient()

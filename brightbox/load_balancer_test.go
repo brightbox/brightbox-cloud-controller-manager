@@ -602,6 +602,7 @@ func TestEnsureMappedCip(t *testing.T) {
 	testCases := map[string]struct {
 		lb  *brightbox.LoadBalancer
 		cip *brightbox.CloudIP
+		err bool
 	}{
 		"mapped": {
 			lb: &brightbox.LoadBalancer{
@@ -617,7 +618,20 @@ func TestEnsureMappedCip(t *testing.T) {
 				LoadBalancer: &brightbox.LoadBalancer{
 					Id: "lba-testy",
 				},
+				Status: "mapped",
 			},
+			err: false,
+		},
+		"badmap": {
+			lb: &brightbox.LoadBalancer{
+				Id:       "lba-testy",
+				CloudIPs: []brightbox.CloudIP{},
+			},
+			cip: &brightbox.CloudIP{
+				Id:     "cip-testy",
+				Status: "mapped",
+			},
+			err: true,
 		},
 		"unmapped": {
 			lb: &brightbox.LoadBalancer{
@@ -625,8 +639,10 @@ func TestEnsureMappedCip(t *testing.T) {
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id: "cip-testy",
+				Id:     "cip-testy",
+				Status: "unmapped",
 			},
+			err: false,
 		},
 	}
 
@@ -637,8 +653,8 @@ func TestEnsureMappedCip(t *testing.T) {
 			}
 
 			err := client.ensureMappedCip(tc.lb, tc.cip)
-			if err != nil {
-				t.Errorf("Error when not expected")
+			if err != nil && !tc.err {
+				t.Errorf("Error when not expected: %q", err.Error())
 			}
 		})
 	}
