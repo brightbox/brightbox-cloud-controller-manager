@@ -123,7 +123,23 @@ func (c *cloud) getLoadBalancerFromService(apiservice *v1.Service) (*brightbox.L
 }
 
 func (c *cloud) ensureAllocatedCip(apiservice *v1.Service) (*brightbox.CloudIP, error) {
-	return nil, nil
+	name := cloudprovider.GetLoadBalancerName(apiservice)
+	ip := apiservice.Spec.LoadBalancerIP
+	glog.V(4).Infof("ensureAllocatedCip (%q, %q)", name, ip)
+	cloudIpList, err := c.getCloudIPs()
+	if err != nil {
+		return nil, err
+	}
+	for i := range cloudIpList {
+		if cloudIpList[i].PublicIP == ip || cloudIpList[i].Name == name {
+			return &cloudIpList[i], nil
+		}
+	}
+	if ip == "" {
+		return c.allocateCip(name)
+	} else {
+		return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
+	}
 }
 
 func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {

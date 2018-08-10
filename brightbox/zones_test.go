@@ -200,6 +200,14 @@ func (f *fakeZoneCloud) MapCloudIP(identifier string, destination string) error 
 	return nil
 }
 
+func (f *fakeZoneCloud) CloudIPs() ([]brightbox.CloudIP, error) {
+	return nil, nil
+}
+
+func (f *fakeZoneCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
+	return nil, nil
+}
+
 func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 	result := f.serverzone[identifier]
 	if result == "" {

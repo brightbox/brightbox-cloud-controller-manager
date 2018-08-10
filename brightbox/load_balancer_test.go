@@ -614,6 +614,9 @@ func TestEnsureMappedCip(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				Id: "cip-testy",
+				LoadBalancer: &brightbox.LoadBalancer{
+					Id: "lba-testy",
+				},
 			},
 		},
 		"unmapped": {
@@ -641,6 +644,161 @@ func TestEnsureMappedCip(t *testing.T) {
 	}
 }
 
+func TestEnsureAllocatedCip(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		cip     *brightbox.CloudIP
+	}{
+		"LBIP_found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       "cip-12345",
+				PublicIP: publicIP,
+			},
+		},
+		"LBIP_notfound": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP2,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: nil,
+		},
+		"name_found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       "cip-testy",
+				Name:     lbname,
+				PublicIP: "240.240.240.240",
+			},
+		},
+		"new_allocation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   "tcp",
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   "tcp",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       "cip-67890",
+				Name:     newlbname,
+				PublicIP: publicIP2,
+			},
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+
+			cip, err := client.ensureAllocatedCip(tc.service)
+			if err != nil && tc.cip != nil {
+				t.Errorf("Error when not expected %q", err.Error())
+			} else if diff := deep.Equal(cip, tc.cip); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 var cloudIpCount = 0
 
 func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) error {
@@ -649,6 +807,31 @@ func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) er
 		return nil
 	}
 	return errors.New(`mapping failed`)
+}
+
+func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
+	return []brightbox.CloudIP{
+		{
+			Id:       "cip-12345",
+			PublicIP: publicIP,
+		},
+		{
+			Id:       "cip-testy",
+			Name:     lbname,
+			PublicIP: "240.240.240.240",
+		},
+	}, nil
+}
+
+func (f *fakeInstanceCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
+	cip := &brightbox.CloudIP{
+		Id:       "cip-67890",
+		PublicIP: publicIP2,
+	}
+	if newCloudIP.Name != nil {
+		cip.Name = *newCloudIP.Name
+	}
+	return cip, nil
 }
 
 func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {

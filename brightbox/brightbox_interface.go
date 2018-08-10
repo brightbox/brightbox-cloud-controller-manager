@@ -63,7 +63,12 @@ type CloudAccess interface {
 	CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 	//Updates an existing load balancer
 	UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
+	//Retrieves a list of all cloud IPs
+	CloudIPs() ([]brightbox.CloudIP, error)
+	//Issues a request to map the cloud ip to the destination.
 	MapCloudIP(identifier string, destination string) error
+	//Creates a new Cloud IP
+	CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error)
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -150,12 +155,28 @@ func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.Cloud
 }
 
 func alreadyMapped(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) bool {
-	for i := range lb.CloudIPs {
-		if lb.CloudIPs[i].Id == cip.Id {
-			return true
-		}
+	return cip.LoadBalancer != nil && cip.LoadBalancer.Id == lb.Id
+}
+
+func (c *cloud) allocateCip(name string) (*brightbox.CloudIP, error) {
+	glog.V(4).Infof("allocateCip %q", name)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
 	}
-	return false
+	opts := &brightbox.CloudIPOptions{
+		Name: &name,
+	}
+	return client.CreateCloudIP(opts)
+}
+
+func (c *cloud) getCloudIPs() ([]brightbox.CloudIP, error) {
+	glog.V(4).Infof("getCloudIPs")
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CloudIPs()
 }
 
 // Obtain a Brightbox cloud client anew
