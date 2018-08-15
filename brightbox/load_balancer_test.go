@@ -896,3 +896,118 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		},
 	}, nil
 }
+
+func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {
+	switch identifier {
+	case "grp-found":
+		groups, _ := f.ServerGroups()
+		return &groups[0], nil
+	default:
+		result := &brightbox.ServerGroup{
+			Id:      identifier,
+			Name:    "Fake Name After AddServers",
+			Servers: mapServerIdsToServers(serverIds),
+		}
+		return result, nil
+	}
+}
+
+func (f *fakeInstanceCloud) RemoveServersFromServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {
+	switch identifier {
+	case "grp-found":
+		groups, _ := f.ServerGroups()
+		return &groups[0], nil
+	default:
+		result := &brightbox.ServerGroup{
+			Id:      identifier,
+			Name:    "Fake Name After RemoveServers",
+			Servers: mapServerIdsToServers(serverIds),
+		}
+		return result, nil
+	}
+}
+
+func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
+	result := []brightbox.ServerGroup{
+		brightbox.ServerGroup{
+			Id:   "grp-found",
+			Name: lbname,
+			Servers: []brightbox.Server{
+				{
+					Id: "srv-gdqms",
+				},
+				{
+					Id: "srv-230b7",
+				},
+			},
+			FirewallPolicy: &brightbox.FirewallPolicy{
+				Id:   "fwp-found",
+				Name: lbname,
+				Rules: []brightbox.FirewallRule{
+					{
+						Id:          "fwr-found",
+						Description: lbname,
+					},
+				},
+			},
+		},
+	}
+	return result, nil
+}
+
+func (f *fakeInstanceCloud) CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
+	result := &brightbox.ServerGroup{
+		Id: "grp-testy",
+	}
+	if newServerGroup.Name != nil {
+		result.Name = *newServerGroup.Name
+	}
+	if newServerGroup.Description != nil {
+		result.Description = *newServerGroup.Description
+	}
+	return result, nil
+}
+
+func (f *fakeInstanceCloud) CreateFirewallPolicy(policyOptions *brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error) {
+	result := &brightbox.FirewallPolicy{
+		Id:   "fwp-testy",
+		Name: *policyOptions.Name,
+		ServerGroup: &brightbox.ServerGroup{
+			Id:   *policyOptions.ServerGroup,
+			Name: *policyOptions.Name,
+		},
+	}
+	return result, nil
+}
+
+func (f *fakeInstanceCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+	result := &brightbox.FirewallRule{
+		Id:          "fwr-testy",
+		Description: "After Create Firewll Rule",
+		FirewallPolicy: brightbox.FirewallPolicy{
+			Id:   ruleOptions.FirewallPolicy,
+			Name: "After Create Firewall Rule",
+		},
+	}
+	return result, nil
+}
+
+func (f *fakeInstanceCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+	result := &brightbox.FirewallRule{
+		Id:          ruleOptions.Id,
+		Description: *ruleOptions.Description,
+		FirewallPolicy: brightbox.FirewallPolicy{
+			Id:   ruleOptions.FirewallPolicy,
+			Name: *ruleOptions.Description,
+		},
+	}
+	return result, nil
+}
+
+func mapServerIdsToServers(serverIds []string) []brightbox.Server {
+	result := make([]brightbox.Server, len(serverIds))
+	for i := range serverIds {
+		result[i].Id = serverIds[i]
+	}
+	return result
+}

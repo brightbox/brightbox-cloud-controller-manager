@@ -69,6 +69,20 @@ type CloudAccess interface {
 	MapCloudIP(identifier string, destination string) error
 	//Creates a new Cloud IP
 	CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error)
+	//adds servers to an existing server group
+	AddServersToServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error)
+	//removes servers from an existing server group
+	RemoveServersFromServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error)
+	// ServerGroups retrieves a list of all server groups
+	ServerGroups() ([]brightbox.ServerGroup, error)
+	//creates a new server group
+	CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error)
+	//creates a new firewall policy
+	CreateFirewallPolicy(policyOptions *brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error)
+	//creates a new firewall rule
+	CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error)
+	//updates an existing firewall rule
+	UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error)
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -117,7 +131,7 @@ func (c *cloud) getLoadBalancerByName(lbName string) (*brightbox.LoadBalancer, e
 }
 
 func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("createLoadBalancer called for %q", newLB.Name)
+	glog.V(4).Infof("createLoadBalancer called for %q", *newLB.Name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -126,12 +140,71 @@ func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 }
 
 func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("updateLoadBalancer called for (%q, %q)", newLB.Id, newLB.Name)
+	glog.V(4).Infof("updateLoadBalancer called for (%q, %q)", newLB.Id, *newLB.Name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
 	}
 	return client.UpdateLoadBalancer(newLB)
+}
+
+// get a serverGroup By Name
+func (c *cloud) getServerGroupByName(sgName string) (*brightbox.ServerGroup, error) {
+	glog.V(4).Infof("getServerGroupByName called for %q", sgName)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	sgList, err := client.ServerGroups()
+	if err != nil {
+		return nil, err
+	}
+	var result *brightbox.ServerGroup
+	for i := range sgList {
+		if sgName == sgList[i].Name {
+			result = &sgList[i]
+			break
+		}
+	}
+	return result, nil
+}
+
+func (c *cloud) createServerGroup(name string) (*brightbox.ServerGroup, error) {
+	glog.V(4).Infof("createServerGroup called for %q", name)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CreateServerGroup(&brightbox.ServerGroupOptions{Name: &name})
+}
+
+//Firewall Policy
+func (c *cloud) createFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
+	glog.V(4).Infof("createFirewallPolicy called for %q", group.Name)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CreateFirewallPolicy(&brightbox.FirewallPolicyOptions{Name: &group.Name, ServerGroup: &group.Id})
+}
+
+//Firewall Rules
+func (c *cloud) createFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+	glog.V(4).Infof("createFirewallRule called for %q", *newFR.Description)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CreateFirewallRule(newFR)
+}
+
+func (c *cloud) updateFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+	glog.V(4).Infof("updateFirewallRule called for (%q, %q)", newFR.Id, *newFR.Description)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.UpdateFirewallRule(newFR)
 }
 
 // backoff retry mapping the cloudip to a load balancer
@@ -263,4 +336,26 @@ func (authd *authdetails) apiClientAuth(ctx context.Context) (*brightbox.Client,
 	glog.V(4).Infof("Speaking to %s", authd.tokenURL())
 	oauthConnection := conf.Client(ctx)
 	return brightbox.NewClient(authd.APIURL, authd.Account, oauthConnection)
+}
+
+func mapServersToServerIds(servers []brightbox.Server) []string {
+	result := make([]string, len(servers))
+	for i := range servers {
+		result[i] = servers[i].Id
+	}
+	return result
+}
+
+func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (*brightbox.ServerGroup, error) {
+	glog.V(4).Infof("syncServerGroup called for (%q, %v)", group.Id, newIds)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	insIds, delIds := getSyncLists(mapServersToServerIds(group.Servers), newIds)
+	_, err = client.AddServersToServerGroup(group.Id, insIds)
+	if err != nil {
+		return nil, err
+	}
+	return client.RemoveServersFromServerGroup(group.Id, delIds)
 }

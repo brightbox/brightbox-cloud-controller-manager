@@ -152,6 +152,7 @@ func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v
 		return nil, err
 	}
 	newLB := buildLoadBalancerOptions(apiservice, nodes)
+	err = c.ensureFirewallOpenForService(apiservice, nodes)
 	if current_lb == nil {
 		return c.createLoadBalancer(newLB)
 	} else {

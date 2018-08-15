@@ -16,6 +16,8 @@ package brightbox
 
 import (
 	"testing"
+
+	"github.com/go-test/deep"
 )
 
 func TestMapProviderIDToServerID(t *testing.T) {
@@ -71,6 +73,69 @@ func TestMapZoneHandleToRegion(t *testing.T) {
 				}
 			} else if result != tc.expected {
 				t.Errorf("Expected server id %q, but got %q", tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestGetSyncLists(t *testing.T) {
+	testCases := map[string]struct {
+		old []string
+		new []string
+		ins []string
+		del []string
+	}{
+		"all nil": {
+			old: nil,
+			new: nil,
+			ins: nil,
+			del: nil,
+		},
+		"no change": {
+			old: []string{"srv-12345", "srv-67890"},
+			new: []string{"srv-67890", "srv-12345"},
+			ins: nil,
+			del: nil,
+		},
+		"one insert": {
+			old: []string{"srv-12345", "srv-67890"},
+			new: []string{"srv-67890", "srv-12345", "srv-testy"},
+			ins: []string{"srv-testy"},
+			del: nil,
+		},
+		"one delete": {
+			old: []string{"srv-12345", "srv-testy", "srv-67890"},
+			new: []string{"srv-67890", "srv-12345"},
+			ins: nil,
+			del: []string{"srv-testy"},
+		},
+		"nil to something": {
+			old: nil,
+			new: []string{"srv-67890", "srv-12345"},
+			ins: []string{"srv-12345", "srv-67890"},
+			del: nil,
+		},
+		"something to nil": {
+			old: []string{"srv-67890", "srv-12345"},
+			new: nil,
+			ins: nil,
+			del: []string{"srv-12345", "srv-67890"},
+		},
+		"change": {
+			old: []string{"srv-12345", "srv-testy", "srv-67890"},
+			new: []string{"srv-67890", "srv-fasty", "srv-newly"},
+			ins: []string{"srv-fasty", "srv-newly"},
+			del: []string{"srv-12345", "srv-testy"},
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ins, del := getSyncLists(tc.old, tc.new)
+			if diff := deep.Equal(ins, tc.ins); diff != nil {
+				t.Error(diff)
+			}
+			if diff := deep.Equal(del, tc.del); diff != nil {
+				t.Error(diff)
 			}
 		})
 	}

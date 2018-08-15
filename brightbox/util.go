@@ -17,6 +17,7 @@ package brightbox
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -73,4 +74,32 @@ func getenvWithDefault(key string, defaultValue string) string {
 	} else {
 		return val
 	}
+}
+
+//get a list of inserts and deletes that changes oldList into newList
+func getSyncLists(oldList []string, newList []string) ([]string, []string) {
+	sort.Strings(oldList)
+	sort.Strings(newList)
+	var x, y int
+	var insList, delList []string
+	for x < len(oldList) || y < len(newList) {
+		switch {
+		case y >= len(newList):
+			delList = append(delList, oldList[x])
+			x += 1
+		case x >= len(oldList):
+			insList = append(insList, newList[y])
+			y += 1
+		case oldList[x] < newList[y]:
+			delList = append(delList, oldList[x])
+			x += 1
+		case oldList[x] > newList[y]:
+			insList = append(insList, newList[y])
+			y += 1
+		default:
+			y += 1
+			x += 1
+		}
+	}
+	return insList, delList
 }
