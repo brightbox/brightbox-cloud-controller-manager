@@ -146,21 +146,21 @@ func TestValidateService(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "dns",
-							Protocol:   "udp",
+							Protocol:   v1.ProtocolUDP,
 							Port:       53,
 							TargetPort: intstr.FromInt(1024),
 							NodePort:   31348,
@@ -268,14 +268,14 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -337,14 +337,14 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -432,6 +432,83 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 	}
 }
 
+func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		nodes   []*v1.Node
+		status  *v1.LoadBalancerStatus
+	}{
+		"found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			status: &v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					v1.LoadBalancerIngress{
+						IP:       publicIP,
+						Hostname: reverseDNS,
+					},
+				},
+			},
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+
+			lbstatus, err := client.EnsureLoadBalancer(context.TODO(), "kubernetes", tc.service, tc.nodes)
+			if err != nil {
+				t.Errorf("Error when not expected: %q", err.Error())
+			} else if diff := deep.Equal(lbstatus, tc.status); diff != nil {
+				t.Error(diff)
+			}
+			err = client.UpdateLoadBalancer(context.TODO(), "kubernetes", tc.service, tc.nodes)
+			if err != nil {
+				t.Errorf("Error when not expected: %q", err.Error())
+			}
+		})
+	}
+}
+
 func TestBuildEnsureLoadBalancer(t *testing.T) {
 	testCases := map[string]struct {
 		service *v1.Service
@@ -448,14 +525,14 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -519,14 +596,14 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -675,14 +752,14 @@ func TestEnsureAllocatedCip(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -709,14 +786,14 @@ func TestEnsureAllocatedCip(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -740,14 +817,14 @@ func TestEnsureAllocatedCip(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,
@@ -774,14 +851,14 @@ func TestEnsureAllocatedCip(t *testing.T) {
 					Ports: []v1.ServicePort{
 						{
 							Name:       "https",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       443,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
 						{
 							Name:       "http",
-							Protocol:   "tcp",
+							Protocol:   v1.ProtocolTCP,
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31348,

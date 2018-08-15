@@ -63,6 +63,10 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
+	lb, err = c.getLoadBalancerFromService(apiservice)
+	if err != nil {
+		return nil, err
+	}
 	return toLoadBalancerStatus(lb), nil
 }
 
