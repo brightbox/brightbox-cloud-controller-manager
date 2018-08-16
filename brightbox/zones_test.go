@@ -255,3 +255,22 @@ func (f *fakeZoneCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOp
 func (f *fakeZoneCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
 	panic("not implemented")
 }
+func (f *fakeZoneCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, error) {
+	panic("not implemented")
+}
+
+func (f *fakeZoneCloud) DestroyServerGroup(identifier string) error {
+	panic("not implemented")
+}
+
+func (f *fakeZoneCloud) DestroyFirewallPolicy(identifier string) error {
+	panic("not implemented")
+}
+
+func (f *fakeZoneCloud) DestroyLoadBalancer(identifier string) error {
+	panic("not implemented")
+}
+
+func (f *fakeZoneCloud) DestroyCloudIP(identifier string) error {
+	panic("not implemented")
+}

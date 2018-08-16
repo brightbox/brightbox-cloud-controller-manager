@@ -79,7 +79,89 @@ func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apis
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
 	name := cloudprovider.GetLoadBalancerName(apiservice)
 	glog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v, %v, %v)", clusterName, name, apiservice.Namespace, apiservice.Spec.LoadBalancerIP)
+	c.ensureServerGroupDeleted(name)
+	c.ensureFirewallClosed(name)
+	c.ensureLoadBalancerDeletedByName(name)
+	c.ensureCloudIPsDeleted(name)
+	lb, err := c.getLoadBalancerByName(name)
+	if err != nil {
+		return err
+	}
+	if lb != nil && lb.Status == "Active" {
+		return fmt.Errorf("Load Balancer %q failed to delete properly", name)
+	}
 	return nil
+}
+
+//Take all the servers out of the server group and remove it
+func (c *cloud) ensureServerGroupDeleted(name string) {
+	group, err := c.getServerGroupByName(name)
+	if err != nil {
+		glog.V(4).Infof("Error looking for Server Group %q", name)
+		return
+	} else if group == nil {
+		glog.V(4).Infof("Unable to find Server Group %q", name)
+		return
+	}
+	group, err = c.syncServerGroup(group, nil)
+	if err != nil {
+		glog.V(4).Infof("Error removing servers from %q", name)
+		return
+	}
+	err = c.destroyServerGroup(group.Id)
+	if err != nil {
+		glog.V(4).Infof("Error destroying Server Group %q (%q)", group.Id, err.Error())
+	}
+}
+
+//Remove the firewall policy
+func (c *cloud) ensureFirewallClosed(name string) {
+	fp, err := c.getFirewallPolicyByName(name)
+	if err != nil {
+		glog.V(4).Infof("Error looking for Firewall Policy %q", name)
+		return
+	} else if fp == nil {
+		glog.V(4).Infof("Unable to find Firewall Policy %q", name)
+		return
+	}
+	err = c.destroyFirewallPolicy(fp.Id)
+	if err != nil {
+		glog.V(4).Infof("Error destroying Firewall Policy %q (%q)", fp.Id, err.Error())
+	}
+}
+
+//Try to remove the loadbalancer
+func (c *cloud) ensureLoadBalancerDeletedByName(name string) {
+	glog.V(4).Infof("EnsureLoadBalancerDeletedByName (%q)", name)
+	lb, err := c.getLoadBalancerByName(name)
+	if err != nil {
+		glog.V(4).Infof("Error looking for Load Balancer %q", name)
+		return
+	} else if lb == nil {
+		glog.V(4).Infof("Unable to find Load Balancer %q", name)
+		return
+	}
+	err = c.destroyLoadBalancer(lb.Id)
+	if err != nil {
+		glog.V(4).Infof("Error destroying Load Balancer %q (%q)", lb.Id, err.Error())
+	}
+}
+
+//Try to remove CloudIPs matching `name` from the list of cloudIPs
+func (c *cloud) ensureCloudIPsDeleted(name string) {
+	cloudIpList, err := c.getCloudIPs()
+	if err != nil {
+		glog.V(4).Infof("Error retrieving list of CloudIPs")
+		return
+	}
+	for i := range cloudIpList {
+		if cloudIpList[i].Name == name {
+			err := c.retryDestroyCloudIP(cloudIpList[i].Id)
+			if err != nil {
+				glog.V(4).Infof("Error destroying CloudIP %q (%q)", cloudIpList[i].Id, err.Error())
+			}
+		}
+	}
 }
 
 // lb is expected to be not nil

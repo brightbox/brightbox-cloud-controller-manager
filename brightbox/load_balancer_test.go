@@ -17,6 +17,7 @@ package brightbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
@@ -34,15 +35,17 @@ const (
 	publicIP2  = "190.190.190.190"
 	fqdn2      = "cip-190-190-190-190.gb1.brightbox.com"
 	reverseDNS = "k8s-lb.example.com"
-	foundLba   = "lba-12345"
+	foundLba   = "lba-found"
+	errorLba   = "lba-error"
 	newUID     = "9d85099c-227c-46c0-a373-e954ec8eee2e"
 	newlbname  = "a9d85099c227c46c0a373e954ec8eee2"
 )
 
 //Constant variables you can take the address of!
 var (
-	lbuid  types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname string    = "a9bde5f3313794b8c877a777f5da4d76"
+	lbuid   types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname  string    = "a9bde5f3313794b8c877a777f5da4d76"
+	lberror string    = "888888f3313794b8c877a777f5da4d76"
 )
 
 func TestLoadBalancerStatus(t *testing.T) {
@@ -836,7 +839,7 @@ func TestEnsureAllocatedCip(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       "cip-testy",
+				Id:       "cip-found",
 				Name:     lbname,
 				PublicIP: "240.240.240.240",
 			},
@@ -892,6 +895,78 @@ func TestEnsureAllocatedCip(t *testing.T) {
 	}
 }
 
+func TestDeletionFunctions(t *testing.T) {
+	testCases := []string{
+		lbname,
+		"not-found",
+		lberror,
+	}
+	for _, name := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+			client.ensureServerGroupDeleted(name)
+			client.ensureFirewallClosed(name)
+			client.ensureLoadBalancerDeletedByName(name)
+			client.ensureCloudIPsDeleted(name)
+		})
+	}
+}
+
+func TestEnsureLoadBalancerDeleted(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		err     error
+	}{
+		"missing": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+				},
+				Spec: v1.ServiceSpec{
+					Type:            v1.ServiceTypeLoadBalancer,
+					Ports:           nil,
+					SessionAffinity: "None",
+					LoadBalancerIP:  "",
+				},
+			},
+			err: nil,
+		},
+		"found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type:            v1.ServiceTypeLoadBalancer,
+					Ports:           nil,
+					SessionAffinity: "None",
+					LoadBalancerIP:  "",
+				},
+			},
+			err: fmt.Errorf("Load Balancer %q failed to delete properly", lbname),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+
+			err := client.EnsureLoadBalancerDeleted(
+				context.TODO(),
+				"dummy_cluster",
+				tc.service,
+			)
+			if diff := deep.Equal(err, tc.err); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 var cloudIpCount = 0
 
 func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) error {
@@ -909,9 +984,14 @@ func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 			PublicIP: publicIP,
 		},
 		{
-			Id:       "cip-testy",
+			Id:       "cip-found",
 			Name:     lbname,
 			PublicIP: "240.240.240.240",
+		},
+		{
+			Id:       "cip-error",
+			Name:     lberror,
+			PublicIP: "255.255.255.255",
 		},
 	}, nil
 }
@@ -971,6 +1051,18 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			Name:   "abob",
 			Status: "Active",
 		},
+		{
+			Id:     errorLba,
+			Name:   lberror,
+			Status: "Active",
+			CloudIPs: []brightbox.CloudIP{
+				brightbox.CloudIP{
+					PublicIP:   publicIP,
+					ReverseDns: reverseDNS,
+					Fqdn:       fqdn,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -1024,6 +1116,28 @@ func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
 					{
 						Id:          "fwr-found",
 						Description: lbname,
+					},
+				},
+			},
+		},
+		brightbox.ServerGroup{
+			Id:   "grp-error",
+			Name: lberror,
+			Servers: []brightbox.Server{
+				{
+					Id: "srv-gdqms",
+				},
+				{
+					Id: "srv-230b7",
+				},
+			},
+			FirewallPolicy: &brightbox.FirewallPolicy{
+				Id:   "fwp-error",
+				Name: lberror,
+				Rules: []brightbox.FirewallRule{
+					{
+						Id:          "fwr-found",
+						Description: lberror,
 					},
 				},
 			},
@@ -1087,4 +1201,92 @@ func mapServerIdsToServers(serverIds []string) []brightbox.Server {
 		result[i].Id = serverIds[i]
 	}
 	return result
+}
+
+func (f *fakeInstanceCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, error) {
+	result := []brightbox.FirewallPolicy{
+		brightbox.FirewallPolicy{
+			Id:   "fwp-found",
+			Name: lbname,
+			Rules: []brightbox.FirewallRule{
+				{
+					Id:          "fwr-found",
+					Description: lbname,
+				},
+			},
+		},
+		brightbox.FirewallPolicy{
+			Id:   "fwp-error",
+			Name: lberror,
+			Rules: []brightbox.FirewallRule{
+				{
+					Id:          "fwr-error",
+					Description: lberror,
+				},
+			},
+			ServerGroup: &brightbox.ServerGroup{
+				Id:   "grp-error",
+				Name: lberror,
+				Servers: []brightbox.Server{
+					{
+						Id: "srv-gdqms",
+					},
+					{
+						Id: "srv-230b7",
+					},
+				},
+			},
+		},
+	}
+	return result, nil
+}
+
+func (f *fakeInstanceCloud) DestroyServerGroup(identifier string) error {
+	switch identifier {
+	case "grp-found":
+		return nil
+	case "grp-error":
+		return fmt.Errorf("Raising error in DestroyServerGroup")
+	default:
+		return fmt.Errorf("unexpected identifier %q sent to DestroyServerGroup", identifier)
+	}
+}
+
+func (f *fakeInstanceCloud) DestroyFirewallPolicy(identifier string) error {
+	switch identifier {
+	case "fwp-found":
+		return nil
+	case "fwp-error":
+		return fmt.Errorf("Raising error in DestroyFirewallPolicy")
+	default:
+		return fmt.Errorf("unexpected identifier %q sent to DestroyFirewallPolicy", identifier)
+	}
+}
+
+func (f *fakeInstanceCloud) DestroyLoadBalancer(identifier string) error {
+	switch identifier {
+	case foundLba:
+		return nil
+	case errorLba:
+		return fmt.Errorf("Raising error in DestroyLoadBalancer")
+	default:
+		return fmt.Errorf("unexpected identifier %q sent to DestroyLoadBalancer", identifier)
+	}
+}
+
+var delcloudIpCount = 0
+
+func (f *fakeInstanceCloud) DestroyCloudIP(identifier string) error {
+	switch identifier {
+	case "cip-found":
+		delcloudIpCount++
+		if delcloudIpCount%3 == 0 {
+			return nil
+		}
+		return fmt.Errorf("Can't delete %q - still mapped", identifier)
+	case "cip-error":
+		return fmt.Errorf("Raising error in DestroyCloudIP")
+	default:
+		return fmt.Errorf("unexpected identifier %q sent to DestroyCloudIP", identifier)
+	}
 }

@@ -83,6 +83,17 @@ type CloudAccess interface {
 	CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error)
 	//updates an existing firewall rule
 	UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error)
+
+	//retrieves a list of all firewall policies
+	FirewallPolicies() ([]brightbox.FirewallPolicy, error)
+	// DestroyServerGroup destroys an existing server group
+	DestroyServerGroup(identifier string) error
+	// DestroyFirewallPolicy issues a request to destroy the firewall policy
+	DestroyFirewallPolicy(identifier string) error
+	// DestroyLoadBalancer issues a request to destroy the load balancer
+	DestroyLoadBalancer(identifier string) error
+	// DestroyCloudIP issues a request to destroy the cloud ip
+	DestroyCloudIP(identifier string) error
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
@@ -146,6 +157,27 @@ func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 		return nil, err
 	}
 	return client.UpdateLoadBalancer(newLB)
+}
+
+// get a FirewallPolicy By Name
+func (c *cloud) getFirewallPolicyByName(fpName string) (*brightbox.FirewallPolicy, error) {
+	glog.V(4).Infof("getFirewallPolicyByName called for %q", fpName)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	fpList, err := client.FirewallPolicies()
+	if err != nil {
+		return nil, err
+	}
+	var result *brightbox.FirewallPolicy
+	for i := range fpList {
+		if fpName == fpList[i].Name {
+			result = &fpList[i]
+			break
+		}
+	}
+	return result, nil
 }
 
 // get a serverGroup By Name
@@ -252,6 +284,52 @@ func (c *cloud) getCloudIPs() ([]brightbox.CloudIP, error) {
 		return nil, err
 	}
 	return client.CloudIPs()
+}
+
+//Destroy things
+
+func (c *cloud) destroyLoadBalancer(id string) error {
+	glog.V(4).Infof("destroyLoadBalancer %q", id)
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	return client.DestroyLoadBalancer(id)
+}
+
+func (c *cloud) destroyServerGroup(id string) error {
+	glog.V(4).Infof("destroyServerGroup %q", id)
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	return client.DestroyServerGroup(id)
+}
+
+func (c *cloud) destroyFirewallPolicy(id string) error {
+	glog.V(4).Infof("destroyFirewallPolicy %q", id)
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	return client.DestroyFirewallPolicy(id)
+}
+
+// backoff retry removing the cloudip
+func (c *cloud) retryDestroyCloudIP(id string) error {
+	glog.V(4).Infof("retryDestroyCloudIP called")
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
+		glog.V(4).Infof("attempting to remove CloudIP %q", id)
+		return client.DestroyCloudIP(id)
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
+	defer cancel()
+	p := backoff.NewExponential()
+	return backoff.Retry(ctx, p, retryFunc)
 }
 
 // Obtain a Brightbox cloud client anew
