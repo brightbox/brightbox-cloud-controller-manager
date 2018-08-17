@@ -16,7 +16,6 @@ package brightbox
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -325,8 +324,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type: loadBalancerTcpProtocol,
-					Port: 31347,
+					Type:    loadBalancerTcpProtocol,
+					Port:    31347,
+					Request: "/",
 				},
 			},
 		},
@@ -419,8 +419,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &lbname,
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type: loadBalancerTcpProtocol,
-					Port: 80,
+					Type:    loadBalancerTcpProtocol,
+					Port:    80,
+					Request: "/",
 				},
 			},
 		},
@@ -584,8 +585,9 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type: loadBalancerTcpProtocol,
-					Port: 31347,
+					Type:    loadBalancerTcpProtocol,
+					Port:    31347,
+					Request: "/",
 				},
 			},
 		},
@@ -945,7 +947,7 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 					LoadBalancerIP:  "",
 				},
 			},
-			err: fmt.Errorf("Load Balancer %q failed to delete properly", lbname),
+			err: fmt.Errorf("CloudIps still mapped to load balancer %q", foundLba),
 		},
 	}
 
@@ -967,14 +969,8 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 	}
 }
 
-var cloudIpCount = 0
-
 func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) error {
-	cloudIpCount++
-	if cloudIpCount%3 == 0 {
-		return nil
-	}
-	return errors.New(`mapping failed`)
+	return nil
 }
 
 func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
@@ -1064,6 +1060,19 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			},
 		},
 	}, nil
+}
+
+func (f *fakeInstanceCloud) LoadBalancer(identifier string) (*brightbox.LoadBalancer, error) {
+	LbList, err := f.LoadBalancers()
+	if err != nil {
+		return nil, err
+	}
+	for i := range LbList {
+		if LbList[i].Id == identifier {
+			return &LbList[i], nil
+		}
+	}
+	return nil, fmt.Errorf("Unknown load balancer %q", identifier)
 }
 
 func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {
@@ -1274,16 +1283,10 @@ func (f *fakeInstanceCloud) DestroyLoadBalancer(identifier string) error {
 	}
 }
 
-var delcloudIpCount = 0
-
 func (f *fakeInstanceCloud) DestroyCloudIP(identifier string) error {
 	switch identifier {
 	case "cip-found":
-		delcloudIpCount++
-		if delcloudIpCount%3 == 0 {
-			return nil
-		}
-		return fmt.Errorf("Can't delete %q - still mapped", identifier)
+		return nil
 	case "cip-error":
 		return fmt.Errorf("Raising error in DestroyCloudIP")
 	default:

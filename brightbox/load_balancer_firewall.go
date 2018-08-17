@@ -94,11 +94,20 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 	if len(fp.Rules) == 0 {
 		_, err := c.createFirewallRule(&newRule)
 		return err
-	} else {
+	} else if isUpdateFirewallRuleRequired(fp.Rules[0], newRule) {
 		newRule.Id = fp.Rules[0].Id
 		_, err := c.updateFirewallRule(&newRule)
 		return err
 	}
+	glog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].Id)
+	return nil
+}
+
+func isUpdateFirewallRuleRequired(old brightbox.FirewallRule, new brightbox.FirewallRuleOptions) bool {
+	return (new.Protocol != nil && *new.Protocol != old.Protocol) ||
+		(new.Source != nil && *new.Source != old.Source) ||
+		(new.DestinationPort != nil && *new.DestinationPort != old.DestinationPort) ||
+		(new.Description != nil && *new.Description != old.Description)
 }
 
 func createPortListString(ports []v1.ServicePort) string {

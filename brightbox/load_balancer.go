@@ -36,10 +36,7 @@ const (
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	glog.V(4).Infof("GetLoadBalancer(%v, %v)", clusterName, apiservice.UID)
 	lb, err := c.getLoadBalancerFromService(apiservice)
-	if lb == nil || err != nil {
-		return nil, false, err
-	}
-	return toLoadBalancerStatus(lb), true, nil
+	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
 
 // Make sure we have a cloud ip before asking for a load balancer. Try
@@ -64,10 +61,10 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 		return nil, err
 	}
 	lb, err = c.getLoadBalancerFromService(apiservice)
-	if lb == nil || err != nil {
+	if err != nil {
 		return nil, err
 	}
-	return toLoadBalancerStatus(lb), nil
+	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, string(apiservice.UID))
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
@@ -79,93 +76,108 @@ func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apis
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
 	name := cloudprovider.GetLoadBalancerName(apiservice)
 	glog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v, %v, %v)", clusterName, name, apiservice.Namespace, apiservice.Spec.LoadBalancerIP)
-	c.ensureServerGroupDeleted(name)
-	c.ensureFirewallClosed(name)
-	c.ensureLoadBalancerDeletedByName(name)
-	c.ensureCloudIPsDeleted(name)
+	if err := c.ensureServerGroupDeleted(name); err != nil {
+		return err
+	}
+	if err := c.ensureFirewallClosed(name); err != nil {
+		return err
+	}
+	if err := c.ensureLoadBalancerDeletedByName(name); err != nil {
+		return err
+	}
+	if err := c.ensureCloudIPsDeleted(name); err != nil {
+		return err
+	}
 	lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
 		return err
 	}
-	if lb != nil && isAlive(lb) {
-		return fmt.Errorf("Load Balancer %q failed to delete properly", name)
+	return errorIfNotErased(lb)
+}
+
+//Take all the servers out of the server group and remove it
+func (c *cloud) ensureServerGroupDeleted(name string) error {
+	glog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
+	group, err := c.getServerGroupByName(name)
+	if err != nil {
+		glog.V(4).Infof("Error looking for Server Group for %q", name)
+		return err
+	}
+	if group == nil {
+		return nil
+	}
+	group, err = c.syncServerGroup(group, nil)
+	if err != nil {
+		glog.V(4).Infof("Error removing servers from %q", group.Id)
+		return err
+	}
+	if err := c.destroyServerGroup(group.Id); err != nil {
+		glog.V(4).Infof("Error destroying Server Group %q", group.Id)
+		return err
 	}
 	return nil
 }
 
-//Take all the servers out of the server group and remove it
-func (c *cloud) ensureServerGroupDeleted(name string) {
-	group, err := c.getServerGroupByName(name)
-	if err != nil {
-		glog.V(4).Infof("Error looking for Server Group %q", name)
-		return
-	} else if group == nil {
-		glog.V(4).Infof("Unable to find Server Group %q", name)
-		return
-	}
-	group, err = c.syncServerGroup(group, nil)
-	if err != nil {
-		glog.V(4).Infof("Error removing servers from %q", name)
-		return
-	}
-	err = c.destroyServerGroup(group.Id)
-	if err != nil {
-		glog.V(4).Infof("Error destroying Server Group %q (%q)", group.Id, err.Error())
-	}
-}
-
 //Remove the firewall policy
-func (c *cloud) ensureFirewallClosed(name string) {
+func (c *cloud) ensureFirewallClosed(name string) error {
+	glog.V(4).Infof("ensureFirewallClosed (%q)", name)
 	fp, err := c.getFirewallPolicyByName(name)
 	if err != nil {
 		glog.V(4).Infof("Error looking for Firewall Policy %q", name)
-		return
-	} else if fp == nil {
-		glog.V(4).Infof("Unable to find Firewall Policy %q", name)
-		return
+		return err
 	}
-	err = c.destroyFirewallPolicy(fp.Id)
-	if err != nil {
-		glog.V(4).Infof("Error destroying Firewall Policy %q (%q)", fp.Id, err.Error())
+	if fp == nil {
+		return nil
 	}
+	if err := c.destroyFirewallPolicy(fp.Id); err != nil {
+		glog.V(4).Infof("Error destroying Firewall Policy %q", fp.Id)
+		return err
+	}
+	return nil
 }
 
 //Try to remove the loadbalancer
-func (c *cloud) ensureLoadBalancerDeletedByName(name string) {
-	glog.V(4).Infof("EnsureLoadBalancerDeletedByName (%q)", name)
+func (c *cloud) ensureLoadBalancerDeletedByName(name string) error {
+	glog.V(4).Infof("ensureLoadBalancerDeletedByName (%q)", name)
 	lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
 		glog.V(4).Infof("Error looking for Load Balancer %q", name)
-		return
-	} else if lb == nil {
-		glog.V(4).Infof("Unable to find Load Balancer %q", name)
-		return
+		return err
 	}
-	err = c.destroyLoadBalancer(lb.Id)
-	if err != nil {
-		glog.V(4).Infof("Error destroying Load Balancer %q (%q)", lb.Id, err.Error())
+	if lb == nil {
+		return nil
 	}
+	if err = c.destroyLoadBalancer(lb.Id); err != nil {
+		glog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
+		return err
+	}
+	return nil
 }
 
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
-func (c *cloud) ensureCloudIPsDeleted(name string) {
+func (c *cloud) ensureCloudIPsDeleted(name string) error {
+	glog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
 	cloudIpList, err := c.getCloudIPs()
 	if err != nil {
 		glog.V(4).Infof("Error retrieving list of CloudIPs")
-		return
+		return err
 	}
 	for i := range cloudIpList {
 		if cloudIpList[i].Name == name {
-			err := c.retryDestroyCloudIP(cloudIpList[i].Id)
+			err := c.destroyCloudIP(cloudIpList[i].Id)
 			if err != nil {
-				glog.V(4).Infof("Error destroying CloudIP %q (%q)", cloudIpList[i].Id, err.Error())
+				glog.V(4).Infof("Error destroying CloudIP %q", cloudIpList[i].Id)
+				return err
 			}
 		}
 	}
+	return nil
 }
 
-// lb is expected to be not nil
 func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
+	if lb == nil {
+		return nil
+	}
 	status := v1.LoadBalancerStatus{}
 	if len(lb.CloudIPs) > 0 {
 		status.Ingress = make([]v1.LoadBalancerIngress, len(lb.CloudIPs))
@@ -177,16 +189,6 @@ func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
 		}
 	}
 	return &status
-}
-
-// ReverseDNS entry takes priority over the standard FQDN
-func selectHostname(ip *brightbox.CloudIP) string {
-	glog.V(4).Infof("selectHostname (%q otherwise %q)", ip.ReverseDns, ip.Fqdn)
-	if ip.ReverseDns != "" {
-		return ip.ReverseDns
-	} else {
-		return ip.Fqdn
-	}
 }
 
 func validateServiceSpec(apiservice *v1.Service) error {
@@ -237,17 +239,19 @@ func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v
 	if err != nil {
 		return nil, err
 	}
-	newLB := buildLoadBalancerOptions(apiservice, nodes)
 	err = c.ensureFirewallOpenForService(apiservice, nodes)
 	if err != nil {
-		glog.V(4).Infof("Firewall error %q", err.Error())
+		return nil, err
 	}
+	newLB := buildLoadBalancerOptions(apiservice, nodes)
 	if current_lb == nil {
 		return c.createLoadBalancer(newLB)
-	} else {
+	} else if isUpdateLoadBalancerRequired(current_lb, *newLB) {
 		newLB.Id = current_lb.Id
 		return c.updateLoadBalancer(newLB)
 	}
+	glog.V(4).Infof("No Load Balancer update required for %q, skipping", current_lb.Id)
+	return current_lb, nil
 }
 
 func buildLoadBalancerOptions(apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
@@ -298,8 +302,9 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 		}
 	} else {
 		return &brightbox.LoadBalancerHealthcheck{
-			Type: loadBalancerTcpProtocol,
-			Port: getTcpHealthCheckPort(apiservice),
+			Type:    loadBalancerTcpProtocol,
+			Port:    getTcpHealthCheckPort(apiservice),
+			Request: "/",
 		}
 	}
 }

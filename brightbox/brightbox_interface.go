@@ -16,15 +16,12 @@ package brightbox
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/brightbox/gobrightbox"
 	"github.com/golang/glog"
-	"github.com/lestrrat-go/backoff"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/kubernetes/pkg/cloudprovider"
@@ -64,6 +61,8 @@ type CloudAccess interface {
 	Server(identifier string) (*brightbox.Server, error)
 	//Fetch a list of LoadBalancers
 	LoadBalancers() ([]brightbox.LoadBalancer, error)
+	//retrieves a detailed view of one load balancer
+	LoadBalancer(identifier string) (*brightbox.LoadBalancer, error)
 	//Creates a new load balancer
 	CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 	//Updates an existing load balancer
@@ -143,14 +142,12 @@ func (c *cloud) getLoadBalancerByName(lbName string) (*brightbox.LoadBalancer, e
 	if err != nil {
 		return nil, err
 	}
-	var result *brightbox.LoadBalancer
 	for i := range lbList {
 		if isAlive(&lbList[i]) && lbName == lbList[i].Name {
-			result = &lbList[i]
-			break
+			return client.LoadBalancer(lbList[i].Id)
 		}
 	}
-	return result, nil
+	return nil, nil
 }
 
 func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
@@ -251,52 +248,6 @@ func (c *cloud) updateFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brigh
 	return client.UpdateFirewallRule(newFR)
 }
 
-func (c *cloud) retryMapCip(cipId, lbId string) error {
-	glog.V(4).Infof("retryMapCip (%q, %q)", cipId, lbId)
-	client, err := c.cloudClient()
-	if err != nil {
-		return err
-	}
-	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
-		glog.V(4).Infof("attempting to map CloudIP %q", cipId)
-		err := client.MapCloudIP(cipId, lbId)
-		//Make sure we return a normal error
-		if err != nil {
-			return errors.New(err.Error())
-		}
-		return nil
-	})
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
-	defer cancel()
-	p := backoff.NewExponential()
-	return backoff.Retry(ctx, p, retryFunc)
-}
-
-func (c *cloud) retryWaitForLbMap(cipId, lbId string) error {
-	glog.V(4).Infof("retryWaitForLbMap (%q, %q)", cipId, lbId)
-	client, err := c.cloudClient()
-	if err != nil {
-		return err
-	}
-	waitForMapped := backoff.ExecuteFunc(func(_ context.Context) error {
-		glog.V(4).Infof("Waiting for mapping to occur (%q, %q)", cipId, lbId)
-		cip, err := client.CloudIP(cipId)
-		//Make sure we return a normal error
-		if err != nil {
-			return errors.New(err.Error())
-		}
-		if alreadyMapped(cip, lbId) {
-			return nil
-		}
-		return errors.New("Not mapped")
-	})
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
-	defer cancel()
-	p := backoff.NewExponential()
-	return backoff.Retry(ctx, p, waitForMapped)
-}
-
-// backoff retry mapping the cloudip to a load balancer
 func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
 	glog.V(4).Infof("ensureMappedCip called for (%q, %q)", lb.Id, cip.Id)
 	if alreadyMapped(cip, lb.Id) {
@@ -304,11 +255,11 @@ func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.Cloud
 	} else if cip.Status == cipMapped {
 		return fmt.Errorf("Unexplained mapping of %q (%q)", cip.Id, cip.PublicIP)
 	}
-	err := c.retryMapCip(cip.Id, lb.Id)
+	client, err := c.cloudClient()
 	if err != nil {
 		return err
 	}
-	return c.retryWaitForLbMap(cip.Id, lb.Id)
+	return client.MapCloudIP(cip.Id, lb.Id)
 }
 
 func alreadyMapped(cip *brightbox.CloudIP, lbId string) bool {
@@ -375,26 +326,13 @@ func (c *cloud) destroyFirewallPolicy(id string) error {
 	return client.DestroyFirewallPolicy(id)
 }
 
-// backoff retry removing the cloudip
-func (c *cloud) retryDestroyCloudIP(id string) error {
-	glog.V(4).Infof("retryDestroyCloudIP called")
+func (c *cloud) destroyCloudIP(id string) error {
+	glog.V(4).Infof("destroyCloudIP called")
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
 	}
-	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
-		glog.V(4).Infof("attempting to remove CloudIP %q", id)
-		err := client.DestroyCloudIP(id)
-		//Ensure we return a normal error to stop backoff complaining
-		if err != nil {
-			return errors.New(err.Error())
-		}
-		return nil
-	})
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
-	defer cancel()
-	p := backoff.NewExponential()
-	return backoff.Retry(ctx, p, retryFunc)
+	return client.DestroyCloudIP(id)
 }
 
 // Obtain a Brightbox cloud client anew
@@ -507,4 +445,90 @@ func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (
 		result, err = client.RemoveServersFromServerGroup(group.Id, delIds)
 	}
 	return result, err
+}
+
+//Equality test between load balancer and load balancer options - to avoid unnecessary api calls
+func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.LoadBalancerOptions) bool {
+	glog.V(8).Infof("Update LoadBalancer Required called (%v, %v)", *newLb.Name, lb.Name)
+	return (newLb.Name != nil && *newLb.Name != lb.Name) ||
+		(newLb.Healthcheck != nil && isUpdateLoadBalancerHealthcheckRequired(newLb.Healthcheck, &lb.Healthcheck)) ||
+		(newLb.Nodes != nil && isUpdateLoadBalancerNodeRequired(*newLb.Nodes, lb.Nodes)) ||
+		(newLb.Listeners != nil && isUpdateLoadBalancerListenerRequired(*newLb.Listeners, lb.Listeners))
+}
+
+func isUpdateLoadBalancerHealthcheckRequired(new *brightbox.LoadBalancerHealthcheck, old *brightbox.LoadBalancerHealthcheck) bool {
+	glog.V(8).Infof("Update LoadBalancer Healthcheck Required called (%#v, %#v)", *new, *old)
+	return (new.Type != old.Type) ||
+		(new.Port != old.Port) ||
+		(new.Request != old.Request)
+}
+
+func isUpdateLoadBalancerNodeRequired(a []brightbox.LoadBalancerNode, b []brightbox.Server) bool {
+	glog.V(8).Infof("Update LoadBalancer Node Required called (%v, %v)", a, b)
+	// If one is nil, the other must also be nil.
+	if (a == nil) != (b == nil) {
+		return true
+	}
+	if len(a) != len(b) {
+		return true
+	}
+	for i := range a {
+		if a[i].Node != b[i].Id {
+			return true
+		}
+	}
+	return false
+}
+
+func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b []brightbox.LoadBalancerListener) bool {
+	glog.V(8).Infof("Update LoadBalancer Listener Required called (%v, %v)", a, b)
+	// If one is nil, the other must also be nil.
+	if (a == nil) != (b == nil) {
+		return true
+	}
+	if len(a) != len(b) {
+		return true
+	}
+	for i := range a {
+		if (a[i].Protocol != b[i].Protocol) ||
+			(a[i].In != b[i].In) ||
+			(a[i].Out != b[i].Out) {
+			return true
+		}
+	}
+	return false
+}
+
+func errorIfNotErased(lb *brightbox.LoadBalancer) error {
+	switch {
+	case lb == nil:
+		return nil
+	case lb.CloudIPs != nil && len(lb.CloudIPs) > 0:
+		return fmt.Errorf("CloudIps still mapped to load balancer %q", lb.Id)
+	case !isAlive(lb):
+		return nil
+	}
+	return fmt.Errorf("Unknown reason why %q has not deleted", lb.Id)
+}
+
+func errorIfNotComplete(lb *brightbox.LoadBalancer, name string) error {
+	switch {
+	case lb == nil:
+		return fmt.Errorf("Load Balancer for %q is missing", name)
+	case !isAlive(lb):
+		return fmt.Errorf("Load Balancer %q still building", lb.Id)
+	case lb.CloudIPs == nil || len(lb.CloudIPs) <= 0:
+		return fmt.Errorf("Mapping of CloudIPs to %q not complete", lb.Id)
+	}
+	return nil
+}
+
+// ReverseDNS entry takes priority over the standard FQDN
+func selectHostname(ip *brightbox.CloudIP) string {
+	glog.V(4).Infof("selectHostname (%q otherwise %q)", ip.ReverseDns, ip.Fqdn)
+	if ip.ReverseDns != "" {
+		return ip.ReverseDns
+	} else {
+		return ip.Fqdn
+	}
 }
