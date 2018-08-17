@@ -51,6 +51,7 @@ func (c *cloud) ensureFirewallOpenForService(apiservice *v1.Service, nodes []*v1
 }
 
 func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.ServerGroup, error) {
+	glog.V(4).Infof("ensureServerGroup(%v)", name)
 	group, err := c.getServerGroupByName(name)
 	if err != nil {
 		return nil, err
@@ -69,14 +70,19 @@ func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.Ser
 }
 
 func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
-	if group.FirewallPolicy == nil {
-		return c.createFirewallPolicy(group)
-	} else {
-		return group.FirewallPolicy, nil
+	glog.V(4).Infof("ensureFireWallPolicy (%q)", group.Name)
+	fp, err := c.getFirewallPolicyByName(group.Name)
+	if err != nil {
+		return nil, err
 	}
+	if fp == nil {
+		return c.createFirewallPolicy(group)
+	}
+	return fp, nil
 }
 
 func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.FirewallPolicy) error {
+	glog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
 	portListStr := createPortListString(apiservice.Spec.Ports)
 	newRule := brightbox.FirewallRuleOptions{
 		FirewallPolicy:  fp.Id,

@@ -64,7 +64,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 		return nil, err
 	}
 	lb, err = c.getLoadBalancerFromService(apiservice)
-	if err != nil {
+	if lb == nil || err != nil {
 		return nil, err
 	}
 	return toLoadBalancerStatus(lb), nil
@@ -87,7 +87,7 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 	if err != nil {
 		return err
 	}
-	if lb != nil && lb.Status == "Active" {
+	if lb != nil && isAlive(lb) {
 		return fmt.Errorf("Load Balancer %q failed to delete properly", name)
 	}
 	return nil
@@ -239,6 +239,9 @@ func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v
 	}
 	newLB := buildLoadBalancerOptions(apiservice, nodes)
 	err = c.ensureFirewallOpenForService(apiservice, nodes)
+	if err != nil {
+		glog.V(4).Infof("Firewall error %q", err.Error())
+	}
 	if current_lb == nil {
 		return c.createLoadBalancer(newLB)
 	} else {

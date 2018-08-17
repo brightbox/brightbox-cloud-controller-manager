@@ -16,6 +16,7 @@ package brightbox
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -40,6 +41,10 @@ const (
 	apiUrlEnvVar        = "BRIGHTBOX_API_URL"
 
 	defaultTimeoutSeconds = 10
+
+	lbActive   = "active"
+	lbCreating = "creating"
+	cipMapped  = "mapped"
 )
 
 var infrastructureScope = []string{"infrastructure"}
@@ -65,6 +70,8 @@ type CloudAccess interface {
 	UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 	//Retrieves a list of all cloud IPs
 	CloudIPs() ([]brightbox.CloudIP, error)
+	//retrieves a detailed view of one cloud ip
+	CloudIP(identifier string) (*brightbox.CloudIP, error)
 	//Issues a request to map the cloud ip to the destination.
 	MapCloudIP(identifier string, destination string) error
 	//Creates a new Cloud IP
@@ -104,7 +111,7 @@ func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, er
 	}
 	srv, err := client.Server(id)
 	if err != nil {
-		if isNotFound(err.(brightbox.ApiError)) {
+		if isNotFound(err) {
 			return nil, cloudprovider.InstanceNotFound
 		}
 		return nil, err
@@ -112,12 +119,17 @@ func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, er
 	return srv, nil
 }
 
-func isNotFound(e brightbox.ApiError) bool {
-	return e.StatusCode == http.StatusNotFound
+func isNotFound(e error) bool {
+	switch v := e.(type) {
+	case brightbox.ApiError:
+		return v.StatusCode == http.StatusNotFound
+	default:
+		return false
+	}
 }
 
-func isActive(lb *brightbox.LoadBalancer) bool {
-	return lb.Status == "Active"
+func isAlive(lb *brightbox.LoadBalancer) bool {
+	return lb.Status == lbActive || lb.Status == lbCreating
 }
 
 // get a loadbalancer by name
@@ -133,7 +145,7 @@ func (c *cloud) getLoadBalancerByName(lbName string) (*brightbox.LoadBalancer, e
 	}
 	var result *brightbox.LoadBalancer
 	for i := range lbList {
-		if isActive(&lbList[i]) && lbName == lbList[i].Name {
+		if isAlive(&lbList[i]) && lbName == lbList[i].Name {
 			result = &lbList[i]
 			break
 		}
@@ -239,21 +251,20 @@ func (c *cloud) updateFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brigh
 	return client.UpdateFirewallRule(newFR)
 }
 
-// backoff retry mapping the cloudip to a load balancer
-func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
-	if alreadyMapped(lb, cip) {
-		return nil
-	} else if cip.Status == "mapped" {
-		return fmt.Errorf("Unexplained mapping of %q (%q)", cip.Id, cip.PublicIP)
-	}
-	glog.V(4).Infof("ensureMappedCip called for (%q, %q)", lb.Id, cip.Id)
+func (c *cloud) retryMapCip(cipId, lbId string) error {
+	glog.V(4).Infof("retryMapCip (%q, %q)", cipId, lbId)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
 	}
 	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
-		glog.V(4).Infof("attempting to map CloudIP %q", cip.Id)
-		return client.MapCloudIP(cip.Id, lb.Id)
+		glog.V(4).Infof("attempting to map CloudIP %q", cipId)
+		err := client.MapCloudIP(cipId, lbId)
+		//Make sure we return a normal error
+		if err != nil {
+			return errors.New(err.Error())
+		}
+		return nil
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
 	defer cancel()
@@ -261,8 +272,47 @@ func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.Cloud
 	return backoff.Retry(ctx, p, retryFunc)
 }
 
-func alreadyMapped(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) bool {
-	return cip.LoadBalancer != nil && cip.LoadBalancer.Id == lb.Id
+func (c *cloud) retryWaitForLbMap(cipId, lbId string) error {
+	glog.V(4).Infof("retryWaitForLbMap (%q, %q)", cipId, lbId)
+	client, err := c.cloudClient()
+	if err != nil {
+		return err
+	}
+	waitForMapped := backoff.ExecuteFunc(func(_ context.Context) error {
+		glog.V(4).Infof("Waiting for mapping to occur (%q, %q)", cipId, lbId)
+		cip, err := client.CloudIP(cipId)
+		//Make sure we return a normal error
+		if err != nil {
+			return errors.New(err.Error())
+		}
+		if alreadyMapped(cip, lbId) {
+			return nil
+		}
+		return errors.New("Not mapped")
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
+	defer cancel()
+	p := backoff.NewExponential()
+	return backoff.Retry(ctx, p, waitForMapped)
+}
+
+// backoff retry mapping the cloudip to a load balancer
+func (c *cloud) ensureMappedCip(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
+	glog.V(4).Infof("ensureMappedCip called for (%q, %q)", lb.Id, cip.Id)
+	if alreadyMapped(cip, lb.Id) {
+		return nil
+	} else if cip.Status == cipMapped {
+		return fmt.Errorf("Unexplained mapping of %q (%q)", cip.Id, cip.PublicIP)
+	}
+	err := c.retryMapCip(cip.Id, lb.Id)
+	if err != nil {
+		return err
+	}
+	return c.retryWaitForLbMap(cip.Id, lb.Id)
+}
+
+func alreadyMapped(cip *brightbox.CloudIP, lbId string) bool {
+	return cip.LoadBalancer != nil && cip.LoadBalancer.Id == lbId
 }
 
 func (c *cloud) allocateCip(name string) (*brightbox.CloudIP, error) {
@@ -284,6 +334,16 @@ func (c *cloud) getCloudIPs() ([]brightbox.CloudIP, error) {
 		return nil, err
 	}
 	return client.CloudIPs()
+}
+
+//Get a cloudIp by id
+func (c *cloud) getCloudIP(identifier string) (*brightbox.CloudIP, error) {
+	glog.V(4).Infof("getCloudIP (%q)", identifier)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CloudIP(identifier)
 }
 
 //Destroy things
@@ -324,7 +384,12 @@ func (c *cloud) retryDestroyCloudIP(id string) error {
 	}
 	retryFunc := backoff.ExecuteFunc(func(_ context.Context) error {
 		glog.V(4).Infof("attempting to remove CloudIP %q", id)
-		return client.DestroyCloudIP(id)
+		err := client.DestroyCloudIP(id)
+		//Ensure we return a normal error to stop backoff complaining
+		if err != nil {
+			return errors.New(err.Error())
+		}
+		return nil
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
 	defer cancel()
@@ -425,15 +490,21 @@ func mapServersToServerIds(servers []brightbox.Server) []string {
 }
 
 func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (*brightbox.ServerGroup, error) {
-	glog.V(4).Infof("syncServerGroup called for (%q, %v)", group.Id, newIds)
+	oldIds := mapServersToServerIds(group.Servers)
+	glog.V(4).Infof("syncServerGroup called for (%v, %v, %v)", group.Id, oldIds, newIds)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
 	}
-	insIds, delIds := getSyncLists(mapServersToServerIds(group.Servers), newIds)
-	_, err = client.AddServersToServerGroup(group.Id, insIds)
-	if err != nil {
-		return nil, err
+	insIds, delIds := getSyncLists(oldIds, newIds)
+	result := group
+	if len(insIds) > 0 {
+		glog.V(4).Infof("Adding Servers %v", insIds)
+		result, err = client.AddServersToServerGroup(group.Id, insIds)
 	}
-	return client.RemoveServersFromServerGroup(group.Id, delIds)
+	if err == nil && len(delIds) > 0 {
+		glog.V(4).Infof("Removing Servers %v", delIds)
+		result, err = client.RemoveServersFromServerGroup(group.Id, delIds)
+	}
+	return result, err
 }

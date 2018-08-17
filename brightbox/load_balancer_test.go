@@ -562,7 +562,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
 				Name:   lbname,
-				Status: "Active",
+				Status: lbActive,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-gdqms",
@@ -636,7 +636,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Name:   newlbname,
-				Status: "Active",
+				Status: lbActive,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-230b7",
@@ -1019,7 +1019,7 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 	return &brightbox.LoadBalancer{
 		Id:          newLB.Id,
 		Name:        *newLB.Name,
-		Status:      "Active",
+		Status:      lbActive,
 		Nodes:       server_list,
 		Listeners:   *newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
@@ -1031,13 +1031,13 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		{
 			Id:       "lba-test1",
 			Name:     lbname,
-			Status:   "Deleted",
+			Status:   "deleted",
 			CloudIPs: nil,
 		},
 		{
 			Id:     foundLba,
 			Name:   lbname,
-			Status: "Active",
+			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					PublicIP:   publicIP,
@@ -1049,12 +1049,12 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		{
 			Id:     "lba-test3",
 			Name:   "abob",
-			Status: "Active",
+			Status: lbActive,
 		},
 		{
 			Id:     errorLba,
 			Name:   lberror,
-			Status: "Active",
+			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					PublicIP:   publicIP,
@@ -1289,4 +1289,21 @@ func (f *fakeInstanceCloud) DestroyCloudIP(identifier string) error {
 	default:
 		return fmt.Errorf("unexpected identifier %q sent to DestroyCloudIP", identifier)
 	}
+}
+
+func (f *fakeInstanceCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
+	var lbId string
+	switch identifier {
+	case "cip-testy":
+		lbId = "lba-testy"
+	case "cip-12345":
+		lbId = foundLba
+	}
+	result := &brightbox.CloudIP{
+		Id: identifier,
+	}
+	if lbId != "" {
+		result.LoadBalancer = &brightbox.LoadBalancer{Id: lbId}
+	}
+	return result, nil
 }
