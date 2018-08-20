@@ -103,3 +103,8 @@ func getSyncLists(oldList []string, newList []string) ([]string, []string) {
 	}
 	return insList, delList
 }
+
+//Add the nasty hack to the load balancer name to trigger speed
+func grokLoadBalancerName(name string) string {
+	return name + " #type:container"
+}

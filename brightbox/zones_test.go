@@ -278,7 +278,3 @@ func (f *fakeZoneCloud) DestroyCloudIP(identifier string) error {
 func (f *fakeZoneCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
 	panic("not implemented")
 }
-
-func (f *fakeZoneCloud) LoadBalancer(identifier string) (*brightbox.LoadBalancer, error) {
-	panic("not implemented")
-}

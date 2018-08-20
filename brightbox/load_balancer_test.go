@@ -25,26 +25,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 const (
-	publicIP   = "180.180.180.180"
-	fqdn       = "cip-180-180-180-180.gb1.brightbox.com"
-	publicIP2  = "190.190.190.190"
-	fqdn2      = "cip-190-190-190-190.gb1.brightbox.com"
-	reverseDNS = "k8s-lb.example.com"
-	foundLba   = "lba-found"
-	errorLba   = "lba-error"
-	newUID     = "9d85099c-227c-46c0-a373-e954ec8eee2e"
-	newlbname  = "a9d85099c227c46c0a373e954ec8eee2"
+	publicIP    = "180.180.180.180"
+	fqdn        = "cip-180-180-180-180.gb1.brightbox.com"
+	publicIP2   = "190.190.190.190"
+	fqdn2       = "cip-190-190-190-190.gb1.brightbox.com"
+	reverseDNS  = "k8s-lb.example.com"
+	foundLba    = "lba-found"
+	errorLba    = "lba-error"
+	newUID      = "9d85099c-227c-46c0-a373-e954ec8eee2e"
+	clusterName = "test-cluster-name"
 )
 
 //Constant variables you can take the address of!
 var (
-	lbuid   types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname  string    = "a9bde5f3313794b8c877a777f5da4d76"
-	lberror string    = "888888f3313794b8c877a777f5da4d76"
+	newlbname string    = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
+	lbuid     types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname    string    = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
+	lberror   string    = "888888f3313794b8c877a777f5da4d76.default." + clusterName
 )
 
 func TestLoadBalancerStatus(t *testing.T) {
@@ -240,13 +240,14 @@ func TestGetLoadBalancer(t *testing.T) {
 
 			lb, exists, err := client.GetLoadBalancer(
 				context.TODO(),
-				"dummy_cluster",
+				clusterName,
 				tc.service,
 			)
 			if err != nil {
 				t.Errorf("Error when none expected")
 			} else if tc.exists != exists {
-				t.Errorf("Exists status wrong, got %v, expected %v for %v", exists, tc.exists, cloudprovider.GetLoadBalancerName(tc.service))
+				t.Errorf("Exists status wrong, got %v, expected %v for %v", exists, tc.exists,
+					client.GetLoadBalancerName(context.TODO(), clusterName, tc.service))
 			} else if diff := deep.Equal(lb, tc.lbstatus); diff != nil {
 				t.Error(diff)
 			}
@@ -255,6 +256,7 @@ func TestGetLoadBalancer(t *testing.T) {
 }
 
 func TestBuildLoadBalancerOptions(t *testing.T) {
+	groklbname := grokLoadBalancerName(lbname)
 	testCases := map[string]struct {
 		service *v1.Service
 		nodes   []*v1.Node
@@ -302,7 +304,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
-				Name: &lbname,
+				Name: &groklbname,
 				Nodes: &[]brightbox.LoadBalancerNode{
 					{
 						Node: "srv-gdqms",
@@ -376,7 +378,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
-				Name: &lbname,
+				Name: &groklbname,
 				Nodes: &[]brightbox.LoadBalancerNode{
 					{
 						Node: "srv-230b7",
@@ -417,7 +419,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			nodes: []*v1.Node{},
 			lbopts: &brightbox.LoadBalancerOptions{
-				Name: &lbname,
+				Name: &groklbname,
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerTcpProtocol,
 					Port:    80,
@@ -428,7 +430,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			lbopts := buildLoadBalancerOptions(tc.service, tc.nodes)
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
+
+			lbopts := buildLoadBalancerOptions(desc, tc.service, tc.nodes)
 			if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
 				t.Error(diff)
 			}
@@ -499,13 +506,13 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 				client: fakeInstanceCloudClient(context.TODO()),
 			}
 
-			lbstatus, err := client.EnsureLoadBalancer(context.TODO(), "kubernetes", tc.service, tc.nodes)
+			lbstatus, err := client.EnsureLoadBalancer(context.TODO(), clusterName, tc.service, tc.nodes)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			} else if diff := deep.Equal(lbstatus, tc.status); diff != nil {
 				t.Error(diff)
 			}
-			err = client.UpdateLoadBalancer(context.TODO(), "kubernetes", tc.service, tc.nodes)
+			err = client.UpdateLoadBalancer(context.TODO(), clusterName, tc.service, tc.nodes)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -562,7 +569,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
-				Name:   lbname,
+				Name:   grokLoadBalancerName(lbname),
 				Status: lbActive,
 				Nodes: []brightbox.Server{
 					{
@@ -637,7 +644,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancer{
-				Name:   newlbname,
+				Name:   grokLoadBalancerName(newlbname),
 				Status: lbActive,
 				Nodes: []brightbox.Server{
 					{
@@ -670,7 +677,8 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				client: fakeInstanceCloudClient(context.TODO()),
 			}
 
-			lbopts, err := client.ensureLoadBalancerFromService(tc.service, tc.nodes)
+			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
+			lbopts, err := client.ensureLoadBalancerFromService(desc, tc.service, tc.nodes)
 			if err != nil {
 				t.Errorf("Error when not expected")
 			} else if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
@@ -887,7 +895,8 @@ func TestEnsureAllocatedCip(t *testing.T) {
 				client: fakeInstanceCloudClient(context.TODO()),
 			}
 
-			cip, err := client.ensureAllocatedCip(tc.service)
+			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
+			cip, err := client.ensureAllocatedCip(desc, tc.service)
 			if err != nil && tc.cip != nil {
 				t.Errorf("Error when not expected %q", err.Error())
 			} else if diff := deep.Equal(cip, tc.cip); diff != nil {
@@ -959,7 +968,7 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 
 			err := client.EnsureLoadBalancerDeleted(
 				context.TODO(),
-				"dummy_cluster",
+				clusterName,
 				tc.service,
 			)
 			if diff := deep.Equal(err, tc.err); diff != nil {
@@ -1026,13 +1035,13 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 	return []brightbox.LoadBalancer{
 		{
 			Id:       "lba-test1",
-			Name:     lbname,
+			Name:     grokLoadBalancerName(lbname),
 			Status:   "deleted",
 			CloudIPs: nil,
 		},
 		{
 			Id:     foundLba,
-			Name:   lbname,
+			Name:   grokLoadBalancerName(lbname),
 			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
@@ -1044,12 +1053,12 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		},
 		{
 			Id:     "lba-test3",
-			Name:   "abob",
+			Name:   grokLoadBalancerName("abob"),
 			Status: lbActive,
 		},
 		{
 			Id:     errorLba,
-			Name:   lberror,
+			Name:   grokLoadBalancerName(lberror),
 			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
@@ -1060,19 +1069,6 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			},
 		},
 	}, nil
-}
-
-func (f *fakeInstanceCloud) LoadBalancer(identifier string) (*brightbox.LoadBalancer, error) {
-	LbList, err := f.LoadBalancers()
-	if err != nil {
-		return nil, err
-	}
-	for i := range LbList {
-		if LbList[i].Id == identifier {
-			return &LbList[i], nil
-		}
-	}
-	return nil, fmt.Errorf("Unknown load balancer %q", identifier)
 }
 
 func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {

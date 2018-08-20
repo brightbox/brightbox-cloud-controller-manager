@@ -15,6 +15,7 @@
 package brightbox
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -32,10 +33,31 @@ const (
 	defaultTcpHealthCheckPort = 80
 )
 
-// Ignoring clusterName completely as it doesn't appear to be used anywhere else at the moment
+// Return a name that is 'name'.'namespace'.'clusterName'
+// Use the default name derived from the UID if no name field is set
+func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
+	namespace := service.Namespace
+	if namespace == "" {
+		namespace = "default"
+	}
+	name := service.Name
+	if name == "" {
+		//FIXME: Change this to DefaultLoadBalancerName after 1.12
+		name = cloudprovider.GetLoadBalancerName(service)
+	}
+	var buffer bytes.Buffer
+	buffer.WriteString(name)
+	buffer.WriteString(".")
+	buffer.WriteString(namespace)
+	buffer.WriteString(".")
+	buffer.WriteString(clusterName)
+	return buffer.String()
+}
+
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
-	glog.V(4).Infof("GetLoadBalancer(%v, %v)", clusterName, apiservice.UID)
-	lb, err := c.getLoadBalancerFromService(apiservice)
+	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
+	glog.V(4).Infof("GetLoadBalancer(%v)", name)
+	lb, err := c.getLoadBalancerByName(name)
 	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
 
@@ -43,16 +65,16 @@ func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiserv
 // to get one matching the LoadBalancerIP spec in the service, and error
 // if that isn't in the cloudip list.
 func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
-	glog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v, %v, %v)",
-		clusterName, apiservice.UID, apiservice.Namespace, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)
+	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
+	glog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v)", name, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
-	cip, err := c.ensureAllocatedCip(apiservice)
+	cip, err := c.ensureAllocatedCip(name, apiservice)
 	if err != nil {
 		return nil, err
 	}
-	lb, err := c.ensureLoadBalancerFromService(apiservice, nodes)
+	lb, err := c.ensureLoadBalancerFromService(name, apiservice, nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +82,11 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	lb, err = c.getLoadBalancerFromService(apiservice)
+	lb, err = c.getLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
 	}
-	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, string(apiservice.UID))
+	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, name)
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
@@ -74,8 +96,8 @@ func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apis
 }
 
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
-	name := cloudprovider.GetLoadBalancerName(apiservice)
-	glog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v, %v, %v)", clusterName, name, apiservice.Namespace, apiservice.Spec.LoadBalancerIP)
+	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
+	glog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP)
 	if err := c.ensureServerGroupDeleted(name); err != nil {
 		return err
 	}
@@ -206,15 +228,7 @@ func validateServiceSpec(apiservice *v1.Service) error {
 	return nil
 }
 
-// nil if no loadbalancer
-func (c *cloud) getLoadBalancerFromService(apiservice *v1.Service) (*brightbox.LoadBalancer, error) {
-	name := cloudprovider.GetLoadBalancerName(apiservice)
-	glog.V(4).Infof("getLoadBalancerFromService(%v)", name)
-	return c.getLoadBalancerByName(name)
-}
-
-func (c *cloud) ensureAllocatedCip(apiservice *v1.Service) (*brightbox.CloudIP, error) {
-	name := cloudprovider.GetLoadBalancerName(apiservice)
+func (c *cloud) ensureAllocatedCip(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
 	ip := apiservice.Spec.LoadBalancerIP
 	glog.V(4).Infof("ensureAllocatedCip (%q, %q)", name, ip)
 	cloudIpList, err := c.getCloudIPs()
@@ -233,17 +247,17 @@ func (c *cloud) ensureAllocatedCip(apiservice *v1.Service) (*brightbox.CloudIP, 
 	}
 }
 
-func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("ensureLoadBalancerFromService(%v)", apiservice.UID)
-	current_lb, err := c.getLoadBalancerFromService(apiservice)
+func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
+	glog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
+	current_lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureFirewallOpenForService(apiservice, nodes)
+	err = c.ensureFirewallOpenForService(name, apiservice, nodes)
 	if err != nil {
 		return nil, err
 	}
-	newLB := buildLoadBalancerOptions(apiservice, nodes)
+	newLB := buildLoadBalancerOptions(name, apiservice, nodes)
 	if current_lb == nil {
 		return c.createLoadBalancer(newLB)
 	} else if isUpdateLoadBalancerRequired(current_lb, *newLB) {
@@ -254,11 +268,11 @@ func (c *cloud) ensureLoadBalancerFromService(apiservice *v1.Service, nodes []*v
 	return current_lb, nil
 }
 
-func buildLoadBalancerOptions(apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
-	name := cloudprovider.GetLoadBalancerName(apiservice)
+func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	glog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
+	temp := grokLoadBalancerName(name)
 	return &brightbox.LoadBalancerOptions{
-		Name:        &name,
+		Name:        &temp,
 		Nodes:       buildLoadBalancerNodes(nodes),
 		Listeners:   buildLoadBalancerListeners(apiservice),
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),

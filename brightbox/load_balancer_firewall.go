@@ -21,7 +21,6 @@ import (
 	"github.com/brightbox/gobrightbox"
 	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
-	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
@@ -32,8 +31,7 @@ var defaultRuleProtocol = loadBalancerTcpProtocol
 // potential race conditions in the driver.
 // It also allows k8s to select subsets of nodes for each loadbalancer
 // created if it wants to.
-func (c *cloud) ensureFirewallOpenForService(apiservice *v1.Service, nodes []*v1.Node) error {
-	name := cloudprovider.GetLoadBalancerName(apiservice)
+func (c *cloud) ensureFirewallOpenForService(name string, apiservice *v1.Service, nodes []*v1.Node) error {
 	glog.V(4).Infof("ensureFireWallOpen(%v)", name)
 	if len(apiservice.Spec.Ports) <= 0 {
 		glog.V(4).Infof("no ports to open")
