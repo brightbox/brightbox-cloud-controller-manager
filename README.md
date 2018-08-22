@@ -22,7 +22,7 @@ apply the Brightbox Cloud patch to the upstream controller file.
 
 ## versioning
 The controller uses the Kubernetes versioning system with magic strings
-injected into the binary via Loader flags to the Go compiler.
+injected into the binary via Loader flags given to the Go compiler.
 
 The script `hack/version.sh` generates the required loader flags from
 the commits and tags in the git repository.
@@ -70,9 +70,9 @@ magic version information) that can be copied to a cluster.
 `make build` creates a docker image of the cloud controller.
 
 To test on a cluster shutdown any running cloud controller containers
-using `kubectl`, copy the binary to the cluster and then run in a shell
-using the following command. (This assumes the cluster was built with
-kubeadm and the `admin.conf` kubeconfig is available).
+using `kubectl`, copy the binary to the cluster and then run in
+a shell. (This assumes the cluster was built with `kubeadm` and the
+`admin.conf` kubeconfig is available).
 
 Obtain an [api client from the Brightbox Manager](https://www.brightbox.com/docs/guides/manager/api-clients/) and run the controller using the following command
 
@@ -95,5 +95,5 @@ sudo BRIGHTBOX_CLIENT=cli-xxxxx \
 
 The logs from the cloud controller will come out on the terminal.
 
-Exercise the controller by using `kubectl` in a separate terminal to
-create nodes and loadbalancers.
+Exercise the controller by using `kubectl` in a separate terminal by
+creating, updating and deleting nodes and loadbalancers.
