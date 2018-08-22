@@ -67,3 +67,5 @@ build: compile
 test: check
 	go test -v ./...
 
+main.go:
+	@./hack/create-main.sh

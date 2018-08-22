@@ -17,8 +17,8 @@ Is [described here](config/README.md)
 with alterations made to accommodate this implementation.
 
 You can regenerate `main.go` from the latest version of the upstream
-controller by running `hack/create-main.sh`. This will apply the Brightbox
-Cloud patch to the controller.
+controller by removing the file and running `make main.go`. This will
+apply the Brightbox Cloud patch to the upstream controller file.
 
 ## versioning
 The controller uses the Kubernetes versioning system with magic strings
