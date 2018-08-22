@@ -1,0 +1,126 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: system:cloud-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: cloud-controller-manager
+  name: cloud-controller-manager
+  namespace: kube-system
+data:
+  cloud-controller.conf: |-
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        server: https://[::1]:6443
+      name: default
+    contexts:
+    - context:
+        cluster: default
+        namespace: default
+        user: default
+      name: default
+    current-context: default
+    users:
+    - name: default
+      user:
+        tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: cloud-controller-manager
+  name: cloud-controller-manager
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cloud-controller-manager
+  template:
+    metadata:
+      labels:
+        k8s-app: cloud-controller-manager
+    spec:
+      dnsPolicy: Default
+      serviceAccountName: cloud-controller-manager
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        # this taint is set by all kubelets running '--cloud-provider=external'
+        # so we should tolerate it to schedule the brightbox ccm
+        - key: "node.cloudprovider.kubernetes.io/uninitialized"
+          value: "true"
+          effect: "NoSchedule"
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+        # cloud controller manages should be able to run on masters
+        - key: "node-role.kubernetes.io/master"
+          effect: NoSchedule
+      containers:
+      - name: cloud-controller-manager
+        # for in-tree providers we use k8s.gcr.io/cloud-controller-manager
+        # this can be replaced with any other image for out-of-tree providers
+        image: brightbox/brightbox-cloud-controller-manager:0.0.5
+        command:
+          - "/bin/brightbox-cloud-controller-manager"
+          - "--cloud-provider=brightbox"
+          - "--bind-address=::1"
+          - "--port=0"
+          - "--secure-port=10253"
+          - "--configure-cloud-routes=false"
+          - "--kubeconfig=/etc/kubernetes/cloud-controller.conf"
+          - "--cluster-name=brightbox-k8s"
+          - "--leader-elect=true"
+          - --use-service-account-credentials=false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        env:
+          - name: BRIGHTBOX_CLIENT
+            valueFrom:
+              secretKeyRef:
+                name: brightbox-cloud-controller
+                key: controller-client
+          - name: BRIGHTBOX_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: brightbox-cloud-controller
+                key: controller-client-secret
+          - name: BRIGHTBOX_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: brightbox-cloud-controller
+                key: apiurl
+        volumeMounts:
+        - mountPath: /etc/kubernetes/cloud-controller.conf
+          name: cloud-controller-conf
+          readOnly: true
+          subPath: cloud-controller.conf
+      hostNetwork: true
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: cloud-controller-manager
+        name: cloud-controller-conf
