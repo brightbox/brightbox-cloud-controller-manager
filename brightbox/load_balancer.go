@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/brightbox/gobrightbox"
@@ -82,6 +83,11 @@ const (
 	// on the service to specify the protocol used to do the healthcheck
 	// Defaults to the same protocol as the listener
 	serviceAnnotationLoadBalancerHCProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-protocol"
+
+	// ServiceAnnotationLoadBalancerHeathcheckRequest is the annotation used
+	// on the service to specify the request path an http healthcheck should use to talk to the backend
+	// Defaults to the kubernetes specified standard (currently '/healthz')
+	serviceAnnotationLoadBalancerHCRequest = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-request"
 
 	// ServiceAnnotationLoadBalancerHCTimeout is the annotation used
 	// on the service to specify, in seconds, how long to wait before
@@ -329,6 +335,12 @@ func validateAnnotations(annotationList map[string]string) error {
 			if val > validMaximumBufferSize {
 				return fmt.Errorf("%q needs to be no more than %d", annotation, validMaximumBufferSize)
 			}
+		case serviceAnnotationLoadBalancerHCRequest:
+			testUrl := "http://example.com:6443" + value
+			u, err := url.Parse(testUrl)
+			if err != nil || u.Path != value {
+				return fmt.Errorf("%q needs to be a valid Url request path", annotation)
+			}
 		}
 	}
 	return nil
@@ -377,12 +389,20 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	glog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
 	temp := grokLoadBalancerName(name)
-	return &brightbox.LoadBalancerOptions{
+	result := &brightbox.LoadBalancerOptions{
 		Name:        &temp,
 		Nodes:       buildLoadBalancerNodes(nodes),
 		Listeners:   buildLoadBalancerListeners(apiservice),
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),
 	}
+	bufferSize, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerBufferSize)
+	if bufferSize != 0 {
+		result.BufferSize = &bufferSize
+	}
+	if policy, ok := apiservice.Annotations[serviceAnnotationLoadBalancerPolicy]; ok {
+		result.Policy = &policy
+	}
+	return result
 }
 
 func buildLoadBalancerNodes(nodes []*v1.Node) *[]brightbox.LoadBalancerNode {
@@ -409,6 +429,7 @@ func buildLoadBalancerListeners(apiservice *v1.Service) *[]brightbox.LoadBalance
 		result[i].Protocol = loadBalancerTcpProtocol
 		result[i].In = int(apiservice.Spec.Ports[i].Port)
 		result[i].Out = int(apiservice.Spec.Ports[i].NodePort)
+		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
 	}
 	return &result
 }
@@ -424,7 +445,7 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 	return &brightbox.LoadBalancerHealthcheck{
 		Type:          protocol,
 		Port:          getHealthCheckPort(apiservice, int(healthCheckNodePort)),
-		Request:       getHealthCheckPath(protocol, path),
+		Request:       getHealthCheckPath(apiservice, protocol, path),
 		Interval:      interval,
 		Timeout:       timeout,
 		ThresholdUp:   thresholdUp,
@@ -432,12 +453,17 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 	}
 }
 
-func getHealthCheckPath(protocol string, path string) string {
-	if protocol == loadBalancerTcpProtocol || path == "" {
+func getHealthCheckPath(apiservice *v1.Service, protocol string, path string) string {
+	if protocol == loadBalancerTcpProtocol {
 		return "/"
-	} else {
-		return path
 	}
+	if request, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCRequest]; ok {
+		return request
+	}
+	if path == "" {
+		return "/"
+	}
+	return path
 }
 
 func getHealthCheckProtocol(apiservice *v1.Service, path string) string {

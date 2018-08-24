@@ -41,10 +41,11 @@ const (
 
 //Constant variables you can take the address of!
 var (
-	newlbname string    = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
-	lbuid     types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname    string    = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
-	lberror   string    = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	newlbname  string    = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
+	lbuid      types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname     string    = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
+	lberror    string    = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	testPolicy string    = "round-robin"
 )
 
 func TestLoadBalancerStatus(t *testing.T) {
@@ -221,6 +222,30 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "Invalid Load Balancer Listener Protocol \"https\"",
 		},
+		"invalid-healthcheck-request": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCRequest: "fred",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerHCRequest + "\" needs to be a valid Url request path",
+		},
 		"invalid-healthcheck-protocol": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
@@ -316,6 +341,30 @@ func TestValidateService(t *testing.T) {
 				},
 			},
 			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"100000\": value out of range)",
+		},
+		"invalid-value-for-buffer-size": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize: "buffer",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be a positive number (strconv.ParseUint: parsing \"buffer\": invalid syntax)",
 		},
 		"invalid-small-buffer-size": {
 			service: &v1.Service{
@@ -449,6 +498,7 @@ func TestGetLoadBalancer(t *testing.T) {
 
 func TestBuildLoadBalancerOptions(t *testing.T) {
 	groklbname := grokLoadBalancerName(lbname)
+	bufferSize := 16384
 	testCases := map[string]struct {
 		service *v1.Service
 		nodes   []*v1.Node
@@ -458,6 +508,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize:          "16384",
+						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+					},
 				},
 				Spec: v1.ServiceSpec{
 					Type: v1.ServiceTypeLoadBalancer,
@@ -510,9 +565,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Protocol: loadBalancerTcpProtocol,
 						In:       443,
 						Out:      31347,
+						Timeout:  6000,
 					},
 					{
 						Protocol: loadBalancerTcpProtocol,
+						Timeout:  6000,
 						In:       80,
 						Out:      31348,
 					},
@@ -522,6 +579,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31347,
 					Request: "/",
 				},
+				BufferSize: &bufferSize,
+				Policy:     &testPolicy,
 			},
 		},
 		"overrideToTcpHealthcheck": {
@@ -949,6 +1008,9 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCRequest: "/different/path",
+					},
 				},
 				Spec: v1.ServiceSpec{
 					Type: v1.ServiceTypeLoadBalancer,
@@ -1013,7 +1075,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHttpProtocol,
 					Port:    8080,
-					Request: "/healthz",
+					Request: "/different/path",
 				},
 			},
 		},
