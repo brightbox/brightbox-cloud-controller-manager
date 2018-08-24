@@ -173,12 +173,204 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "UDP nodeports are not supported",
 		},
+		"invalid-policy": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerPolicy: "magic-routing",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "Invalid Load Balancer Policy \"magic-routing\"",
+		},
+		"invalid-listener-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: "https",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "Invalid Load Balancer Listener Protocol \"https\"",
+		},
+		"invalid-healthcheck-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCProtocol: "https",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "Invalid Load Balancer Healthcheck Protocol \"https\"",
+		},
+		"invalid-uint-negative": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCInterval: "-1",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerHCInterval + "\" needs to be a positive number (strconv.ParseUint: parsing \"-1\": invalid syntax)",
+		},
+		"invalid-uint-alpha": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCInterval: "0x56",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerHCInterval + "\" needs to be a positive number (strconv.ParseUint: parsing \"0x56\": invalid syntax)",
+		},
+		"invalid-uint-too-big": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCTimeout: "100000",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"100000\": value out of range)",
+		},
+		"invalid-small-buffer-size": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize: "1023",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be no less than 1024",
+		},
+		"invalid-big-buffer-size": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize: "16385",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be no more than 16384",
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := validateServiceSpec(tc.service)
 			if err == nil {
-				t.Errorf("Expected error got nil")
+				t.Errorf("Expected error %q got nil", tc.status)
 			} else if err.Error() != tc.status {
 				t.Errorf("Expected %q, got %q", tc.status, err.Error())
 			}
@@ -332,6 +524,87 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 			},
 		},
+		"overrideToTcpHealthcheck": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCProtocol:           loadBalancerHttpProtocol,
+						serviceAnnotationLoadBalancerHCInterval:           "4000",
+						serviceAnnotationLoadBalancerHCTimeout:            "6000",
+						serviceAnnotationLoadBalancerHCHealthyThreshold:   "4",
+						serviceAnnotationLoadBalancerHCUnhealthyThreshold: "5",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: &[]brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: &[]brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:          loadBalancerHttpProtocol,
+					Port:          31347,
+					Request:       "/",
+					Timeout:       6000,
+					Interval:      4000,
+					ThresholdUp:   4,
+					ThresholdDown: 5,
+				},
+			},
+		},
 		"httphealthcheck": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
@@ -400,6 +673,80 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Type:    loadBalancerHttpProtocol,
 					Port:    8080,
 					Request: "/healthz",
+				},
+			},
+		},
+		"overrideToHttpHealthcheck": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerHCProtocol: loadBalancerTcpProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeLocal,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-gdprt",
+					},
+					Spec: v1.NodeSpec{},
+				},
+				&v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "srv-230b7",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: &[]brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: &[]brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerTcpProtocol,
+					Port:    8080,
+					Request: "/",
 				},
 			},
 		},

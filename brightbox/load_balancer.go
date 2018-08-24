@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/brightbox/gobrightbox"
 	"github.com/golang/glog"
@@ -29,8 +30,73 @@ import (
 const (
 	loadBalancerTcpProtocol  = "tcp"
 	loadBalancerHttpProtocol = "http"
-	//Healthcheck on http port if there are no endpoints for the loadbalancer
-	defaultTcpHealthCheckPort = 80
+
+	// Healthcheck on http port if there are no endpoints for the loadbalancer
+	defaultHealthCheckPort = 80
+
+	// Maximum number of bits in unsigned integers specified in annotations.
+	maxBits = 16
+
+	// The minimum size of the buffer in a load balancer
+	validMinimumBufferSize = 1024
+
+	// The maximum size of the buffer in a load balancer
+	validMaximumBufferSize = 16384
+
+	// serviceAnnotationLoadBalancerBufferSize is the annotation used
+	// on the server to specify the way balancing is done.
+	// One of "least-connections", "round-robin" or "source-address"
+	serviceAnnotationLoadBalancerPolicy = "service.beta.kubernetes.io/brightbox-load-balancer-policy"
+
+	// serviceAnnotationLoadBalancerBufferSize is the annotation used
+	// on the server to specify the size of the receive buffer for the service in bytes.
+	// This is subject to a minimum size of 1024 bytes.
+	serviceAnnotationLoadBalancerBufferSize = "service.beta.kubernetes.io/brightbox-load-balancer-buffer-size"
+
+	// ServiceAnnotationLoadBalancerBEProtocol is the annotation used
+	// on the service to specify the protocol spoken by the backend
+	// (pod) behind a listener.
+	// If `http` (default), an HTTP listener that terminates the
+	// connection and parses headers is created.
+	// If set to `tcp`, a "raw" listener is used.
+	serviceAnnotationLoadBalancerListenerProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol"
+
+	// ServiceAnnotationLoadBalancerConnectionIdleTimeout is the
+	// annotation used on the service to specify the idle connection
+	// timeout.
+	serviceAnnotationLoadBalancerListenerIdleTimeout = "service.beta.kubernetes.io/brightbox-load-balancer-listener-idle-timeout"
+
+	// ServiceAnnotationLoadBalancerHCHealthyThreshold is the
+	// annotation used on the service to specify the number of successive
+	// successful health checks required for a backend to be considered
+	// healthy for traffic.
+	serviceAnnotationLoadBalancerHCHealthyThreshold = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-healthy-threshold"
+
+	// ServiceAnnotationLoadBalancerHCUnhealthyThreshold is
+	// the annotation used on the service to specify the number of
+	// unsuccessful health checks required for a backend to be considered
+	// unhealthy for traffic
+	serviceAnnotationLoadBalancerHCUnhealthyThreshold = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-unhealthy-threshold"
+
+	// ServiceAnnotationLoadBalancerHeathcheckProtocol is the annotation used
+	// on the service to specify the protocol used to do the healthcheck
+	// Defaults to the same protocol as the listener
+	serviceAnnotationLoadBalancerHCProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-protocol"
+
+	// ServiceAnnotationLoadBalancerHCTimeout is the annotation used
+	// on the service to specify, in seconds, how long to wait before
+	// marking a health check as failed.
+	serviceAnnotationLoadBalancerHCTimeout = "service.beta.kubernetes.io/brightbox-load-balancer-healthcheck-timeout"
+
+	// ServiceAnnotationLoadBalancerHCInterval is the annotation used on the
+	// service to specify, in seconds, the interval between health checks.
+	serviceAnnotationLoadBalancerHCInterval = "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval"
+)
+
+var (
+	validLoadBalancerPolicies = map[string]bool{"least-connections": true, "round-robin": true, "source-address": true}
+	validListenerProtocols    = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true}
+	validHealthCheckProtocols = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true}
 )
 
 // Return a name that is 'name'.'namespace'.'clusterName'
@@ -225,6 +291,46 @@ func validateServiceSpec(apiservice *v1.Service) error {
 			return fmt.Errorf("UDP nodeports are not supported")
 		}
 	}
+	return validateAnnotations(apiservice.Annotations)
+}
+
+func validateAnnotations(annotationList map[string]string) error {
+	for annotation, value := range annotationList {
+		switch annotation {
+		case serviceAnnotationLoadBalancerPolicy:
+			if !validLoadBalancerPolicies[value] {
+				return fmt.Errorf("Invalid Load Balancer Policy %q", value)
+			}
+		case serviceAnnotationLoadBalancerListenerProtocol:
+			if !validListenerProtocols[value] {
+				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q", value)
+			}
+		case serviceAnnotationLoadBalancerHCProtocol:
+			if !validHealthCheckProtocols[value] {
+				return fmt.Errorf("Invalid Load Balancer Healthcheck Protocol %q", value)
+			}
+		case serviceAnnotationLoadBalancerHCInterval,
+			serviceAnnotationLoadBalancerHCTimeout,
+			serviceAnnotationLoadBalancerHCHealthyThreshold,
+			serviceAnnotationLoadBalancerHCUnhealthyThreshold,
+			serviceAnnotationLoadBalancerListenerIdleTimeout:
+			_, err := parseUintAnnotation(annotationList, annotation)
+			if err != nil {
+				return fmt.Errorf("%q needs to be a positive number (%v)", annotation, err)
+			}
+		case serviceAnnotationLoadBalancerBufferSize:
+			val, err := parseUintAnnotation(annotationList, annotation)
+			if err != nil {
+				return fmt.Errorf("%q needs to be a positive number (%v)", annotation, err)
+			}
+			if val < validMinimumBufferSize {
+				return fmt.Errorf("%q needs to be no less than %d", annotation, validMinimumBufferSize)
+			}
+			if val > validMaximumBufferSize {
+				return fmt.Errorf("%q needs to be no more than %d", annotation, validMaximumBufferSize)
+			}
+		}
+	}
 	return nil
 }
 
@@ -308,24 +414,60 @@ func buildLoadBalancerListeners(apiservice *v1.Service) *[]brightbox.LoadBalance
 }
 
 func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalancerHealthcheck {
-	if path, healthCheckNodePort := service.GetServiceHealthCheckPathPort(apiservice); path != "" {
-		return &brightbox.LoadBalancerHealthcheck{
-			Type:    loadBalancerHttpProtocol,
-			Port:    int(healthCheckNodePort),
-			Request: path,
-		}
-	} else {
-		return &brightbox.LoadBalancerHealthcheck{
-			Type:    loadBalancerTcpProtocol,
-			Port:    getTcpHealthCheckPort(apiservice),
-			Request: "/",
-		}
+	path, healthCheckNodePort := service.GetServiceHealthCheckPathPort(apiservice)
+	protocol := getHealthCheckProtocol(apiservice, path)
+	//Validate has already checked all these so there should be no errors!
+	interval, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCInterval)
+	timeout, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCTimeout)
+	thresholdUp, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCHealthyThreshold)
+	thresholdDown, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCUnhealthyThreshold)
+	return &brightbox.LoadBalancerHealthcheck{
+		Type:          protocol,
+		Port:          getHealthCheckPort(apiservice, int(healthCheckNodePort)),
+		Request:       getHealthCheckPath(protocol, path),
+		Interval:      interval,
+		Timeout:       timeout,
+		ThresholdUp:   thresholdUp,
+		ThresholdDown: thresholdDown,
 	}
 }
 
-func getTcpHealthCheckPort(apiservice *v1.Service) int {
+func getHealthCheckPath(protocol string, path string) string {
+	if protocol == loadBalancerTcpProtocol || path == "" {
+		return "/"
+	} else {
+		return path
+	}
+}
+
+func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
+	protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]
+	if !ok {
+		if path == "" {
+			protocol = loadBalancerTcpProtocol
+		} else {
+			protocol = loadBalancerHttpProtocol
+		}
+	}
+	return protocol
+}
+
+func getHealthCheckPort(apiservice *v1.Service, nodeport int) int {
+	if nodeport != 0 {
+		return nodeport
+	}
 	for i := range apiservice.Spec.Ports {
 		return int(apiservice.Spec.Ports[i].NodePort)
 	}
-	return defaultTcpHealthCheckPort
+	return defaultHealthCheckPort
+}
+
+//If annotation is missing returns zero value
+func parseUintAnnotation(annotationList map[string]string, annotation string) (int, error) {
+	strValue, ok := annotationList[annotation]
+	if !ok {
+		return 0, nil
+	}
+	val, err := strconv.ParseUint(strValue, 10, maxBits)
+	return int(val), err
 }
