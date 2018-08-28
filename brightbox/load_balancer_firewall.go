@@ -81,7 +81,7 @@ func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.F
 
 func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.FirewallPolicy) error {
 	glog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
-	portListStr := createPortListString(apiservice.Spec.Ports)
+	portListStr := createPortListString(apiservice)
 	newRule := brightbox.FirewallRuleOptions{
 		FirewallPolicy:  fp.Id,
 		Protocol:        &defaultRuleProtocol,
@@ -108,12 +108,17 @@ func isUpdateFirewallRuleRequired(old brightbox.FirewallRule, new brightbox.Fire
 		(new.Description != nil && *new.Description != old.Description)
 }
 
-func createPortListString(ports []v1.ServicePort) string {
+func createPortListString(apiservice *v1.Service) string {
 	var buffer bytes.Buffer
+	ports := apiservice.Spec.Ports
 	buffer.WriteString(strconv.Itoa(int(ports[0].NodePort)))
 	for i := range ports[1:] {
 		buffer.WriteString(",")
-		buffer.WriteString(strconv.Itoa(int(ports[i].NodePort)))
+		buffer.WriteString(strconv.Itoa(int(ports[i+1].NodePort)))
+	}
+	if apiservice.Spec.HealthCheckNodePort != 0 {
+		buffer.WriteString(",")
+		buffer.WriteString(strconv.Itoa(int(apiservice.Spec.HealthCheckNodePort)))
 	}
 	return buffer.String()
 }
