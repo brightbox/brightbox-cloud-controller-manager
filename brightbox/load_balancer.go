@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	loadBalancerTcpProtocol  = "tcp"
-	loadBalancerHttpProtocol = "http"
+	loadBalancerTcpProtocol     = "tcp"
+	loadBalancerHttpProtocol    = "http"
+	defaultLoadBalancerProtocol = loadBalancerHttpProtocol
 
 	// Healthcheck on http port if there are no endpoints for the loadbalancer
 	defaultHealthCheckPort = 80
@@ -426,12 +427,20 @@ func buildLoadBalancerListeners(apiservice *v1.Service) *[]brightbox.LoadBalance
 	}
 	result := make([]brightbox.LoadBalancerListener, len(apiservice.Spec.Ports))
 	for i := range apiservice.Spec.Ports {
-		result[i].Protocol = loadBalancerTcpProtocol
+		result[i].Protocol = getListenerProtocol(apiservice)
 		result[i].In = int(apiservice.Spec.Ports[i].Port)
 		result[i].Out = int(apiservice.Spec.Ports[i].NodePort)
 		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
 	}
 	return &result
+}
+
+func getListenerProtocol(apiservice *v1.Service) string {
+	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerListenerProtocol]; ok {
+		return protocol
+	} else {
+		return defaultLoadBalancerProtocol
+	}
 }
 
 func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalancerHealthcheck {
@@ -461,21 +470,20 @@ func getHealthCheckPath(apiservice *v1.Service, protocol string, path string) st
 		return request
 	}
 	if path == "" {
-		return "/"
+		return "/healthz"
 	}
 	return path
 }
 
 func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
-	protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]
-	if !ok {
-		if path == "" {
-			protocol = loadBalancerTcpProtocol
-		} else {
-			protocol = loadBalancerHttpProtocol
-		}
+	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]; ok {
+		return protocol
 	}
-	return protocol
+	if path == "" {
+		return getListenerProtocol(apiservice)
+	} else {
+		return loadBalancerHttpProtocol
+	}
 }
 
 func getHealthCheckPort(apiservice *v1.Service, nodeport int) int {

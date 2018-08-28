@@ -562,11 +562,78 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: &[]brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       443,
 						Out:      31347,
 						Timeout:  6000,
 					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						Timeout:  6000,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    31347,
+					Request: "/healthz",
+				},
+				BufferSize: &bufferSize,
+				Policy:     &testPolicy,
+			},
+		},
+		"OverrideToTcpListener": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerTcpProtocol,
+						serviceAnnotationLoadBalancerBufferSize:          "16384",
+						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: &[]brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: &[]brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerTcpProtocol,
 						Timeout:  6000,
@@ -576,18 +643,19 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerTcpProtocol,
-					Port:    31347,
+					Port:    31348,
 					Request: "/",
 				},
 				BufferSize: &bufferSize,
 				Policy:     &testPolicy,
 			},
 		},
-		"overrideToTcpHealthcheck": {
+		"overrideToHttpHealthcheck": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol:     loadBalancerTcpProtocol,
 						serviceAnnotationLoadBalancerHCProtocol:           loadBalancerHttpProtocol,
 						serviceAnnotationLoadBalancerHCInterval:           "4000",
 						serviceAnnotationLoadBalancerHCTimeout:            "6000",
@@ -656,7 +724,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:          loadBalancerHttpProtocol,
 					Port:          31347,
-					Request:       "/",
+					Request:       "/healthz",
 					Timeout:       6000,
 					Interval:      4000,
 					ThresholdUp:   4,
@@ -718,12 +786,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: &[]brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       80,
 						Out:      31348,
 					},
@@ -735,7 +803,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 			},
 		},
-		"overrideToHttpHealthcheck": {
+		"overrideToTcpHealthcheck": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
@@ -792,12 +860,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: &[]brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       80,
 						Out:      31348,
 					},
@@ -827,9 +895,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerTcpProtocol,
+					Type:    loadBalancerHttpProtocol,
 					Port:    80,
-					Request: "/",
+					Request: "/healthz",
 				},
 			},
 		},
@@ -936,6 +1004,9 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTcpProtocol,
+					},
 				},
 				Spec: v1.ServiceSpec{
 					Type: v1.ServiceTypeLoadBalancer,
@@ -1016,13 +1087,6 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 					Type: v1.ServiceTypeLoadBalancer,
 					Ports: []v1.ServicePort{
 						{
-							Name:       "https",
-							Protocol:   v1.ProtocolTCP,
-							Port:       443,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31347,
-						},
-						{
 							Name:       "http",
 							Protocol:   v1.ProtocolTCP,
 							Port:       80,
@@ -1062,12 +1126,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTcpProtocol,
-						In:       443,
-						Out:      31347,
-					},
-					{
-						Protocol: loadBalancerTcpProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						In:       80,
 						Out:      31348,
 					},
