@@ -32,7 +32,16 @@ Vendored dependencies are managed with `dep` with the restrictions
 described in `Gopkg.toml`. Run `dep ensure` to check vendor is up to date.
 
 ## Design approach
-The implementation in the brightbox package satisifes the `cloudprovder.Interface` pluggable interface.
+The implementation in the brightbox package satisifes the
+`cloudprovder.Interface` pluggable interface.
+
+The provider implements:
+
+- the node controller - annotating nodes with zone, region and image
+type information allowing the k8s scheduler to better place containers
+in a resilient manner
+
+- the service controller - building Brightbox Cloud load balancers on demand.
 
 It treats the cloud-controller framework and the wider Kubernetes system
 as a supervisor system - along the lines of Erlang. The approach taken
@@ -55,6 +64,13 @@ The Controller avoids any additional Goroutines. The Interfaces
 implemented are described in `brightbox/cloud-controller-interface.go`,
 with a separate file in the package for each of the interfaces
 implemented.
+
+## Examples
+
+The load balancer supports annotations that allow you to use the range of
+facilities available on Brightbox Cloud Load Balancers. See the [manifest
+examples](https://github.com/brightbox/kubernetes-cluster/blob/master/README.md)
+for details.
 
 ## Developing
 
