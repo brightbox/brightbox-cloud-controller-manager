@@ -451,8 +451,8 @@ func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.Lo
 	glog.V(8).Infof("Update LoadBalancer Required called (%v, %v)", *newLb.Name, lb.Name)
 	return (newLb.Name != nil && *newLb.Name != lb.Name) ||
 		(newLb.Healthcheck != nil && isUpdateLoadBalancerHealthcheckRequired(newLb.Healthcheck, &lb.Healthcheck)) ||
-		(newLb.Nodes != nil && isUpdateLoadBalancerNodeRequired(*newLb.Nodes, lb.Nodes)) ||
-		(newLb.Listeners != nil && isUpdateLoadBalancerListenerRequired(*newLb.Listeners, lb.Listeners))
+		isUpdateLoadBalancerNodeRequired(newLb.Nodes, lb.Nodes) ||
+		isUpdateLoadBalancerListenerRequired(newLb.Listeners, lb.Listeners)
 }
 
 func isUpdateLoadBalancerHealthcheckRequired(new *brightbox.LoadBalancerHealthcheck, old *brightbox.LoadBalancerHealthcheck) bool {

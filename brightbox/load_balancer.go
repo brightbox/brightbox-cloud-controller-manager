@@ -406,7 +406,7 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 	return result
 }
 
-func buildLoadBalancerNodes(nodes []*v1.Node) *[]brightbox.LoadBalancerNode {
+func buildLoadBalancerNodes(nodes []*v1.Node) []brightbox.LoadBalancerNode {
 	if len(nodes) <= 0 {
 		return nil
 	}
@@ -418,10 +418,10 @@ func buildLoadBalancerNodes(nodes []*v1.Node) *[]brightbox.LoadBalancerNode {
 		}
 		result = append(result, brightbox.LoadBalancerNode{Node: mapProviderIDToServerID(nodes[i].Spec.ProviderID)})
 	}
-	return &result
+	return result
 }
 
-func buildLoadBalancerListeners(apiservice *v1.Service) *[]brightbox.LoadBalancerListener {
+func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancerListener {
 	if len(apiservice.Spec.Ports) <= 0 {
 		return nil
 	}
@@ -432,7 +432,7 @@ func buildLoadBalancerListeners(apiservice *v1.Service) *[]brightbox.LoadBalance
 		result[i].Out = int(apiservice.Spec.Ports[i].NodePort)
 		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
 	}
-	return &result
+	return result
 }
 
 func getListenerProtocol(apiservice *v1.Service) string {

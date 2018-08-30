@@ -552,7 +552,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
-				Nodes: &[]brightbox.LoadBalancerNode{
+				Nodes: []brightbox.LoadBalancerNode{
 					{
 						Node: "srv-gdqms",
 					},
@@ -560,7 +560,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Listeners: &[]brightbox.LoadBalancerListener{
+				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerHttpProtocol,
 						In:       443,
@@ -625,7 +625,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
-				Nodes: &[]brightbox.LoadBalancerNode{
+				Nodes: []brightbox.LoadBalancerNode{
 					{
 						Node: "srv-gdqms",
 					},
@@ -633,7 +633,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Listeners: &[]brightbox.LoadBalancerListener{
+				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerTcpProtocol,
 						Timeout:  6000,
@@ -701,7 +701,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
-				Nodes: &[]brightbox.LoadBalancerNode{
+				Nodes: []brightbox.LoadBalancerNode{
 					{
 						Node: "srv-gdqms",
 					},
@@ -709,7 +709,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Listeners: &[]brightbox.LoadBalancerListener{
+				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerTcpProtocol,
 						In:       443,
@@ -779,12 +779,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
-				Nodes: &[]brightbox.LoadBalancerNode{
+				Nodes: []brightbox.LoadBalancerNode{
 					{
 						Node: "srv-230b7",
 					},
 				},
-				Listeners: &[]brightbox.LoadBalancerListener{
+				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerHttpProtocol,
 						In:       443,
@@ -853,12 +853,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
-				Nodes: &[]brightbox.LoadBalancerNode{
+				Nodes: []brightbox.LoadBalancerNode{
 					{
 						Node: "srv-230b7",
 					},
 				},
-				Listeners: &[]brightbox.LoadBalancerListener{
+				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerHttpProtocol,
 						In:       443,
@@ -1560,8 +1560,8 @@ func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 }
 
 func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	server_list := make([]brightbox.Server, len(*newLB.Nodes))
-	for i, v := range *newLB.Nodes {
+	server_list := make([]brightbox.Server, len(newLB.Nodes))
+	for i, v := range newLB.Nodes {
 		server_list[i].Id = v.Node
 	}
 	return &brightbox.LoadBalancer{
@@ -1569,7 +1569,7 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 		Name:        *newLB.Name,
 		Status:      lbActive,
 		Nodes:       server_list,
-		Listeners:   *newLB.Listeners,
+		Listeners:   newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
 	}, nil
 }
