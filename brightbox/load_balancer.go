@@ -58,15 +58,27 @@ const (
 	// ServiceAnnotationLoadBalancerBEProtocol is the annotation used
 	// on the service to specify the protocol spoken by the backend
 	// (pod) behind a listener.
-	// If `http` (default), an HTTP listener that terminates the
+	// If `http` (default) or `http+ws`, an HTTP listener that terminates the
 	// connection and parses headers is created.
 	// If set to `tcp`, a "raw" listener is used.
+	// If set to `https` or `https+wss`, an SSL enabled listener is
+	// created and a certificate registered with Let's Encrypt.
+	// The 'ws' extensions add support for Websockets to the listener.
 	serviceAnnotationLoadBalancerListenerProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol"
 
 	// ServiceAnnotationLoadBalancerConnectionIdleTimeout is the
 	// annotation used on the service to specify the idle connection
 	// timeout.
 	serviceAnnotationLoadBalancerListenerIdleTimeout = "service.beta.kubernetes.io/brightbox-load-balancer-listener-idle-timeout"
+
+	// ServiceAnnotationLoadBalancerSslDomains is the annotation used
+	// on the service to specify the list of additional domains to add to the
+	// Let's Encrypt SSL certificate used by the https listener.
+	// The entry must be a comma separated list of DNS names that the
+	// loadbalancer should accept as a target. These DNS names need to be
+	// mapped externally onto the `Load Balancer Ingress` address
+	// of the service, or via a CNAME onto the ingress address hostname
+	serviceAnnotationLoadBalancerSslDomains = "service.beta.kubernetes.io/brightbox-load-balancer-ssl-domains"
 
 	// ServiceAnnotationLoadBalancerHCHealthyThreshold is the
 	// annotation used on the service to specify the number of successive
@@ -143,7 +155,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
-	cip, err := c.ensureAllocatedCip(name, apiservice)
+	cip, err := c.ensureAllocatedCloudIP(name, apiservice)
 	if err != nil {
 		return nil, err
 	}
@@ -151,11 +163,15 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureMappedCip(lb, cip)
+	err = c.ensureMappedCloudIP(lb, cip)
 	if err != nil {
 		return nil, err
 	}
 	lb, err = c.getLoadBalancerByName(name)
+	if err != nil {
+		return nil, err
+	}
+	err = c.ensureOldCloudIPsDeposed(lb, cip, name)
 	if err != nil {
 		return nil, err
 	}
@@ -257,16 +273,7 @@ func (c *cloud) ensureCloudIPsDeleted(name string) error {
 		glog.V(4).Infof("Error retrieving list of CloudIPs")
 		return err
 	}
-	for i := range cloudIpList {
-		if cloudIpList[i].Name == name {
-			err := c.destroyCloudIP(cloudIpList[i].Id)
-			if err != nil {
-				glog.V(4).Infof("Error destroying CloudIP %q", cloudIpList[i].Id)
-				return err
-			}
-		}
-	}
-	return nil
+	return c.destroyCloudIPs(cloudIpList, name)
 }
 
 func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
@@ -347,9 +354,9 @@ func validateAnnotations(annotationList map[string]string) error {
 	return nil
 }
 
-func (c *cloud) ensureAllocatedCip(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
+func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
 	ip := apiservice.Spec.LoadBalancerIP
-	glog.V(4).Infof("ensureAllocatedCip (%q, %q)", name, ip)
+	glog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
 	cloudIpList, err := c.getCloudIPs()
 	if err != nil {
 		return nil, err
@@ -360,7 +367,7 @@ func (c *cloud) ensureAllocatedCip(name string, apiservice *v1.Service) (*bright
 		}
 	}
 	if ip == "" {
-		return c.allocateCip(name)
+		return c.allocateCloudIP(name)
 	} else {
 		return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 	}

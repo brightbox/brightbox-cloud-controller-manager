@@ -271,6 +271,10 @@ func (f *fakeZoneCloud) DestroyLoadBalancer(identifier string) error {
 	panic("not implemented")
 }
 
+func (f *fakeZoneCloud) UnMapCloudIP(identifier string) error {
+	panic("not implemented")
+}
+
 func (f *fakeZoneCloud) DestroyCloudIP(identifier string) error {
 	panic("not implemented")
 }

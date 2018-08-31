@@ -28,15 +28,18 @@ import (
 )
 
 const (
-	publicIP    = "180.180.180.180"
-	fqdn        = "cip-180-180-180-180.gb1.brightbox.com"
-	publicIP2   = "190.190.190.190"
-	fqdn2       = "cip-190-190-190-190.gb1.brightbox.com"
-	reverseDNS  = "k8s-lb.example.com"
-	foundLba    = "lba-found"
-	errorLba    = "lba-error"
-	newUID      = "9d85099c-227c-46c0-a373-e954ec8eee2e"
-	clusterName = "test-cluster-name"
+	publicCipId  = "cip-found"
+	errorCipId   = "cip-error"
+	publicIP     = "180.180.180.180"
+	fqdn         = "cip-180-180-180-180.gb1.brightbox.com"
+	publicCipId2 = "cip-manul"
+	publicIP2    = "190.190.190.190"
+	fqdn2        = "cip-190-190-190-190.gb1.brightbox.com"
+	reverseDNS   = "k8s-lb.example.com"
+	foundLba     = "lba-found"
+	errorLba     = "lba-error"
+	newUID       = "9d85099c-227c-46c0-a373-e954ec8eee2e"
+	clusterName  = "test-cluster-name"
 )
 
 //Constant variables you can take the address of!
@@ -61,6 +64,7 @@ func TestLoadBalancerStatus(t *testing.T) {
 			lb: &brightbox.LoadBalancer{
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
+						Id:         publicCipId,
 						PublicIP:   publicIP,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
@@ -80,11 +84,14 @@ func TestLoadBalancerStatus(t *testing.T) {
 			lb: &brightbox.LoadBalancer{
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
+						Id:         publicCipId2,
 						PublicIP:   publicIP2,
 						ReverseDns: "",
 						Fqdn:       fqdn2,
+						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
+						Id:         publicCipId,
 						PublicIP:   publicIP,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
@@ -485,7 +492,7 @@ func TestGetLoadBalancer(t *testing.T) {
 				tc.service,
 			)
 			if err != nil {
-				t.Errorf("Error when none expected")
+				t.Errorf("Error when not expected: %q", err.Error())
 			} else if tc.exists != exists {
 				t.Errorf("Exists status wrong, got %v, expected %v for %v", exists, tc.exists,
 					client.GetLoadBalancerName(context.TODO(), clusterName, tc.service))
@@ -1156,7 +1163,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 	}
 }
 
-func TestEnsureMappedCip(t *testing.T) {
+func TestEnsureMappedCloudIP(t *testing.T) {
 	testCases := map[string]struct {
 		lb  *brightbox.LoadBalancer
 		cip *brightbox.CloudIP
@@ -1210,7 +1217,7 @@ func TestEnsureMappedCip(t *testing.T) {
 				client: fakeInstanceCloudClient(context.TODO()),
 			}
 
-			err := client.ensureMappedCip(tc.lb, tc.cip)
+			err := client.ensureMappedCloudIP(tc.lb, tc.cip)
 			if err != nil && !tc.err {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -1218,7 +1225,7 @@ func TestEnsureMappedCip(t *testing.T) {
 	}
 }
 
-func TestEnsureAllocatedCip(t *testing.T) {
+func TestEnsureAllocatedCloudIP(t *testing.T) {
 	testCases := map[string]struct {
 		service *v1.Service
 		cip     *brightbox.CloudIP
@@ -1317,7 +1324,7 @@ func TestEnsureAllocatedCip(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       "cip-found",
+				Id:       publicCipId,
 				Name:     lbname,
 				PublicIP: "240.240.240.240",
 			},
@@ -1364,11 +1371,155 @@ func TestEnsureAllocatedCip(t *testing.T) {
 			}
 
 			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
-			cip, err := client.ensureAllocatedCip(desc, tc.service)
+			cip, err := client.ensureAllocatedCloudIP(desc, tc.service)
 			if err != nil && tc.cip != nil {
 				t.Errorf("Error when not expected %q", err.Error())
 			} else if diff := deep.Equal(cip, tc.cip); diff != nil {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestDeposeCloudIPFunctions(t *testing.T) {
+	testCases := map[string]struct {
+		lb   *brightbox.LoadBalancer
+		cip  *brightbox.CloudIP
+		name string
+	}{
+		"no_change": {
+			lb: &brightbox.LoadBalancer{
+				Id: "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{
+					brightbox.CloudIP{
+						Id:         publicCipId,
+						PublicIP:   publicIP,
+						ReverseDns: reverseDNS,
+						Fqdn:       fqdn,
+						Name:       "test",
+					},
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:         publicCipId,
+				PublicIP:   publicIP,
+				ReverseDns: reverseDNS,
+				Fqdn:       fqdn,
+				Name:       "test",
+			},
+			name: "test",
+		},
+		"no_change_manual": {
+			lb: &brightbox.LoadBalancer{
+				Id: "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{
+					brightbox.CloudIP{
+						Id:       publicCipId2,
+						PublicIP: publicIP2,
+						Fqdn:     fqdn2,
+						Name:     "manually allocated",
+					},
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       publicCipId2,
+				PublicIP: publicIP2,
+				Fqdn:     fqdn2,
+				Name:     "manually allocated",
+			},
+			name: "test",
+		},
+		"changed_delete": {
+			lb: &brightbox.LoadBalancer{
+				Id: "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{
+					brightbox.CloudIP{
+						Id:       publicCipId2,
+						PublicIP: publicIP2,
+						Fqdn:     fqdn2,
+						Name:     "manually allocated",
+					},
+					brightbox.CloudIP{
+						Id:         publicCipId,
+						PublicIP:   publicIP,
+						ReverseDns: reverseDNS,
+						Fqdn:       fqdn,
+						Name:       "test",
+					},
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       publicCipId2,
+				PublicIP: publicIP2,
+				Fqdn:     fqdn2,
+				Name:     "manually allocated",
+			},
+			name: "test",
+		},
+		"changed_unmap": {
+			lb: &brightbox.LoadBalancer{
+				Id: "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{
+					brightbox.CloudIP{
+						Id:       publicCipId2,
+						PublicIP: publicIP2,
+						Fqdn:     fqdn2,
+						Name:     "manually allocated",
+					},
+					brightbox.CloudIP{
+						Id:         publicCipId,
+						PublicIP:   publicIP,
+						ReverseDns: reverseDNS,
+						Fqdn:       fqdn,
+						Name:       "test",
+					},
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:         publicCipId,
+				PublicIP:   publicIP,
+				ReverseDns: reverseDNS,
+				Fqdn:       fqdn,
+				Name:       "test",
+			},
+			name: "test",
+		},
+		"already unmapped": {
+			lb: &brightbox.LoadBalancer{
+				Id:       "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{},
+			},
+			cip: &brightbox.CloudIP{
+				Id:         publicCipId,
+				PublicIP:   publicIP,
+				ReverseDns: reverseDNS,
+				Fqdn:       fqdn,
+				Name:       "test",
+			},
+			name: "test",
+		},
+		"already unmapped_manual": {
+			lb: &brightbox.LoadBalancer{
+				Id:       "lba-oldip",
+				CloudIPs: []brightbox.CloudIP{},
+			},
+			cip: &brightbox.CloudIP{
+				Id:       publicCipId2,
+				PublicIP: publicIP2,
+				Fqdn:     fqdn2,
+				Name:     "manually allocated",
+			},
+			name: "test",
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			client := &cloud{
+				client: fakeInstanceCloudClient(context.TODO()),
+			}
+			err := client.ensureOldCloudIPsDeposed(tc.lb, tc.cip, tc.name)
+			if err != nil {
+				t.Errorf("Error when not expected: %q", err.Error())
 			}
 		})
 	}
@@ -1499,7 +1650,7 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 					LoadBalancerIP:  "",
 				},
 			},
-			err: fmt.Errorf("CloudIps still mapped to load balancer %q", foundLba),
+			err: fmt.Errorf("CloudIPs still mapped to load balancer %q", foundLba),
 		},
 	}
 
@@ -1532,12 +1683,12 @@ func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 			PublicIP: publicIP,
 		},
 		{
-			Id:       "cip-found",
+			Id:       publicCipId,
 			Name:     lbname,
 			PublicIP: "240.240.240.240",
 		},
 		{
-			Id:       "cip-error",
+			Id:       errorCipId,
 			Name:     lberror,
 			PublicIP: "255.255.255.255",
 		},
@@ -1588,6 +1739,7 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
+					Id:         publicCipId,
 					PublicIP:   publicIP,
 					ReverseDns: reverseDNS,
 					Fqdn:       fqdn,
@@ -1605,6 +1757,7 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
+					Id:         publicCipId,
 					PublicIP:   publicIP,
 					ReverseDns: reverseDNS,
 					Fqdn:       fqdn,
@@ -1824,12 +1977,23 @@ func (f *fakeInstanceCloud) DestroyLoadBalancer(identifier string) error {
 
 func (f *fakeInstanceCloud) DestroyCloudIP(identifier string) error {
 	switch identifier {
-	case "cip-found":
+	case publicCipId:
 		return nil
-	case "cip-error":
+	case errorCipId:
 		return fmt.Errorf("Raising error in DestroyCloudIP")
 	default:
 		return fmt.Errorf("unexpected identifier %q sent to DestroyCloudIP", identifier)
+	}
+}
+
+func (f *fakeInstanceCloud) UnMapCloudIP(identifier string) error {
+	switch identifier {
+	case publicCipId, publicCipId2:
+		return nil
+	case errorCipId:
+		return fmt.Errorf("Raising error in UnMapCloudIP")
+	default:
+		return fmt.Errorf("unexpected identifier %q sent to UnMapCloudIP", identifier)
 	}
 }
 
