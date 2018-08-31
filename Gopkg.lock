@@ -60,7 +60,7 @@
   branch = "master"
   name = "github.com/brightbox/gobrightbox"
   packages = ["."]
-  revision = "138f9c307f836fed92187b82ea4a461c110e3351"
+  revision = "acf3e0493a6f2f9a62a6c9a65d20e3aaacfcdb7b"
 
 [[projects]]
   name = "github.com/coreos/etcd"

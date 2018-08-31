@@ -359,7 +359,7 @@ func (c *cloud) destroyCloudIPs(cloudIpList []brightbox.CloudIP, name string) er
 	return nil
 }
 
-//Unmap and optionally delete any CloudIPs mapped to the loadbalancer that are not the allocated cloud ip
+//Unmap any CloudIPs mapped to the loadbalancer that are not the allocated cloud ip
 func (c *cloud) ensureOldCloudIPsDeposed(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP, name string) error {
 	glog.V(4).Infof("ensureOldCloudIPsDeposed (%q, %q, %q)", lb.Id, cip.Id, name)
 	deposedCloudIPList := getDeposedCloudIPList(lb.CloudIPs, cip.Id)
@@ -368,7 +368,7 @@ func (c *cloud) ensureOldCloudIPsDeposed(lb *brightbox.LoadBalancer, cip *bright
 			return err
 		}
 	}
-	return c.destroyCloudIPs(deposedCloudIPList, name)
+	return nil
 }
 
 func getDeposedCloudIPList(cloudIPList []brightbox.CloudIP, cipId string) []brightbox.CloudIP {
@@ -565,6 +565,8 @@ func errorIfNotComplete(lb *brightbox.LoadBalancer, name string) error {
 		return fmt.Errorf("Load Balancer %q still building", lb.Id)
 	case lb.CloudIPs == nil || len(lb.CloudIPs) <= 0:
 		return fmt.Errorf("Mapping of CloudIPs to %q not complete", lb.Id)
+	case len(lb.CloudIPs) > 1:
+		return fmt.Errorf("Unmapping of deposed CloudIPs to %q not complete", lb.Id)
 	}
 	return nil
 }

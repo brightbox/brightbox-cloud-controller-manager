@@ -31,6 +31,8 @@ const (
 	publicCipId  = "cip-found"
 	errorCipId   = "cip-error"
 	publicIP     = "180.180.180.180"
+	publicIPv6   = "2a02:1348:ffff:ffff::6d6b:275c"
+	publicIPv62  = "2a02:1348:ffff:ffff::6d6b:375c"
 	fqdn         = "cip-180-180-180-180.gb1.brightbox.com"
 	publicCipId2 = "cip-manul"
 	publicIP2    = "190.190.190.190"
@@ -65,7 +67,8 @@ func TestLoadBalancerStatus(t *testing.T) {
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
 						Id:         publicCipId,
-						PublicIP:   publicIP,
+						PublicIPv4: publicIP,
+						PublicIPv6: publicIPv6,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
 					},
@@ -74,8 +77,16 @@ func TestLoadBalancerStatus(t *testing.T) {
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
 					v1.LoadBalancerIngress{
-						IP:       publicIP,
+						IP: publicIP,
+					},
+					v1.LoadBalancerIngress{
+						IP: publicIPv6,
+					},
+					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: fqdn,
 					},
 				},
 			},
@@ -85,14 +96,16 @@ func TestLoadBalancerStatus(t *testing.T) {
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
 						Id:         publicCipId2,
-						PublicIP:   publicIP2,
+						PublicIPv4: publicIP2,
+						PublicIPv6: publicIPv62,
 						ReverseDns: "",
 						Fqdn:       fqdn2,
 						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
 						Id:         publicCipId,
-						PublicIP:   publicIP,
+						PublicIPv4: publicIP,
+						PublicIPv6: publicIPv6,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
 					},
@@ -101,12 +114,25 @@ func TestLoadBalancerStatus(t *testing.T) {
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
 					v1.LoadBalancerIngress{
-						IP:       publicIP2,
+						IP: publicIP2,
+					},
+					v1.LoadBalancerIngress{
+						IP: publicIPv62,
+					},
+					v1.LoadBalancerIngress{
 						Hostname: fqdn2,
 					},
 					v1.LoadBalancerIngress{
-						IP:       publicIP,
+						IP: publicIP,
+					},
+					v1.LoadBalancerIngress{
+						IP: publicIPv6,
+					},
+					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: fqdn,
 					},
 				},
 			},
@@ -448,9 +474,7 @@ func TestGetLoadBalancer(t *testing.T) {
 				},
 				Spec: v1.ServiceSpec{
 					Type:            v1.ServiceTypeLoadBalancer,
-					Ports:           nil,
-					SessionAffinity: "None",
-					LoadBalancerIP:  "",
+					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
 			lbstatus: nil,
@@ -463,16 +487,22 @@ func TestGetLoadBalancer(t *testing.T) {
 				},
 				Spec: v1.ServiceSpec{
 					Type:            v1.ServiceTypeLoadBalancer,
-					Ports:           nil,
-					SessionAffinity: "None",
-					LoadBalancerIP:  "",
+					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
 			lbstatus: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
 					v1.LoadBalancerIngress{
-						IP:       publicIP,
+						IP: publicIP,
+					},
+					v1.LoadBalancerIngress{
+						IP: publicIPv6,
+					},
+					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: fqdn,
 					},
 				},
 			},
@@ -974,8 +1004,16 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
 					v1.LoadBalancerIngress{
-						IP:       publicIP,
+						IP: publicIP,
+					},
+					v1.LoadBalancerIngress{
+						IP: publicIPv6,
+					},
+					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: fqdn,
 					},
 				},
 			},
@@ -1230,7 +1268,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 		service *v1.Service
 		cip     *brightbox.CloudIP
 	}{
-		"LBIP_found": {
+		"LBIP_found_no_name": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
@@ -1260,11 +1298,12 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       "cip-12345",
-				PublicIP: publicIP,
+				Id:         "cip-12345",
+				PublicIPv4: publicIP,
+				PublicIPv6: publicIPv6,
 			},
 		},
-		"LBIP_notfound": {
+		"LBIP_notfound_no_name": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
@@ -1295,7 +1334,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 			},
 			cip: nil,
 		},
-		"name_found": {
+		"name_found_noLBIP": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
@@ -1324,12 +1363,12 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       publicCipId,
-				Name:     lbname,
-				PublicIP: "240.240.240.240",
+				Id:         publicCipId,
+				Name:       lbname,
+				PublicIPv4: "240.240.240.240",
 			},
 		},
-		"new_allocation": {
+		"new_allocation_noLBIP": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
@@ -1358,10 +1397,77 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       "cip-67890",
-				Name:     newlbname,
-				PublicIP: publicIP2,
+				Id:         "cip-67890",
+				Name:       newlbname,
+				PublicIPv4: publicIP2,
+				PublicIPv6: publicIPv62,
 			},
+		},
+		"LBIP_specified_with_name_found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+					LoadBalancerIP:        publicIP,
+				},
+			},
+			cip: &brightbox.CloudIP{
+				Id:         "cip-12345",
+				PublicIPv4: publicIP,
+				PublicIPv6: publicIPv6,
+			},
+		},
+		"LBIP_not_found_with_name_found": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+					LoadBalancerIP:        publicIP2,
+				},
+			},
+			cip: nil,
 		},
 	}
 	for name, tc := range testCases {
@@ -1393,7 +1499,8 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
 						Id:         publicCipId,
-						PublicIP:   publicIP,
+						PublicIPv4: publicIP,
+						PublicIPv6: publicIPv6,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
@@ -1402,7 +1509,8 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				Id:         publicCipId,
-				PublicIP:   publicIP,
+				PublicIPv4: publicIP,
+				PublicIPv6: publicIPv6,
 				ReverseDns: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
@@ -1414,18 +1522,20 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				Id: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:       publicCipId2,
-						PublicIP: publicIP2,
-						Fqdn:     fqdn2,
-						Name:     "manually allocated",
+						Id:         publicCipId2,
+						PublicIPv4: publicIP2,
+						PublicIPv6: publicIPv62,
+						Fqdn:       fqdn2,
+						Name:       "manually allocated",
 					},
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       publicCipId2,
-				PublicIP: publicIP2,
-				Fqdn:     fqdn2,
-				Name:     "manually allocated",
+				Id:         publicCipId2,
+				PublicIPv4: publicIP2,
+				PublicIPv6: publicIPv62,
+				Fqdn:       fqdn2,
+				Name:       "manually allocated",
 			},
 			name: "test",
 		},
@@ -1434,14 +1544,16 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				Id: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:       publicCipId2,
-						PublicIP: publicIP2,
-						Fqdn:     fqdn2,
-						Name:     "manually allocated",
+						Id:         publicCipId2,
+						PublicIPv4: publicIP2,
+						PublicIPv6: publicIPv62,
+						Fqdn:       fqdn2,
+						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
 						Id:         publicCipId,
-						PublicIP:   publicIP,
+						PublicIPv4: publicIP,
+						PublicIPv6: publicIPv6,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
@@ -1449,10 +1561,11 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       publicCipId2,
-				PublicIP: publicIP2,
-				Fqdn:     fqdn2,
-				Name:     "manually allocated",
+				Id:         publicCipId2,
+				PublicIPv4: publicIP2,
+				PublicIPv6: publicIPv62,
+				Fqdn:       fqdn2,
+				Name:       "manually allocated",
 			},
 			name: "test",
 		},
@@ -1461,14 +1574,16 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				Id: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:       publicCipId2,
-						PublicIP: publicIP2,
-						Fqdn:     fqdn2,
-						Name:     "manually allocated",
+						Id:         publicCipId2,
+						PublicIPv4: publicIP2,
+						PublicIPv6: publicIPv62,
+						Fqdn:       fqdn2,
+						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
 						Id:         publicCipId,
-						PublicIP:   publicIP,
+						PublicIPv4: publicIP,
+						PublicIPv6: publicIPv6,
 						ReverseDns: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
@@ -1477,7 +1592,8 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				Id:         publicCipId,
-				PublicIP:   publicIP,
+				PublicIPv4: publicIP,
+				PublicIPv6: publicIPv6,
 				ReverseDns: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
@@ -1491,7 +1607,8 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				Id:         publicCipId,
-				PublicIP:   publicIP,
+				PublicIPv4: publicIP,
+				PublicIPv6: publicIPv6,
 				ReverseDns: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
@@ -1504,10 +1621,11 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id:       publicCipId2,
-				PublicIP: publicIP2,
-				Fqdn:     fqdn2,
-				Name:     "manually allocated",
+				Id:         publicCipId2,
+				PublicIPv4: publicIP2,
+				PublicIPv6: publicIPv62,
+				Fqdn:       fqdn2,
+				Name:       "manually allocated",
 			},
 			name: "test",
 		},
@@ -1679,26 +1797,28 @@ func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) er
 func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 	return []brightbox.CloudIP{
 		{
-			Id:       "cip-12345",
-			PublicIP: publicIP,
+			Id:         "cip-12345",
+			PublicIPv4: publicIP,
+			PublicIPv6: publicIPv6,
 		},
 		{
-			Id:       publicCipId,
-			Name:     lbname,
-			PublicIP: "240.240.240.240",
+			Id:         publicCipId,
+			Name:       lbname,
+			PublicIPv4: "240.240.240.240",
 		},
 		{
-			Id:       errorCipId,
-			Name:     lberror,
-			PublicIP: "255.255.255.255",
+			Id:         errorCipId,
+			Name:       lberror,
+			PublicIPv4: "255.255.255.255",
 		},
 	}, nil
 }
 
 func (f *fakeInstanceCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
 	cip := &brightbox.CloudIP{
-		Id:       "cip-67890",
-		PublicIP: publicIP2,
+		Id:         "cip-67890",
+		PublicIPv4: publicIP2,
+		PublicIPv6: publicIPv62,
 	}
 	if newCloudIP.Name != nil {
 		cip.Name = *newCloudIP.Name
@@ -1740,7 +1860,8 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         publicCipId,
-					PublicIP:   publicIP,
+					PublicIPv4: publicIP,
+					PublicIPv6: publicIPv6,
 					ReverseDns: reverseDNS,
 					Fqdn:       fqdn,
 				},
@@ -1758,7 +1879,8 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         publicCipId,
-					PublicIP:   publicIP,
+					PublicIPv4: publicIP,
+					PublicIPv6: publicIPv6,
 					ReverseDns: reverseDNS,
 					Fqdn:       fqdn,
 				},
@@ -1998,18 +2120,16 @@ func (f *fakeInstanceCloud) UnMapCloudIP(identifier string) error {
 }
 
 func (f *fakeInstanceCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
-	var lbId string
-	switch identifier {
-	case "cip-testy":
-		lbId = "lba-testy"
-	case "cip-12345":
-		lbId = foundLba
-	}
 	result := &brightbox.CloudIP{
 		Id: identifier,
 	}
-	if lbId != "" {
-		result.LoadBalancer = &brightbox.LoadBalancer{Id: lbId}
+	switch identifier {
+	case "cip-testy":
+		result.LoadBalancer = &brightbox.LoadBalancer{Id: "lba-testy"}
+	case "cip-12345":
+		result.PublicIPv4 = publicIP
+		result.PublicIPv6 = publicIPv6
+		result.LoadBalancer = &brightbox.LoadBalancer{Id: foundLba}
 	}
 	return result, nil
 }

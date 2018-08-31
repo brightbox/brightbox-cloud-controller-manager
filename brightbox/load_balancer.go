@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/url"
 	"strconv"
 
@@ -167,11 +168,16 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	lb, err = c.getLoadBalancerByName(name)
+	err = c.ensureOldCloudIPsDeposed(lb, cip, name)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureOldCloudIPsDeposed(lb, cip, name)
+	if apiservice.Spec.LoadBalancerIP != "" {
+		if err := c.ensureCloudIPsDeleted(name); err != nil {
+			return nil, err
+		}
+	}
+	lb, err = c.getLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -282,11 +288,29 @@ func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
 	}
 	status := v1.LoadBalancerStatus{}
 	if len(lb.CloudIPs) > 0 {
-		status.Ingress = make([]v1.LoadBalancerIngress, len(lb.CloudIPs))
-		for i, v := range lb.CloudIPs {
-			status.Ingress[i] = v1.LoadBalancerIngress{
-				Hostname: selectHostname(&v),
-				IP:       v.PublicIP,
+		status.Ingress = make([]v1.LoadBalancerIngress, 0, len(lb.CloudIPs)*4)
+		for _, v := range lb.CloudIPs {
+			status.Ingress = append(status.Ingress,
+				v1.LoadBalancerIngress{
+					IP: v.PublicIPv4,
+				},
+				v1.LoadBalancerIngress{
+					IP: v.PublicIPv6,
+				},
+			)
+			if v.ReverseDns != "" {
+				status.Ingress = append(status.Ingress,
+					v1.LoadBalancerIngress{
+						Hostname: v.ReverseDns,
+					},
+				)
+			}
+			if v.Fqdn != "" {
+				status.Ingress = append(status.Ingress,
+					v1.LoadBalancerIngress{
+						Hostname: v.Fqdn,
+					},
+				)
 			}
 		}
 	}
@@ -357,12 +381,27 @@ func validateAnnotations(annotationList map[string]string) error {
 func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
 	ip := apiservice.Spec.LoadBalancerIP
 	glog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
+	var compareFunc func(cip *brightbox.CloudIP) bool
+	switch ip {
+	case "":
+		compareFunc = func(cip *brightbox.CloudIP) bool {
+			return cip.Name == name
+		}
+	default:
+		ipval := net.ParseIP(ip)
+		if ipval == nil {
+			return nil, fmt.Errorf("Invalid LoadBalancerIP: %q", ip)
+		}
+		compareFunc = func(cip *brightbox.CloudIP) bool {
+			return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
+		}
+	}
 	cloudIpList, err := c.getCloudIPs()
 	if err != nil {
 		return nil, err
 	}
 	for i := range cloudIpList {
-		if cloudIpList[i].PublicIP == ip || cloudIpList[i].Name == name {
+		if compareFunc(&cloudIpList[i]) {
 			return &cloudIpList[i], nil
 		}
 	}
