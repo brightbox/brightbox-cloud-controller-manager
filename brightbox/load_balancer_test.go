@@ -1859,7 +1859,7 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 			Status: lbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
-					Id:         publicCipId,
+					Id:         "cip-12345",
 					PublicIPv4: publicIP,
 					PublicIPv6: publicIPv6,
 					ReverseDns: reverseDNS,

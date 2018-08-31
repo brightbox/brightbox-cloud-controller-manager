@@ -557,16 +557,16 @@ func errorIfNotErased(lb *brightbox.LoadBalancer) error {
 	return fmt.Errorf("Unknown reason why %q has not deleted", lb.Id)
 }
 
-func errorIfNotComplete(lb *brightbox.LoadBalancer, name string) error {
+func errorIfNotComplete(lb *brightbox.LoadBalancer, cipId, name string) error {
 	switch {
 	case lb == nil:
 		return fmt.Errorf("Load Balancer for %q is missing", name)
 	case !isAlive(lb):
 		return fmt.Errorf("Load Balancer %q still building", lb.Id)
-	case lb.CloudIPs == nil || len(lb.CloudIPs) <= 0:
-		return fmt.Errorf("Mapping of CloudIPs to %q not complete", lb.Id)
 	case len(lb.CloudIPs) > 1:
 		return fmt.Errorf("Unmapping of deposed CloudIPs to %q not complete", lb.Id)
+	case len(lb.CloudIPs) <= 0 || lb.CloudIPs[0].Id != cipId:
+		return fmt.Errorf("Mapping of CloudIP %q to %q not complete", cipId, lb.Id)
 	}
 	return nil
 }

@@ -181,7 +181,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, name)
+	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, cip.Id, name)
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
