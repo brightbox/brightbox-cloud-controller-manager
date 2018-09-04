@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/brightbox/gobrightbox"
 	"github.com/golang/glog"
@@ -158,6 +159,9 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	}
 	cip, err := c.ensureAllocatedCloudIP(name, apiservice)
 	if err != nil {
+		return nil, err
+	}
+	if err := validateContextualAnnotations(apiservice.Annotations, cip); err != nil {
 		return nil, err
 	}
 	lb, err := c.ensureLoadBalancerFromService(name, apiservice, nodes)
@@ -376,6 +380,48 @@ func validateAnnotations(annotationList map[string]string) error {
 		}
 	}
 	return nil
+}
+
+func validateContextualAnnotations(annotationList map[string]string, cloudIp *brightbox.CloudIP) error {
+	for annotation, value := range annotationList {
+		switch annotation {
+		case serviceAnnotationLoadBalancerSslDomains:
+			domains := strings.Split(value, ",")
+			cloudIpList, err := toIpList(cloudIp)
+			if err != nil {
+				return err
+			}
+			for _, domain := range domains {
+				resolvedAddresses, err := net.LookupIP(domain)
+				if err != nil {
+					return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6, err.Error())
+				}
+				if !anyAddressMatch(cloudIpList, resolvedAddresses) {
+					return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func toIpList(cloudIp *brightbox.CloudIP) ([]net.IP, error) {
+	result := append([]net.IP{}, net.ParseIP(cloudIp.PublicIPv4), net.ParseIP(cloudIp.PublicIPv6))
+	if result[0] == nil || result[1] == nil {
+		return nil, fmt.Errorf("Cloud IP %q failed to parse IP addresses", cloudIp.Id)
+	}
+	return result, nil
+}
+
+func anyAddressMatch(ipListA, ipListB []net.IP) bool {
+	for a := range ipListA {
+		for b := range ipListB {
+			if ipListA[a].Equal(ipListB[b]) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {

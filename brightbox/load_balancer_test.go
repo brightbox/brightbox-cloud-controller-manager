@@ -28,29 +28,39 @@ import (
 )
 
 const (
-	publicCipId  = "cip-found"
-	errorCipId   = "cip-error"
-	publicIP     = "180.180.180.180"
-	publicIPv6   = "2a02:1348:ffff:ffff::6d6b:275c"
-	publicIPv62  = "2a02:1348:ffff:ffff::6d6b:375c"
-	fqdn         = "cip-180-180-180-180.gb1.brightbox.com"
-	publicCipId2 = "cip-manul"
-	publicIP2    = "190.190.190.190"
-	fqdn2        = "cip-190-190-190-190.gb1.brightbox.com"
-	reverseDNS   = "k8s-lb.example.com"
-	foundLba     = "lba-found"
-	errorLba     = "lba-error"
-	newUID       = "9d85099c-227c-46c0-a373-e954ec8eee2e"
-	clusterName  = "test-cluster-name"
+	publicCipId    = "cip-found"
+	errorCipId     = "cip-error"
+	publicIP       = "180.180.180.180"
+	publicIPv6     = "2a02:1348:ffff:ffff::6d6b:275c"
+	publicIPv62    = "2a02:1348:ffff:ffff::6d6b:375c"
+	fqdn           = "cip-180-180-180-180.gb1.brightbox.com"
+	publicCipId2   = "cip-manul"
+	publicIP2      = "190.190.190.190"
+	fqdn2          = "cip-190-190-190-190.gb1.brightbox.com"
+	reverseDNS     = "k8s-lb.example.com"
+	foundLba       = "lba-found"
+	errorLba       = "lba-error"
+	newUID         = "9d85099c-227c-46c0-a373-e954ec8eee2e"
+	clusterName    = "test-cluster-name"
+	missingDomain  = "probablynotthere.co"
+	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
 )
 
 //Constant variables you can take the address of!
 var (
-	newlbname  string    = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
-	lbuid      types.UID = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname     string    = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
-	lberror    string    = "888888f3313794b8c877a777f5da4d76.default." + clusterName
-	testPolicy string    = "round-robin"
+	newlbname  string            = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
+	lbuid      types.UID         = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname     string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
+	lberror    string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	testPolicy string            = "round-robin"
+	resolvCip  brightbox.CloudIP = brightbox.CloudIP{
+		Id:         "cip-vsalc",
+		PublicIP:   "109.107.39.92",
+		PublicIPv4: "109.107.39.92",
+		PublicIPv6: "2a02:1348:ffff:ffff::6d6b:275c",
+		Fqdn:       resolvedDomain,
+		ReverseDns: "cip-109-107-39-92.gb1s.brightbox.com",
+	}
 )
 
 func TestLoadBalancerStatus(t *testing.T) {
@@ -451,6 +461,53 @@ func TestValidateService(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := validateServiceSpec(tc.service)
+			if err == nil {
+				t.Errorf("Expected error %q got nil", tc.status)
+			} else if err.Error() != tc.status {
+				t.Errorf("Expected %q, got %q", tc.status, err.Error())
+			}
+		})
+	}
+}
+
+func TestValidateDomains(t *testing.T) {
+	testCases := map[string]struct {
+		annotations map[string]string
+		cloudIp     *brightbox.CloudIP
+		status      string
+	}{
+		"missing domain": {
+			annotations: map[string]string{
+				serviceAnnotationLoadBalancerSslDomains: missingDomain,
+			},
+			cloudIp: &resolvCip,
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
+		},
+		"missing domain in list": {
+			annotations: map[string]string{
+				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + "," + missingDomain,
+			},
+			cloudIp: &resolvCip,
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
+		},
+		"other addresses": {
+			annotations: map[string]string{
+				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + ",archive.ubuntu.com",
+			},
+			cloudIp: &resolvCip,
+			status:  "Failed to resolve \"archive.ubuntu.com\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
+		},
+		"dodgy cloudip": {
+			annotations: map[string]string{
+				serviceAnnotationLoadBalancerSslDomains: resolvedDomain,
+			},
+			cloudIp: &brightbox.CloudIP{},
+			status:  "Cloud IP \"\" failed to parse IP addresses",
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := validateContextualAnnotations(tc.annotations, tc.cloudIp)
 			if err == nil {
 				t.Errorf("Expected error %q got nil", tc.status)
 			} else if err.Error() != tc.status {
@@ -1268,6 +1325,37 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 		service *v1.Service
 		cip     *brightbox.CloudIP
 	}{
+		"LBIP_invalid": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        "fred",
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: nil,
+		},
 		"LBIP_found_no_name": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
