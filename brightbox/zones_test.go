@@ -174,6 +174,7 @@ func (f *fakeZoneMetadata) GetMetadata(target string) (string, error) {
 }
 
 type fakeZoneCloud struct {
+	CloudAccess
 	serverzone map[string]string
 }
 
@@ -202,83 +203,4 @@ func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 			},
 		}, nil
 	}
-}
-
-func (f *fakeZoneCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CloudIPs() ([]brightbox.CloudIP, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) MapCloudIP(identifier string, destination string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) AddServersToServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) RemoveServersFromServerGroup(identifier string, serverIds []string) (*brightbox.ServerGroup, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CreateFirewallPolicy(policyOptions *brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
-	panic("not implemented")
-}
-func (f *fakeZoneCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, error) {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) DestroyServerGroup(identifier string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) DestroyFirewallPolicy(identifier string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) DestroyLoadBalancer(identifier string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) UnMapCloudIP(identifier string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) DestroyCloudIP(identifier string) error {
-	panic("not implemented")
-}
-
-func (f *fakeZoneCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
-	panic("not implemented")
 }

@@ -39,9 +39,10 @@ const (
 
 	defaultTimeoutSeconds = 10
 
-	lbActive   = "active"
-	lbCreating = "creating"
-	cipMapped  = "mapped"
+	lbActive              = "active"
+	lbCreating            = "creating"
+	cipMapped             = "mapped"
+	validAcmeDomainStatus = "valid"
 )
 
 var infrastructureScope = []string{"infrastructure"}
@@ -61,6 +62,8 @@ type CloudAccess interface {
 	Server(identifier string) (*brightbox.Server, error)
 	//Fetch a list of LoadBalancers
 	LoadBalancers() ([]brightbox.LoadBalancer, error)
+	//Retrieves a detailed view of one load balancer
+	LoadBalancer(identifier string) (*brightbox.LoadBalancer, error)
 	//Creates a new load balancer
 	CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error)
 	//Updates an existing load balancer
@@ -130,7 +133,6 @@ func isAlive(lb *brightbox.LoadBalancer) bool {
 	return lb.Status == lbActive || lb.Status == lbCreating
 }
 
-// get a loadbalancer by name
 func (c *cloud) getLoadBalancerByName(name string) (*brightbox.LoadBalancer, error) {
 	glog.V(4).Infof("getLoadBalancerByName (%q)", name)
 	lbName := grokLoadBalancerName(name)
@@ -148,6 +150,15 @@ func (c *cloud) getLoadBalancerByName(name string) (*brightbox.LoadBalancer, err
 		}
 	}
 	return nil, nil
+}
+
+func (c *cloud) getLoadBalancer(id string) (*brightbox.LoadBalancer, error) {
+	glog.V(4).Infof("getLoadBalancer (%q)", id)
+	client, err := c.cloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.LoadBalancer(id)
 }
 
 func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
@@ -499,7 +510,8 @@ func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.Lo
 	return (newLb.Name != nil && *newLb.Name != lb.Name) ||
 		(newLb.Healthcheck != nil && isUpdateLoadBalancerHealthcheckRequired(newLb.Healthcheck, &lb.Healthcheck)) ||
 		isUpdateLoadBalancerNodeRequired(newLb.Nodes, lb.Nodes) ||
-		isUpdateLoadBalancerListenerRequired(newLb.Listeners, lb.Listeners)
+		isUpdateLoadBalancerListenerRequired(newLb.Listeners, lb.Listeners) ||
+		isUpdateLoadBalancerDomainsRequired(newLb.Domains, lb.Acme)
 }
 
 func isUpdateLoadBalancerHealthcheckRequired(new *brightbox.LoadBalancerHealthcheck, old *brightbox.LoadBalancerHealthcheck) bool {
@@ -545,6 +557,18 @@ func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b 
 	return false
 }
 
+func isUpdateLoadBalancerDomainsRequired(a []string, acme *brightbox.LoadBalancerAcme) bool {
+	glog.V(8).Infof("Update LoadBalancer Domains Required (%v)", a)
+	if acme == nil {
+		return a != nil
+	}
+	b := make([]string, len(acme.Domains))
+	for i, domain := range acme.Domains {
+		b[i] = domain.Identifier
+	}
+	return !sameStringSlice(a, b)
+}
+
 func errorIfNotErased(lb *brightbox.LoadBalancer) error {
 	switch {
 	case lb == nil:
@@ -568,15 +592,16 @@ func errorIfNotComplete(lb *brightbox.LoadBalancer, cipId, name string) error {
 	case len(lb.CloudIPs) <= 0 || lb.CloudIPs[0].Id != cipId:
 		return fmt.Errorf("Mapping of CloudIP %q to %q not complete", cipId, lb.Id)
 	}
-	return nil
+	return errorIfAcmeNotComplete(lb.Acme)
 }
 
-// ReverseDNS entry takes priority over the standard FQDN
-func selectHostname(ip *brightbox.CloudIP) string {
-	glog.V(4).Infof("selectHostname (%q otherwise %q)", ip.ReverseDns, ip.Fqdn)
-	if ip.ReverseDns != "" {
-		return ip.ReverseDns
-	} else {
-		return ip.Fqdn
+func errorIfAcmeNotComplete(acme *brightbox.LoadBalancerAcme) error {
+	if acme != nil {
+		for _, domain := range acme.Domains {
+			if domain.Status != validAcmeDomainStatus {
+				return fmt.Errorf("Domain %q has not yet been validated for SSL use (%q:%q)", domain.Identifier, domain.Status, domain.LastMessage)
+			}
+		}
 	}
+	return nil
 }

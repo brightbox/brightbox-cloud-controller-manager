@@ -48,12 +48,15 @@ const (
 
 //Constant variables you can take the address of!
 var (
-	newlbname  string            = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
-	lbuid      types.UID         = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname     string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
-	lberror    string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
-	testPolicy string            = "round-robin"
-	resolvCip  brightbox.CloudIP = brightbox.CloudIP{
+	newlbname     string            = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
+	lbuid         types.UID         = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname        string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
+	lberror       string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	testPolicy    string            = "round-robin"
+	groklbname    string            = grokLoadBalancerName(lbname)
+	groknewlbname string            = grokLoadBalancerName(newlbname)
+	bufferSize    int               = 16384
+	resolvCip     brightbox.CloudIP = brightbox.CloudIP{
 		Id:         "cip-vsalc",
 		PublicIP:   "109.107.39.92",
 		PublicIPv4: "109.107.39.92",
@@ -159,6 +162,52 @@ func TestLoadBalancerStatus(t *testing.T) {
 
 }
 
+func TestErrorIfAcmeNotComplete(t *testing.T) {
+	testCases := map[string]struct {
+		acme   *brightbox.LoadBalancerAcme
+		status string
+	}{
+		"domain_invalid": {
+			acme: &brightbox.LoadBalancerAcme{
+				Domains: []brightbox.LoadBalancerAcmeDomain{
+					{
+						Identifier:  missingDomain,
+						Status:      "invalid",
+						LastMessage: "failed to resolve",
+					},
+				},
+			},
+			status: "Domain \"" + missingDomain + "\" has not yet been validated for SSL use (\"invalid\":\"failed to resolve\")",
+		},
+		"just_one_domain_invalid": {
+			acme: &brightbox.LoadBalancerAcme{
+				Domains: []brightbox.LoadBalancerAcmeDomain{
+					{
+						Identifier: resolvedDomain,
+						Status:     validAcmeDomainStatus,
+					},
+					{
+						Identifier:  missingDomain,
+						Status:      "invalid",
+						LastMessage: "failed to resolve",
+					},
+				},
+			},
+			status: "Domain \"" + missingDomain + "\" has not yet been validated for SSL use (\"invalid\":\"failed to resolve\")",
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := errorIfAcmeNotComplete(tc.acme)
+			if err == nil {
+				t.Errorf("Expected error %q got nil", tc.status)
+			} else if err.Error() != tc.status {
+				t.Errorf("Expected %q, got %q", tc.status, err.Error())
+			}
+		})
+	}
+}
+
 func TestValidateService(t *testing.T) {
 	testCases := map[string]struct {
 		service *v1.Service
@@ -241,12 +290,45 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "Invalid Load Balancer Policy \"magic-routing\"",
 		},
-		"invalid-listener-protocol": {
+		"valid-listener-protocol": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: "https",
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "",
+		},
+		"https without port 443": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -263,7 +345,55 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Listener Protocol \"https\"",
+			status: "\"" + loadBalancerHttpsProtocol + "\" has to listen on port 443. No such listener found",
+		},
+		"https without domains": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "\"" + loadBalancerHttpsProtocol + "\" needs a list of domains to certify. Add the required annotation",
+		},
+		"invalid-listener-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: "gopher",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "Invalid Load Balancer Listener Protocol \"gopher\"",
 		},
 		"invalid-healthcheck-request": {
 			service: &v1.Service{
@@ -294,7 +424,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCProtocol: "https",
+						serviceAnnotationLoadBalancerHCProtocol: loadBalancerHttpsProtocol,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -311,7 +441,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Healthcheck Protocol \"https\"",
+			status: "Invalid Load Balancer Healthcheck Protocol \"" + loadBalancerHttpsProtocol + "\"",
 		},
 		"invalid-uint-negative": {
 			service: &v1.Service{
@@ -461,10 +591,12 @@ func TestValidateService(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := validateServiceSpec(tc.service)
-			if err == nil {
-				t.Errorf("Expected error %q got nil", tc.status)
-			} else if err.Error() != tc.status {
-				t.Errorf("Expected %q, got %q", tc.status, err.Error())
+			got := ""
+			if err != nil {
+				got = err.Error()
+			}
+			if tc.status != got {
+				t.Errorf("Expected %q, got %q", tc.status, got)
 			}
 		})
 	}
@@ -591,8 +723,6 @@ func TestGetLoadBalancer(t *testing.T) {
 }
 
 func TestBuildLoadBalancerOptions(t *testing.T) {
-	groklbname := grokLoadBalancerName(lbname)
-	bufferSize := 16384
 	testCases := map[string]struct {
 		service *v1.Service
 		nodes   []*v1.Node
@@ -606,6 +736,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						serviceAnnotationLoadBalancerBufferSize:          "16384",
 						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
+						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpsProtocol,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -656,18 +788,19 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: loadBalancerHttpsProtocol,
 						In:       443,
 						Out:      31347,
 						Timeout:  6000,
 					},
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: loadBalancerHttpsProtocol,
 						Timeout:  6000,
 						In:       80,
 						Out:      31348,
 					},
 				},
+				Domains: []string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHttpProtocol,
 					Port:    31347,
@@ -1102,7 +1235,82 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 		nodes   []*v1.Node
 		lbopts  *brightbox.LoadBalancer
 	}{
-		"found": {
+		"found_no_change": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTcpProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancer{
+				Id:     foundLba,
+				Name:   grokLoadBalancerName(lbname),
+				Status: lbActive,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-gdqms",
+					},
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerTcpProtocol,
+					Port:    31347,
+					Request: "/",
+				},
+			},
+		},
+		"found_updated": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
@@ -1253,6 +1461,857 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				t.Errorf("Error when not expected")
 			} else if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestUpdateLoadBalancerCheck(t *testing.T) {
+	testCases := map[string]struct {
+		lb       *brightbox.LoadBalancer
+		lbopts   brightbox.LoadBalancerOptions
+		expected bool
+	}{
+		"No change domains": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Acme: &brightbox.LoadBalancerAcme{
+					Domains: []brightbox.LoadBalancerAcmeDomain{
+						{
+							Identifier: resolvedDomain,
+							Status:     validAcmeDomainStatus,
+						},
+						{
+							Identifier: fqdn,
+							Status:     validAcmeDomainStatus,
+						},
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Domains: []string{resolvedDomain, fqdn},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: false,
+		},
+		"swap domains": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Acme: &brightbox.LoadBalancerAcme{
+					Domains: []brightbox.LoadBalancerAcmeDomain{
+						{
+							Identifier: resolvedDomain,
+							Status:     validAcmeDomainStatus,
+						},
+						{
+							Identifier: fqdn,
+							Status:     validAcmeDomainStatus,
+						},
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Domains: []string{fqdn, resolvedDomain},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: false,
+		},
+		"add_domain": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Acme: &brightbox.LoadBalancerAcme{
+					Domains: []brightbox.LoadBalancerAcmeDomain{
+						{
+							Identifier: resolvedDomain,
+							Status:     validAcmeDomainStatus,
+						},
+						{
+							Identifier: fqdn,
+							Status:     validAcmeDomainStatus,
+						},
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Domains: []string{resolvedDomain, fqdn, reverseDNS},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"remove_domain": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Acme: &brightbox.LoadBalancerAcme{
+					Domains: []brightbox.LoadBalancerAcmeDomain{
+						{
+							Identifier: resolvedDomain,
+							Status:     validAcmeDomainStatus,
+						},
+						{
+							Identifier: fqdn,
+							Status:     validAcmeDomainStatus,
+						},
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Domains: []string{fqdn},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"change domain": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Acme: &brightbox.LoadBalancerAcme{
+					Domains: []brightbox.LoadBalancerAcmeDomain{
+						{
+							Identifier: resolvedDomain,
+							Status:     validAcmeDomainStatus,
+						},
+						{
+							Identifier: fqdn,
+							Status:     validAcmeDomainStatus,
+						},
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Domains: []string{reverseDNS, fqdn},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"No change": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: false,
+		},
+		"add listener": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+					{
+						Protocol: loadBalancerTcpProtocol,
+						In:       25,
+						Out:      32456,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"remove listener": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"change_listener": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31350,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"change node": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-newon",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"remove node": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:    foundLba,
+				Name:  &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"name_change": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groknewlbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"add node": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+					{
+						Node: "srv-newon",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"Healthcheck change": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/check",
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			if change := isUpdateLoadBalancerRequired(tc.lb, tc.lbopts); change != tc.expected {
+				t.Errorf("Expected %v got %v", tc.expected, change)
 			}
 		})
 	}
@@ -1731,7 +2790,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 	}
 }
 
-func TestDeletionFunctions(t *testing.T) {
+func TestDeletionByNameFunctions(t *testing.T) {
 	testCases := []string{
 		lbname,
 		"not-found",
@@ -1743,8 +2802,8 @@ func TestDeletionFunctions(t *testing.T) {
 				client: fakeInstanceCloudClient(context.TODO()),
 			}
 			client.ensureServerGroupDeleted(name)
-			client.ensureFirewallClosed(name)
 			client.ensureLoadBalancerDeletedByName(name)
+			client.ensureFirewallClosed(name)
 			client.ensureCloudIPsDeleted(name)
 		})
 	}
@@ -1931,6 +2990,16 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 		Listeners:   newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
 	}, nil
+}
+
+func (f *fakeInstanceCloud) LoadBalancer(id string) (*brightbox.LoadBalancer, error) {
+	list, _ := f.LoadBalancers()
+	for _, balancer := range list {
+		if balancer.Id == id {
+			return &balancer, nil
+		}
+	}
+	return nil, fmt.Errorf("unexpected identifier %q sent to LoadBalancer", id)
 }
 
 func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {

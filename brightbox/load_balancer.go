@@ -33,6 +33,7 @@ import (
 const (
 	loadBalancerTcpProtocol     = "tcp"
 	loadBalancerHttpProtocol    = "http"
+	loadBalancerHttpsProtocol   = "https"
 	defaultLoadBalancerProtocol = loadBalancerHttpProtocol
 
 	// Healthcheck on http port if there are no endpoints for the loadbalancer
@@ -116,7 +117,7 @@ const (
 
 var (
 	validLoadBalancerPolicies = map[string]bool{"least-connections": true, "round-robin": true, "source-address": true}
-	validListenerProtocols    = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true}
+	validListenerProtocols    = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true, loadBalancerHttpsProtocol: true}
 	validHealthCheckProtocols = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true}
 )
 
@@ -181,7 +182,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 			return nil, err
 		}
 	}
-	lb, err = c.getLoadBalancerByName(name)
+	lb, err = c.getLoadBalancer(lb.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -203,15 +204,18 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 	if err := c.ensureFirewallClosed(name); err != nil {
 		return err
 	}
-	if err := c.ensureLoadBalancerDeletedByName(name); err != nil {
+	lb, err := c.ensureLoadBalancerDeletedByName(name)
+	if err != nil {
 		return err
 	}
 	if err := c.ensureCloudIPsDeleted(name); err != nil {
 		return err
 	}
-	lb, err := c.getLoadBalancerByName(name)
-	if err != nil {
-		return err
+	if lb != nil {
+		lb, err = c.getLoadBalancer(lb.Id)
+		if err != nil {
+			return err
+		}
 	}
 	return errorIfNotErased(lb)
 }
@@ -257,22 +261,20 @@ func (c *cloud) ensureFirewallClosed(name string) error {
 	return nil
 }
 
-//Try to remove the loadbalancer
-func (c *cloud) ensureLoadBalancerDeletedByName(name string) error {
-	glog.V(4).Infof("ensureLoadBalancerDeletedByName (%q)", name)
+//Remove load balancer by name
+func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBalancer, error) {
 	lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
 		glog.V(4).Infof("Error looking for Load Balancer %q", name)
-		return err
+		return nil, err
 	}
-	if lb == nil {
-		return nil
+	if lb != nil {
+		if err = c.destroyLoadBalancer(lb.Id); err != nil {
+			glog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
+			return nil, err
+		}
 	}
-	if err = c.destroyLoadBalancer(lb.Id); err != nil {
-		glog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
-		return err
-	}
-	return nil
+	return lb, nil
 }
 
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
@@ -328,10 +330,16 @@ func validateServiceSpec(apiservice *v1.Service) error {
 	if len(apiservice.Spec.Ports) == 0 {
 		return fmt.Errorf("requested load balancer with no ports")
 	}
+	protocol := getListenerProtocol(apiservice)
+	ssl_port_found := false
 	for _, port := range apiservice.Spec.Ports {
 		if port.Protocol != v1.ProtocolTCP {
 			return fmt.Errorf("UDP nodeports are not supported")
 		}
+		ssl_port_found = ssl_port_found || port.Port == 443
+	}
+	if protocol == loadBalancerHttpsProtocol && !ssl_port_found {
+		return fmt.Errorf("%q has to listen on port 443. No such listener found", protocol)
 	}
 	return validateAnnotations(apiservice.Annotations)
 }
@@ -346,6 +354,11 @@ func validateAnnotations(annotationList map[string]string) error {
 		case serviceAnnotationLoadBalancerListenerProtocol:
 			if !validListenerProtocols[value] {
 				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q", value)
+			}
+			if value == loadBalancerHttpsProtocol {
+				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; !ok {
+					return fmt.Errorf("%q needs a list of domains to certify. Add the required annotation", value)
+				}
 			}
 		case serviceAnnotationLoadBalancerHCProtocol:
 			if !validHealthCheckProtocols[value] {
@@ -383,22 +396,19 @@ func validateAnnotations(annotationList map[string]string) error {
 }
 
 func validateContextualAnnotations(annotationList map[string]string, cloudIp *brightbox.CloudIP) error {
-	for annotation, value := range annotationList {
-		switch annotation {
-		case serviceAnnotationLoadBalancerSslDomains:
-			domains := strings.Split(value, ",")
-			cloudIpList, err := toIpList(cloudIp)
+	domains := buildLoadBalancerDomains(annotationList)
+	if domains != nil {
+		cloudIpList, err := toIpList(cloudIp)
+		if err != nil {
+			return err
+		}
+		for _, domain := range domains {
+			resolvedAddresses, err := net.LookupIP(domain)
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6, err.Error())
 			}
-			for _, domain := range domains {
-				resolvedAddresses, err := net.LookupIP(domain)
-				if err != nil {
-					return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6, err.Error())
-				}
-				if !anyAddressMatch(cloudIpList, resolvedAddresses) {
-					return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6)
-				}
+			if !anyAddressMatch(cloudIpList, resolvedAddresses) {
+				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6)
 			}
 		}
 	}
@@ -487,6 +497,7 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 		Nodes:       buildLoadBalancerNodes(nodes),
 		Listeners:   buildLoadBalancerListeners(apiservice),
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),
+		Domains:     buildLoadBalancerDomains(apiservice.Annotations),
 	}
 	bufferSize, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerBufferSize)
 	if bufferSize != 0 {
@@ -525,6 +536,13 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
 	}
 	return result
+}
+
+func buildLoadBalancerDomains(annotations map[string]string) []string {
+	if domains, ok := annotations[serviceAnnotationLoadBalancerSslDomains]; ok {
+		return strings.Split(domains, ",")
+	}
+	return nil
 }
 
 func getListenerProtocol(apiservice *v1.Service) string {
@@ -571,8 +589,8 @@ func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
 	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]; ok {
 		return protocol
 	}
-	if path == "" {
-		return getListenerProtocol(apiservice)
+	if getListenerProtocol(apiservice) == loadBalancerTcpProtocol && path == "" {
+		return loadBalancerTcpProtocol
 	} else {
 		return loadBalancerHttpProtocol
 	}
