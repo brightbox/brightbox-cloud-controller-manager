@@ -19,3 +19,6 @@ brightbox-cloud-controller-manager
 
 #goreleaser artefacts
 dist
+
+#vendor
+vendor
