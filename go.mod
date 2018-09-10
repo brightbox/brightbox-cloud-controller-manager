@@ -7,7 +7,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
-	github.com/brightbox/gobrightbox v0.0.0-20180831123115-acf3e0493a6f
+	github.com/brightbox/gobrightbox v0.0.1
 	github.com/coreos/etcd v3.3.9+incompatible
 	github.com/coreos/go-semver v0.2.0
 	github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7

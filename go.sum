@@ -12,6 +12,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLM
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/brightbox/gobrightbox v0.0.0-20180831123115-acf3e0493a6f h1:Sw/lputQ8cDoJT+xN0zLGeCx61pdb+BHN2u3+4birVc=
 github.com/brightbox/gobrightbox v0.0.0-20180831123115-acf3e0493a6f/go.mod h1:svQTxFHvTCyBUWim99m5Xh2FVygF63GGr8IKX4Jc+NA=
+github.com/brightbox/gobrightbox v0.0.1 h1:gO/C4TXP3SEWMWLaYIf2zZ+8xgkdZtQ05QiPWqt+U94=
+github.com/brightbox/gobrightbox v0.0.1/go.mod h1:svQTxFHvTCyBUWim99m5Xh2FVygF63GGr8IKX4Jc+NA=
 github.com/coreos/etcd v3.3.9+incompatible h1:/pWnp1yEff0z+vBEOBFLZZ22Ux5xoVozEe7X0VFyRNo=
 github.com/coreos/etcd v3.3.9+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-semver v0.2.0 h1:3Jm3tLmsgAYcjC+4Up7hJrFBPr+n7rAqYeSw/SZazuY=
