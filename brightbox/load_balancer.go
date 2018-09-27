@@ -33,8 +33,9 @@ import (
 const (
 	loadBalancerTcpProtocol     = "tcp"
 	loadBalancerHttpProtocol    = "http"
-	loadBalancerHttpsProtocol   = "https"
+	loadBalancerHttpWsProtocol  = "http+ws"
 	defaultLoadBalancerProtocol = loadBalancerHttpProtocol
+	standardSSLPort             = 443
 
 	// Healthcheck on http port if there are no endpoints for the loadbalancer
 	defaultHealthCheckPort = 80
@@ -58,16 +59,19 @@ const (
 	// This is subject to a minimum size of 1024 bytes.
 	serviceAnnotationLoadBalancerBufferSize = "service.beta.kubernetes.io/brightbox-load-balancer-buffer-size"
 
-	// ServiceAnnotationLoadBalancerBEProtocol is the annotation used
+	// ServiceAnnotationLoadBalancerListenerProtocol is the annotation used
 	// on the service to specify the protocol spoken by the backend
 	// (pod) behind a listener.
 	// If `http` (default) or `http+ws`, an HTTP listener that terminates the
 	// connection and parses headers is created.
 	// If set to `tcp`, a "raw" listener is used.
-	// If set to `https` or `https+wss`, an SSL enabled listener is
-	// created and a certificate registered with Let's Encrypt.
 	// The 'ws' extensions add support for Websockets to the listener.
 	serviceAnnotationLoadBalancerListenerProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol"
+
+	// ServiceAnnotationLoadBalancerSSLPorts is the annotation used on the service
+	// to specify a comma-separated list of ports that will use SSL/HTTPS
+	// listeners rather than plain 'http' listeners. Defaults to '443'.
+	serviceAnnotationLoadBalancerSSLPorts = "service.beta.kubernetes.io/brightbox-load-balancer-ssl-ports"
 
 	// ServiceAnnotationLoadBalancerConnectionIdleTimeout is the
 	// annotation used on the service to specify the idle connection
@@ -116,9 +120,25 @@ const (
 )
 
 var (
-	validLoadBalancerPolicies = map[string]bool{"least-connections": true, "round-robin": true, "source-address": true}
-	validListenerProtocols    = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true, loadBalancerHttpsProtocol: true}
-	validHealthCheckProtocols = map[string]bool{loadBalancerHttpProtocol: true, loadBalancerTcpProtocol: true}
+	validLoadBalancerPolicies = map[string]bool{
+		"least-connections": true,
+		"round-robin":       true,
+		"source-address":    true,
+	}
+	validListenerProtocols = map[string]bool{
+		loadBalancerHttpProtocol:   true,
+		loadBalancerTcpProtocol:    true,
+		loadBalancerHttpWsProtocol: true,
+	}
+	validHealthCheckProtocols = map[string]bool{
+		loadBalancerHttpProtocol: true,
+		loadBalancerTcpProtocol:  true,
+	}
+	sslUpgradeProtocol = map[string]string{
+		loadBalancerTcpProtocol:    loadBalancerTcpProtocol,
+		loadBalancerHttpProtocol:   "https",
+		loadBalancerHttpWsProtocol: "https+wss",
+	}
 )
 
 // Return a name that is 'name'.'namespace'.'clusterName'
@@ -336,10 +356,14 @@ func validateServiceSpec(apiservice *v1.Service) error {
 		if port.Protocol != v1.ProtocolTCP {
 			return fmt.Errorf("UDP nodeports are not supported")
 		}
-		ssl_port_found = ssl_port_found || port.Port == 443
+		ssl_port_found = ssl_port_found || port.Port == standardSSLPort
 	}
-	if protocol == loadBalancerHttpsProtocol && !ssl_port_found {
-		return fmt.Errorf("%q has to listen on port 443. No such listener found", protocol)
+	if !ssl_port_found && protocol == loadBalancerHttpProtocol {
+		_, ports := apiservice.Annotations[serviceAnnotationLoadBalancerSSLPorts]
+		_, domains := apiservice.Annotations[serviceAnnotationLoadBalancerSslDomains]
+		if ports || domains {
+			return fmt.Errorf("SSL support requires a Port definition for %d", standardSSLPort)
+		}
 	}
 	return validateAnnotations(apiservice.Annotations)
 }
@@ -355,10 +379,17 @@ func validateAnnotations(annotationList map[string]string) error {
 			if !validListenerProtocols[value] {
 				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q", value)
 			}
-			if value == loadBalancerHttpsProtocol {
-				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; !ok {
-					return fmt.Errorf("%q needs a list of domains to certify. Add the required annotation", value)
+			if value == loadBalancerTcpProtocol {
+				if _, ok := annotationList[serviceAnnotationLoadBalancerSSLPorts]; ok {
+					return fmt.Errorf("SSL Ports are not supported with the %s protocol", loadBalancerTcpProtocol)
 				}
+				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; ok {
+					return fmt.Errorf("SSL Domains are not supported with the %s protocol", loadBalancerTcpProtocol)
+				}
+			}
+		case serviceAnnotationLoadBalancerSSLPorts:
+			if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; !ok {
+				return fmt.Errorf("SSL needs a list of domains to certify. Add the %q annotation", serviceAnnotationLoadBalancerSslDomains)
 			}
 		case serviceAnnotationLoadBalancerHCProtocol:
 			if !validHealthCheckProtocols[value] {
@@ -528,9 +559,13 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	if len(apiservice.Spec.Ports) <= 0 {
 		return nil
 	}
+	sslPortSet := getPortSets(apiservice.Annotations[serviceAnnotationLoadBalancerSSLPorts])
 	result := make([]brightbox.LoadBalancerListener, len(apiservice.Spec.Ports))
 	for i := range apiservice.Spec.Ports {
 		result[i].Protocol = getListenerProtocol(apiservice)
+		if result[i].Protocol != loadBalancerTcpProtocol && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
+			result[i].Protocol = sslUpgradeProtocol[result[i].Protocol]
+		}
 		result[i].In = int(apiservice.Spec.Ports[i].Port)
 		result[i].Out = int(apiservice.Spec.Ports[i].NodePort)
 		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
@@ -551,6 +586,11 @@ func getListenerProtocol(apiservice *v1.Service) string {
 	} else {
 		return defaultLoadBalancerProtocol
 	}
+}
+
+func isSSLPort(port *v1.ServicePort, sslPorts *portSets) bool {
+	return port.Port == standardSSLPort ||
+		sslPorts != nil && (sslPorts.numbers.Has(int64(port.Port)) || sslPorts.names.Has(port.Name))
 }
 
 func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalancerHealthcheck {

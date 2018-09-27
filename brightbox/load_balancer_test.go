@@ -290,12 +290,76 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "Invalid Load Balancer Policy \"magic-routing\"",
 		},
+		"Domains with TCP": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTcpProtocol,
+						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "SSL Domains are not supported with the tcp protocol",
+		},
+		"Ports with TCP": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTcpProtocol,
+						serviceAnnotationLoadBalancerSSLPorts:         "443",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "SSL Ports are not supported with the tcp protocol",
+		},
 		"valid-listener-protocol": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpProtocol,
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -322,12 +386,44 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "",
 		},
-		"https without port 443": {
+		"valid-websocket-listener-protocol": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpWsProtocol,
+						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "",
+		},
+		"domains without port 443": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpProtocol,
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -345,14 +441,15 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "\"" + loadBalancerHttpsProtocol + "\" has to listen on port 443. No such listener found",
+			status: "SSL support requires a Port definition for 443",
 		},
-		"https without domains": {
+		"Ports without port 443": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpProtocol,
+						serviceAnnotationLoadBalancerSSLPorts:         "http",
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -361,7 +458,7 @@ func TestValidateService(t *testing.T) {
 						{
 							Name:       "http",
 							Protocol:   v1.ProtocolTCP,
-							Port:       443,
+							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 							NodePort:   31347,
 						},
@@ -369,7 +466,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "\"" + loadBalancerHttpsProtocol + "\" needs a list of domains to certify. Add the required annotation",
+			status: "SSL support requires a Port definition for 443",
 		},
 		"invalid-listener-protocol": {
 			service: &v1.Service{
@@ -424,7 +521,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCProtocol: loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerHCProtocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -441,7 +538,32 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Healthcheck Protocol \"" + loadBalancerHttpsProtocol + "\"",
+			status: "Invalid Load Balancer Healthcheck Protocol \"" + sslUpgradeProtocol[loadBalancerHttpProtocol] + "\"",
+		},
+		"https without domains": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHttpProtocol,
+						serviceAnnotationLoadBalancerSSLPorts:         "443",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "SSL needs a list of domains to certify. Add the \"" + serviceAnnotationLoadBalancerSslDomains + "\" annotation",
 		},
 		"invalid-uint-negative": {
 			service: &v1.Service{
@@ -737,7 +859,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
-						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpsProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpProtocol,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -788,15 +910,206 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpsProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 						Timeout:  6000,
 					},
 					{
-						Protocol: loadBalancerHttpsProtocol,
+						Protocol: loadBalancerHttpProtocol,
 						Timeout:  6000,
 						In:       80,
+						Out:      31348,
+					},
+				},
+				Domains: []string{resolvedDomain, fqdn},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    31347,
+					Request: "/healthz",
+				},
+				BufferSize: &bufferSize,
+				Policy:     &testPolicy,
+			},
+		},
+		"websocket": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize:          "16384",
+						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
+						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpWsProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: sslUpgradeProtocol[loadBalancerHttpWsProtocol],
+						In:       443,
+						Out:      31347,
+						Timeout:  6000,
+					},
+					{
+						Protocol: loadBalancerHttpWsProtocol,
+						Timeout:  6000,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Domains: []string{resolvedDomain, fqdn},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    31347,
+					Request: "/healthz",
+				},
+				BufferSize: &bufferSize,
+				Policy:     &testPolicy,
+			},
+		},
+		"extraSSLports": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize:          "16384",
+						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
+						serviceAnnotationLoadBalancerSSLPorts:            "fancy,3030",
+						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+						{
+							Name:       "fancy",
+							Protocol:   v1.ProtocolTCP,
+							Port:       5050,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+						{
+							Name:       "charm",
+							Protocol:   v1.ProtocolTCP,
+							Port:       3030,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
+						In:       443,
+						Out:      31347,
+						Timeout:  6000,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						Timeout:  6000,
+						In:       80,
+						Out:      31348,
+					},
+					{
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
+						Timeout:  6000,
+						In:       5050,
+						Out:      31348,
+					},
+					{
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
+						Timeout:  6000,
+						In:       3030,
 						Out:      31348,
 					},
 				},
@@ -1013,7 +1326,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1087,7 +1400,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1495,7 +1808,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1522,7 +1835,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: []string{resolvedDomain, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1563,7 +1876,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1590,7 +1903,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: []string{fqdn, resolvedDomain},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1631,7 +1944,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1658,7 +1971,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: []string{resolvedDomain, fqdn, reverseDNS},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1699,7 +2012,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1726,7 +2039,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: []string{fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1767,7 +2080,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},
@@ -1794,7 +2107,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: []string{reverseDNS, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHttpProtocol,
+						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
 					},

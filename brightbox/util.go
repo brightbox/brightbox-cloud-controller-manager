@@ -18,9 +18,11 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -133,4 +135,31 @@ func sameStringSlice(x, y []string) bool {
 		return true
 	}
 	return false
+}
+
+type portSets struct {
+	names   sets.String
+	numbers sets.Int64
+}
+
+// getPortSets returns a portSets structure representing port names and numbers
+// that the comma-separated string describes. If the input is empty or equal to
+// "*", a nil pointer is returned.
+func getPortSets(annotation string) (ports *portSets) {
+	if annotation != "" && annotation != "*" {
+		ports = &portSets{
+			sets.NewString(),
+			sets.NewInt64(),
+		}
+		portStringSlice := strings.Split(annotation, ",")
+		for _, item := range portStringSlice {
+			port, err := strconv.Atoi(item)
+			if err != nil {
+				ports.names.Insert(item)
+			} else {
+				ports.numbers.Insert(int64(port))
+			}
+		}
+	}
+	return
 }
