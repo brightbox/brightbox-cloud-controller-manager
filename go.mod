@@ -13,6 +13,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff
+	github.com/docker/docker v1.13.1 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/emicklei/go-restful v2.8.0+incompatible
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305
@@ -32,6 +33,7 @@ require (
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47
 	github.com/imdario/mergo v0.3.6
 	github.com/inconshreveable/mousetrap v1.0.0
@@ -66,11 +68,14 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
 	gopkg.in/square/go-jose.v2 v2.1.8
 	gopkg.in/yaml.v2 v2.2.1
-	k8s.io/api v0.0.0-20180712090710-2d6f90ab1293
+	k8s.io/api v0.0.0-20180925152912-a191abe0b71e
 	k8s.io/apiextensions-apiserver v0.0.0-20180808065829-408db4a50408
-	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
-	k8s.io/apiserver v0.0.0-20180808060109-1844acd6a035
-	k8s.io/client-go v0.0.0-20180806134042-1f13a808da65
+	k8s.io/apimachinery v0.0.0-20180927151612-c6dd271be006
+	k8s.io/apiserver v0.0.0-20180928074203-ec2b99f30258
+	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/csi-api v0.0.0-20180925155520-31ae05d8096d // indirect
+	k8s.io/kube-controller-manager v0.0.0-20180909204853-481b4013cbb6 // indirect
 	k8s.io/kube-openapi v0.0.0-20180731170545-e3762e86a74c
-	k8s.io/kubernetes v1.11.2
+	k8s.io/kubernetes v1.12.0
+	k8s.io/utils v0.0.0-20180918230422-cd34563cd63c // indirect
 )

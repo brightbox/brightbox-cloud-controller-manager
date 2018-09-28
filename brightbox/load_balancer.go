@@ -150,8 +150,7 @@ func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 	}
 	name := service.Name
 	if name == "" {
-		//FIXME: Change this to DefaultLoadBalancerName after 1.12
-		name = cloudprovider.GetLoadBalancerName(service)
+		name = cloudprovider.DefaultLoadBalancerName(service)
 	}
 	var buffer bytes.Buffer
 	buffer.WriteString(name)
