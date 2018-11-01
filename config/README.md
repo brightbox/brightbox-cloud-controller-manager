@@ -4,7 +4,7 @@
 As well as directly in the master node, the cloud controller can be run
 as a Daemonset within the `kube-system` namespace.
 
-The YAML file within this directory is the latest recommended
+The [YAML file](cloud-controller.yml) within this directory is the latest recommended
 configuration to use on Kubernetes.
 
 By far the easiest way to get the Brightbox cloud controller running on
