@@ -33,7 +33,7 @@ described in `Gopkg.toml`. Run `dep ensure` to check vendor is up to date.
 
 ## Design approach
 The implementation in the brightbox package satisifes the
-`cloudprovder.Interface` pluggable interface.
+`cloudprovider.Interface` pluggable interface.
 
 The provider implements:
 
