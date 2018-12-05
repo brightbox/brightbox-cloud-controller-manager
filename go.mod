@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 	github.com/brightbox/gobrightbox v0.0.1
-	github.com/coreos/etcd v3.3.9+incompatible
+	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/coreos/go-semver v0.2.0
 	github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7
 	github.com/davecgh/go-spew v1.1.1
@@ -19,7 +19,7 @@ require (
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305
 	github.com/evanphx/json-patch v3.0.0+incompatible
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-ini/ini v1.38.1
+	github.com/go-ini/ini v1.38.3
 	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa
 	github.com/go-openapi/jsonreference v0.0.0-20180322222742-3fb327e6747d
 	github.com/go-openapi/spec v0.0.0-20180801175345-384415f06ee2
@@ -65,9 +65,9 @@ require (
 	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
 	google.golang.org/grpc v1.14.0
 	gopkg.in/inf.v0 v0.9.1
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
-	gopkg.in/square/go-jose.v2 v2.1.8
-	gopkg.in/yaml.v2 v2.2.1
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/square/go-jose.v2 v2.1.9
+	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20180925152912-a191abe0b71e
 	k8s.io/apiextensions-apiserver v0.0.0-20180808065829-408db4a50408
 	k8s.io/apimachinery v0.0.0-20180927151612-c6dd271be006
@@ -76,6 +76,6 @@ require (
 	k8s.io/csi-api v0.0.0-20180925155520-31ae05d8096d // indirect
 	k8s.io/kube-controller-manager v0.0.0-20180909204853-481b4013cbb6 // indirect
 	k8s.io/kube-openapi v0.0.0-20180731170545-e3762e86a74c
-	k8s.io/kubernetes v1.12.0
+	k8s.io/kubernetes v1.12.3
 	k8s.io/utils v0.0.0-20180918230422-cd34563cd63c // indirect
 )
