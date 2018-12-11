@@ -19,8 +19,8 @@ import (
 	"strconv"
 
 	"github.com/brightbox/gobrightbox"
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
+	"k8s.io/klog"
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
@@ -32,9 +32,9 @@ var defaultRuleProtocol = loadBalancerTcpProtocol
 // It also allows k8s to select subsets of nodes for each loadbalancer
 // created if it wants to.
 func (c *cloud) ensureFirewallOpenForService(name string, apiservice *v1.Service, nodes []*v1.Node) error {
-	glog.V(4).Infof("ensureFireWallOpen(%v)", name)
+	klog.V(4).Infof("ensureFireWallOpen(%v)", name)
 	if len(apiservice.Spec.Ports) <= 0 {
-		glog.V(4).Infof("no ports to open")
+		klog.V(4).Infof("no ports to open")
 		return nil
 	}
 	serverGroup, err := c.ensureServerGroup(name, nodes)
@@ -49,7 +49,7 @@ func (c *cloud) ensureFirewallOpenForService(name string, apiservice *v1.Service
 }
 
 func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.ServerGroup, error) {
-	glog.V(4).Infof("ensureServerGroup(%v)", name)
+	klog.V(4).Infof("ensureServerGroup(%v)", name)
 	group, err := c.getServerGroupByName(name)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.Ser
 }
 
 func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
-	glog.V(4).Infof("ensureFireWallPolicy (%q)", group.Name)
+	klog.V(4).Infof("ensureFireWallPolicy (%q)", group.Name)
 	fp, err := c.getFirewallPolicyByName(group.Name)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.F
 }
 
 func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.FirewallPolicy) error {
-	glog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
+	klog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
 	portListStr := createPortListString(apiservice)
 	newRule := brightbox.FirewallRuleOptions{
 		FirewallPolicy:  fp.Id,
@@ -97,7 +97,7 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 		_, err := c.updateFirewallRule(&newRule)
 		return err
 	}
-	glog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].Id)
+	klog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].Id)
 	return nil
 }
 
@@ -127,7 +127,7 @@ func mapNodesToServerIDs(nodes []*v1.Node) []string {
 	result := make([]string, 0, len(nodes))
 	for i := range nodes {
 		if nodes[i].Spec.ProviderID == "" {
-			glog.Warningf("node %q did not have providerID set", nodes[i].Name)
+			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
 			continue
 		}
 		result = append(result, mapProviderIDToServerID(nodes[i].Spec.ProviderID))

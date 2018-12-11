@@ -21,10 +21,10 @@ import (
 	"os"
 
 	"github.com/brightbox/gobrightbox"
-	"github.com/golang/glog"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/cloud-provider"
+	"k8s.io/klog"
 )
 
 const (
@@ -105,7 +105,7 @@ type CloudAccess interface {
 }
 
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
-	glog.V(4).Infof("getServer (%q)", id)
+	klog.V(4).Infof("getServer (%q)", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func isAlive(lb *brightbox.LoadBalancer) bool {
 }
 
 func (c *cloud) getLoadBalancerByName(name string) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("getLoadBalancerByName (%q)", name)
+	klog.V(4).Infof("getLoadBalancerByName (%q)", name)
 	lbName := grokLoadBalancerName(name)
 	client, err := c.cloudClient()
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *cloud) getLoadBalancerByName(name string) (*brightbox.LoadBalancer, err
 }
 
 func (c *cloud) getLoadBalancer(id string) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("getLoadBalancer (%q)", id)
+	klog.V(4).Infof("getLoadBalancer (%q)", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func (c *cloud) getLoadBalancer(id string) (*brightbox.LoadBalancer, error) {
 }
 
 func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("createLoadBalancer (%q)", *newLB.Name)
+	klog.V(4).Infof("createLoadBalancer (%q)", *newLB.Name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 }
 
 func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("updateLoadBalancer (%q, %q)", newLB.Id, *newLB.Name)
+	klog.V(4).Infof("updateLoadBalancer (%q, %q)", newLB.Id, *newLB.Name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 
 // get a FirewallPolicy By Name
 func (c *cloud) getFirewallPolicyByName(fpName string) (*brightbox.FirewallPolicy, error) {
-	glog.V(4).Infof("getFirewallPolicyByName (%q)", fpName)
+	klog.V(4).Infof("getFirewallPolicyByName (%q)", fpName)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (c *cloud) getFirewallPolicyByName(fpName string) (*brightbox.FirewallPolic
 
 // get a serverGroup By Name
 func (c *cloud) getServerGroupByName(sgName string) (*brightbox.ServerGroup, error) {
-	glog.V(4).Infof("getServerGroupByName (%q)", sgName)
+	klog.V(4).Infof("getServerGroupByName (%q)", sgName)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (c *cloud) getServerGroupByName(sgName string) (*brightbox.ServerGroup, err
 }
 
 func (c *cloud) createServerGroup(name string) (*brightbox.ServerGroup, error) {
-	glog.V(4).Infof("createServerGroup (%q)", name)
+	klog.V(4).Infof("createServerGroup (%q)", name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func (c *cloud) createServerGroup(name string) (*brightbox.ServerGroup, error) {
 
 //Firewall Policy
 func (c *cloud) createFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
-	glog.V(4).Infof("createFirewallPolicy (%q)", group.Name)
+	klog.V(4).Infof("createFirewallPolicy (%q)", group.Name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -242,7 +242,7 @@ func (c *cloud) createFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.F
 
 //Firewall Rules
 func (c *cloud) createFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
-	glog.V(4).Infof("createFirewallRule (%q)", *newFR.Description)
+	klog.V(4).Infof("createFirewallRule (%q)", *newFR.Description)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -251,7 +251,7 @@ func (c *cloud) createFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brigh
 }
 
 func (c *cloud) updateFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
-	glog.V(4).Infof("updateFirewallRule (%q, %q)", newFR.Id, *newFR.Description)
+	klog.V(4).Infof("updateFirewallRule (%q, %q)", newFR.Id, *newFR.Description)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (c *cloud) updateFirewallRule(newFR *brightbox.FirewallRuleOptions) (*brigh
 }
 
 func (c *cloud) ensureMappedCloudIP(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP) error {
-	glog.V(4).Infof("ensureMappedCloudIP (%q, %q)", lb.Id, cip.Id)
+	klog.V(4).Infof("ensureMappedCloudIP (%q, %q)", lb.Id, cip.Id)
 	if alreadyMapped(cip, lb.Id) {
 		return nil
 	} else if cip.Status == cipMapped {
@@ -278,7 +278,7 @@ func alreadyMapped(cip *brightbox.CloudIP, lbId string) bool {
 }
 
 func (c *cloud) allocateCloudIP(name string) (*brightbox.CloudIP, error) {
-	glog.V(4).Infof("allocateCloudIP %q", name)
+	klog.V(4).Infof("allocateCloudIP %q", name)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -290,7 +290,7 @@ func (c *cloud) allocateCloudIP(name string) (*brightbox.CloudIP, error) {
 }
 
 func (c *cloud) getCloudIPs() ([]brightbox.CloudIP, error) {
-	glog.V(4).Infof("getCloudIPs")
+	klog.V(4).Infof("getCloudIPs")
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -300,7 +300,7 @@ func (c *cloud) getCloudIPs() ([]brightbox.CloudIP, error) {
 
 //Get a cloudIp by id
 func (c *cloud) getCloudIP(identifier string) (*brightbox.CloudIP, error) {
-	glog.V(4).Infof("getCloudIP (%q)", identifier)
+	klog.V(4).Infof("getCloudIP (%q)", identifier)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -311,7 +311,7 @@ func (c *cloud) getCloudIP(identifier string) (*brightbox.CloudIP, error) {
 //Destroy things
 
 func (c *cloud) destroyLoadBalancer(id string) error {
-	glog.V(4).Infof("destroyLoadBalancer %q", id)
+	klog.V(4).Infof("destroyLoadBalancer %q", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
@@ -320,7 +320,7 @@ func (c *cloud) destroyLoadBalancer(id string) error {
 }
 
 func (c *cloud) destroyServerGroup(id string) error {
-	glog.V(4).Infof("destroyServerGroup %q", id)
+	klog.V(4).Infof("destroyServerGroup %q", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
@@ -329,7 +329,7 @@ func (c *cloud) destroyServerGroup(id string) error {
 }
 
 func (c *cloud) destroyFirewallPolicy(id string) error {
-	glog.V(4).Infof("destroyFirewallPolicy %q", id)
+	klog.V(4).Infof("destroyFirewallPolicy %q", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
@@ -338,7 +338,7 @@ func (c *cloud) destroyFirewallPolicy(id string) error {
 }
 
 func (c *cloud) destroyCloudIP(id string) error {
-	glog.V(4).Infof("destroyCloudIP (%q)", id)
+	klog.V(4).Infof("destroyCloudIP (%q)", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
@@ -347,7 +347,7 @@ func (c *cloud) destroyCloudIP(id string) error {
 }
 
 func (c *cloud) unmapCloudIP(id string) error {
-	glog.V(4).Infof("unmapCloudIP (%q)", id)
+	klog.V(4).Infof("unmapCloudIP (%q)", id)
 	client, err := c.cloudClient()
 	if err != nil {
 		return err
@@ -357,12 +357,12 @@ func (c *cloud) unmapCloudIP(id string) error {
 
 //Destroy CloudIPs matching 'name' from a supplied list of cloudIPs
 func (c *cloud) destroyCloudIPs(cloudIpList []brightbox.CloudIP, name string) error {
-	glog.V(4).Infof("destroyCloudIPs (%q)", name)
+	klog.V(4).Infof("destroyCloudIPs (%q)", name)
 	for i := range cloudIpList {
 		if cloudIpList[i].Name == name {
 			err := c.destroyCloudIP(cloudIpList[i].Id)
 			if err != nil {
-				glog.V(4).Infof("Error destroying CloudIP %q", cloudIpList[i].Id)
+				klog.V(4).Infof("Error destroying CloudIP %q", cloudIpList[i].Id)
 				return err
 			}
 		}
@@ -372,7 +372,7 @@ func (c *cloud) destroyCloudIPs(cloudIpList []brightbox.CloudIP, name string) er
 
 //Unmap any CloudIPs mapped to the loadbalancer that are not the allocated cloud ip
 func (c *cloud) ensureOldCloudIPsDeposed(lb *brightbox.LoadBalancer, cip *brightbox.CloudIP, name string) error {
-	glog.V(4).Infof("ensureOldCloudIPsDeposed (%q, %q, %q)", lb.Id, cip.Id, name)
+	klog.V(4).Infof("ensureOldCloudIPsDeposed (%q, %q, %q)", lb.Id, cip.Id, name)
 	deposedCloudIPList := getDeposedCloudIPList(lb.CloudIPs, cip.Id)
 	for i := range deposedCloudIPList {
 		if err := c.unmapCloudIP(deposedCloudIPList[i].Id); err != nil {
@@ -394,7 +394,7 @@ func getDeposedCloudIPList(cloudIPList []brightbox.CloudIP, cipId string) []brig
 
 // Obtain a Brightbox cloud client anew
 func obtainCloudClient() (*brightbox.Client, error) {
-	glog.V(4).Infof("obtainCloudClient")
+	klog.V(4).Infof("obtainCloudClient")
 	config := &authdetails{
 		APIClient: getenvWithDefault(clientEnvVar,
 			defaultClientID),
@@ -414,7 +414,7 @@ func obtainCloudClient() (*brightbox.Client, error) {
 
 // Validate account config entries
 func (authd *authdetails) validateConfig() error {
-	glog.V(4).Infof("validateConfig")
+	klog.V(4).Infof("validateConfig")
 	if authd.APIClient == defaultClientID &&
 		authd.APISecret == defaultClientSecret {
 		if authd.Account == "" {
@@ -452,13 +452,13 @@ func (authd *authdetails) tokenisedAuth(ctx context.Context) (*brightbox.Client,
 			TokenURL: authd.tokenURL(),
 		},
 	}
-	glog.V(4).Infof("Obtaining authentication for user %s", authd.UserName)
-	glog.V(4).Infof("Speaking to %s", authd.tokenURL())
+	klog.V(4).Infof("Obtaining authentication for user %s", authd.UserName)
+	klog.V(4).Infof("Speaking to %s", authd.tokenURL())
 	token, err := conf.PasswordCredentialsToken(ctx, authd.UserName, authd.password)
 	if err != nil {
 		return nil, err
 	}
-	glog.V(4).Infof("Refreshing current token as required")
+	klog.V(4).Infof("Refreshing current token as required")
 	oauthConnection := conf.Client(ctx, token)
 	return brightbox.NewClient(authd.APIURL, authd.Account, oauthConnection)
 }
@@ -470,8 +470,8 @@ func (authd *authdetails) apiClientAuth(ctx context.Context) (*brightbox.Client,
 		Scopes:       infrastructureScope,
 		TokenURL:     authd.tokenURL(),
 	}
-	glog.V(4).Infof("Obtaining API client authorisation for client %s", authd.APIClient)
-	glog.V(4).Infof("Speaking to %s", authd.tokenURL())
+	klog.V(4).Infof("Obtaining API client authorisation for client %s", authd.APIClient)
+	klog.V(4).Infof("Speaking to %s", authd.tokenURL())
 	oauthConnection := conf.Client(ctx)
 	return brightbox.NewClient(authd.APIURL, authd.Account, oauthConnection)
 }
@@ -486,7 +486,7 @@ func mapServersToServerIds(servers []brightbox.Server) []string {
 
 func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (*brightbox.ServerGroup, error) {
 	oldIds := mapServersToServerIds(group.Servers)
-	glog.V(4).Infof("syncServerGroup (%v, %v, %v)", group.Id, oldIds, newIds)
+	klog.V(4).Infof("syncServerGroup (%v, %v, %v)", group.Id, oldIds, newIds)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -494,11 +494,11 @@ func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (
 	insIds, delIds := getSyncLists(oldIds, newIds)
 	result := group
 	if len(insIds) > 0 {
-		glog.V(4).Infof("Adding Servers %v", insIds)
+		klog.V(4).Infof("Adding Servers %v", insIds)
 		result, err = client.AddServersToServerGroup(group.Id, insIds)
 	}
 	if err == nil && len(delIds) > 0 {
-		glog.V(4).Infof("Removing Servers %v", delIds)
+		klog.V(4).Infof("Removing Servers %v", delIds)
 		result, err = client.RemoveServersFromServerGroup(group.Id, delIds)
 	}
 	return result, err
@@ -506,7 +506,7 @@ func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (
 
 //Equality test between load balancer and load balancer options - to avoid unnecessary api calls
 func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.LoadBalancerOptions) bool {
-	glog.V(8).Infof("Update LoadBalancer Required (%v, %v)", *newLb.Name, lb.Name)
+	klog.V(8).Infof("Update LoadBalancer Required (%v, %v)", *newLb.Name, lb.Name)
 	return (newLb.Name != nil && *newLb.Name != lb.Name) ||
 		(newLb.Healthcheck != nil && isUpdateLoadBalancerHealthcheckRequired(newLb.Healthcheck, &lb.Healthcheck)) ||
 		isUpdateLoadBalancerNodeRequired(newLb.Nodes, lb.Nodes) ||
@@ -515,14 +515,14 @@ func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.Lo
 }
 
 func isUpdateLoadBalancerHealthcheckRequired(new *brightbox.LoadBalancerHealthcheck, old *brightbox.LoadBalancerHealthcheck) bool {
-	glog.V(8).Infof("Update LoadBalancer Healthcheck Required (%#v, %#v)", *new, *old)
+	klog.V(8).Infof("Update LoadBalancer Healthcheck Required (%#v, %#v)", *new, *old)
 	return (new.Type != old.Type) ||
 		(new.Port != old.Port) ||
 		(new.Request != old.Request)
 }
 
 func isUpdateLoadBalancerNodeRequired(a []brightbox.LoadBalancerNode, b []brightbox.Server) bool {
-	glog.V(8).Infof("Update LoadBalancer Node Required (%v, %v)", a, b)
+	klog.V(8).Infof("Update LoadBalancer Node Required (%v, %v)", a, b)
 	// If one is nil, the other must also be nil.
 	if (a == nil) != (b == nil) {
 		return true
@@ -539,7 +539,7 @@ func isUpdateLoadBalancerNodeRequired(a []brightbox.LoadBalancerNode, b []bright
 }
 
 func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b []brightbox.LoadBalancerListener) bool {
-	glog.V(8).Infof("Update LoadBalancer Listener Required (%v, %v)", a, b)
+	klog.V(8).Infof("Update LoadBalancer Listener Required (%v, %v)", a, b)
 	// If one is nil, the other must also be nil.
 	if (a == nil) != (b == nil) {
 		return true
@@ -558,7 +558,7 @@ func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b 
 }
 
 func isUpdateLoadBalancerDomainsRequired(a []string, acme *brightbox.LoadBalancerAcme) bool {
-	glog.V(8).Infof("Update LoadBalancer Domains Required (%v)", a)
+	klog.V(8).Infof("Update LoadBalancer Domains Required (%v)", a)
 	if acme == nil {
 		return a != nil
 	}

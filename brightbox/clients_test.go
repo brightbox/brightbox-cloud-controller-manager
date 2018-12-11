@@ -16,7 +16,6 @@ package brightbox
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -24,13 +23,14 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws/ec2metadata"
+	"k8s.io/klog"
 )
 
 func init() {
-	flag.Set("alsologtostderr", fmt.Sprintf("%t", true))
-	var logLevel string
-	flag.StringVar(&logLevel, "logLevel", "4", "test")
-	flag.Lookup("v").Value.Set(logLevel)
+	klog.InitFlags(nil)
+	flag.Set("alsologtostderr", "true")
+	flag.Set("v", "4")
+	flag.Parse()
 }
 
 func TestGetMetadataClient(t *testing.T) {

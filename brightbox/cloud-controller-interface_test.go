@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/kubernetes/pkg/cloudprovider"
+	"k8s.io/cloud-provider"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -128,7 +128,7 @@ func TestInterfaceAdaption(t *testing.T) {
 	} else if cloud == nil {
 		t.Fatalf("Failed to initialise %s provider", provider)
 	}
-	cloud.Initialize(controller.SimpleControllerClientBuilder{})
+	cloud.Initialize(controller.SimpleControllerClientBuilder{}, make(chan struct{}))
 	for _, example := range interface_tests {
 		t.Run(example.name, example.fn(cloud))
 	}

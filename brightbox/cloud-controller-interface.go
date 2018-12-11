@@ -17,62 +17,61 @@ package brightbox
 import (
 	"io"
 
-	"github.com/golang/glog"
 	"k8s.io/cloud-provider"
-	"k8s.io/kubernetes/pkg/controller"
+	"k8s.io/klog"
 )
 
 // Initialize provides the cloud with a kubernetes client builder and
 // may spawn goroutines to perform housekeeping activities within the
 // cloud provider.
-func (c *cloud) Initialize(clientBuilder controller.ControllerClientBuilder) {
-	glog.V(4).Infof("Initialise called with %+v", clientBuilder)
+func (c *cloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
+	klog.V(4).Infof("Initialise called with %+v", clientBuilder)
 }
 
 // LoadBalancer returns a balancer interface. Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
-	glog.V(4).Infof("LoadBalancer called")
+	klog.V(4).Infof("LoadBalancer called")
 	return c, true
 }
 
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) Instances() (cloudprovider.Instances, bool) {
-	glog.V(4).Infof("Instances called")
+	klog.V(4).Infof("Instances called")
 	return c, true
 }
 
 // Zones returns a zones interface. Also returns true if the interface
 // is supported, false otherwise.
 func (c *cloud) Zones() (cloudprovider.Zones, bool) {
-	glog.V(4).Infof("Zones called")
+	klog.V(4).Infof("Zones called")
 	return c, true
 }
 
 // Clusters returns a clusters interface.  Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) Clusters() (cloudprovider.Clusters, bool) {
-	glog.V(4).Infof("Clusters called")
+	klog.V(4).Infof("Clusters called")
 	return nil, false
 }
 
 // Routes returns a routes interface along with whether the interface
 // is supported.
 func (c *cloud) Routes() (cloudprovider.Routes, bool) {
-	glog.V(4).Infof("Routes called")
+	klog.V(4).Infof("Routes called")
 	return nil, false
 }
 
 // ProviderName returns the cloud provider ID.
 func (c *cloud) ProviderName() string {
-	glog.V(4).Infof("ProviderName called")
+	klog.V(4).Infof("ProviderName called")
 	return providerName
 }
 
 // HasClusterID returns true if a ClusterID is required and set
 func (c *cloud) HasClusterID() bool {
-	glog.V(4).Infof("HasClusterID called")
+	klog.V(4).Infof("HasClusterID called")
 	return true
 }
 
@@ -86,9 +85,9 @@ func init() {
 // settings.
 // TODO: Look at whether open on demand works better
 func newCloudConnection(config io.Reader) (cloudprovider.Interface, error) {
-	glog.V(4).Infof("newCloudConnection called with %+v", config)
+	klog.V(4).Infof("newCloudConnection called with %+v", config)
 	if config != nil {
-		glog.Warningf("supplied config is not read by this version. Using environment")
+		klog.Warningf("supplied config is not read by this version. Using environment")
 	}
 	newCloud := &cloud{}
 	_, err := newCloud.cloudClient()

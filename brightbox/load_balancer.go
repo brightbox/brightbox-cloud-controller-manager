@@ -24,10 +24,10 @@ import (
 	"strings"
 
 	"github.com/brightbox/gobrightbox"
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
+	"k8s.io/cloud-provider"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/api/v1/service"
-	"k8s.io/kubernetes/pkg/cloudprovider"
 )
 
 const (
@@ -163,7 +163,7 @@ func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	glog.V(4).Infof("GetLoadBalancer(%v)", name)
+	klog.V(4).Infof("GetLoadBalancer(%v)", name)
 	lb, err := c.getLoadBalancerByName(name)
 	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
@@ -173,7 +173,7 @@ func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiserv
 // if that isn't in the cloudip list.
 func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	glog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v)", name, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)
+	klog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v)", name, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
@@ -209,14 +209,14 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
-	glog.V(4).Infof("UpdateLoadBalancer called - delegating")
+	klog.V(4).Infof("UpdateLoadBalancer called - delegating")
 	_, err := c.EnsureLoadBalancer(ctx, clusterName, apiservice, nodes)
 	return err
 }
 
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	glog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP)
+	klog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP)
 	if err := c.ensureServerGroupDeleted(name); err != nil {
 		return err
 	}
@@ -241,10 +241,10 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 
 //Take all the servers out of the server group and remove it
 func (c *cloud) ensureServerGroupDeleted(name string) error {
-	glog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
+	klog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
 	group, err := c.getServerGroupByName(name)
 	if err != nil {
-		glog.V(4).Infof("Error looking for Server Group for %q", name)
+		klog.V(4).Infof("Error looking for Server Group for %q", name)
 		return err
 	}
 	if group == nil {
@@ -252,11 +252,11 @@ func (c *cloud) ensureServerGroupDeleted(name string) error {
 	}
 	group, err = c.syncServerGroup(group, nil)
 	if err != nil {
-		glog.V(4).Infof("Error removing servers from %q", group.Id)
+		klog.V(4).Infof("Error removing servers from %q", group.Id)
 		return err
 	}
 	if err := c.destroyServerGroup(group.Id); err != nil {
-		glog.V(4).Infof("Error destroying Server Group %q", group.Id)
+		klog.V(4).Infof("Error destroying Server Group %q", group.Id)
 		return err
 	}
 	return nil
@@ -264,17 +264,17 @@ func (c *cloud) ensureServerGroupDeleted(name string) error {
 
 //Remove the firewall policy
 func (c *cloud) ensureFirewallClosed(name string) error {
-	glog.V(4).Infof("ensureFirewallClosed (%q)", name)
+	klog.V(4).Infof("ensureFirewallClosed (%q)", name)
 	fp, err := c.getFirewallPolicyByName(name)
 	if err != nil {
-		glog.V(4).Infof("Error looking for Firewall Policy %q", name)
+		klog.V(4).Infof("Error looking for Firewall Policy %q", name)
 		return err
 	}
 	if fp == nil {
 		return nil
 	}
 	if err := c.destroyFirewallPolicy(fp.Id); err != nil {
-		glog.V(4).Infof("Error destroying Firewall Policy %q", fp.Id)
+		klog.V(4).Infof("Error destroying Firewall Policy %q", fp.Id)
 		return err
 	}
 	return nil
@@ -284,12 +284,12 @@ func (c *cloud) ensureFirewallClosed(name string) error {
 func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBalancer, error) {
 	lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
-		glog.V(4).Infof("Error looking for Load Balancer %q", name)
+		klog.V(4).Infof("Error looking for Load Balancer %q", name)
 		return nil, err
 	}
 	if lb != nil {
 		if err = c.destroyLoadBalancer(lb.Id); err != nil {
-			glog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
+			klog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
 			return nil, err
 		}
 	}
@@ -298,10 +298,10 @@ func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBal
 
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
 func (c *cloud) ensureCloudIPsDeleted(name string) error {
-	glog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
+	klog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
 	cloudIpList, err := c.getCloudIPs()
 	if err != nil {
-		glog.V(4).Infof("Error retrieving list of CloudIPs")
+		klog.V(4).Infof("Error retrieving list of CloudIPs")
 		return err
 	}
 	return c.destroyCloudIPs(cloudIpList, name)
@@ -466,7 +466,7 @@ func anyAddressMatch(ipListA, ipListB []net.IP) bool {
 
 func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
 	ip := apiservice.Spec.LoadBalancerIP
-	glog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
+	klog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
 	var compareFunc func(cip *brightbox.CloudIP) bool
 	switch ip {
 	case "":
@@ -499,7 +499,7 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 }
 
 func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
-	glog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
+	klog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
 	current_lb, err := c.getLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
@@ -515,12 +515,12 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 		newLB.Id = current_lb.Id
 		return c.updateLoadBalancer(newLB)
 	}
-	glog.V(4).Infof("No Load Balancer update required for %q, skipping", current_lb.Id)
+	klog.V(4).Infof("No Load Balancer update required for %q, skipping", current_lb.Id)
 	return current_lb, nil
 }
 
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
-	glog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
+	klog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
 	temp := grokLoadBalancerName(name)
 	result := &brightbox.LoadBalancerOptions{
 		Name:        &temp,
@@ -546,7 +546,7 @@ func buildLoadBalancerNodes(nodes []*v1.Node) []brightbox.LoadBalancerNode {
 	result := make([]brightbox.LoadBalancerNode, 0, len(nodes))
 	for i := range nodes {
 		if nodes[i].Spec.ProviderID == "" {
-			glog.Warningf("node %q did not have providerID set", nodes[i].Name)
+			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
 			continue
 		}
 		result = append(result, brightbox.LoadBalancerNode{Node: mapProviderIDToServerID(nodes[i].Spec.ProviderID)})

@@ -117,7 +117,7 @@ require (
 	k8s.io/client-go v10.0.0+incompatible // indirect
 	k8s.io/cloud-provider v0.0.0-20181204010209-aba175aabd87
 	k8s.io/csi-api v0.0.0-20181130072956-61a1735c3f50 // indirect
-	k8s.io/klog v0.1.0 // indirect
+	k8s.io/klog v0.1.0
 	k8s.io/kube-controller-manager v0.0.0-20181129233803-703ba1a5e667 // indirect
 	k8s.io/kube-openapi v0.0.0-20181114233023-0317810137be // indirect
 	k8s.io/kubernetes v1.13.0
