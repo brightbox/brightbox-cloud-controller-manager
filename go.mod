@@ -66,11 +66,13 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
 	gopkg.in/square/go-jose.v2 v2.1.8
 	gopkg.in/yaml.v2 v2.2.1
-	k8s.io/api v0.0.0-20180712090710-2d6f90ab1293
-	k8s.io/apiextensions-apiserver v0.0.0-20180808065829-408db4a50408
-	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
-	k8s.io/apiserver v0.0.0-20180808060109-1844acd6a035
-	k8s.io/client-go v0.0.0-20180806134042-1f13a808da65
+	k8s.io/api v0.0.0-20181126191744-95336914c664
+	k8s.io/apiextensions-apiserver v0.0.0-20181126195113-57b8dbfcc51a
+	k8s.io/apimachinery v0.0.0-20181126123124-70adfbae261e
+	k8s.io/apiserver v0.0.0-20181126193023-8afb6ff1462d
+	k8s.io/client-go v8.0.0+incompatible
+	k8s.io/klog v0.1.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20180731170545-e3762e86a74c
-	k8s.io/kubernetes v1.11.2
+	k8s.io/kubernetes v1.11.5
+	sigs.k8s.io/yaml v1.1.0 // indirect
 )
