@@ -10,7 +10,7 @@ require (
 	github.com/Azure/go-autorest v11.2.8+incompatible // indirect
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/NYTimes/gziphandler v1.0.1 // indirect
-	github.com/aws/aws-sdk-go v1.16.2 // indirect
+	github.com/aws/aws-sdk-go v1.16.3 // indirect
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/brightbox/gobrightbox v0.0.1
@@ -29,9 +29,15 @@ require (
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170926063155-7524189396c6 // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
-	github.com/go-ini/ini v1.39.2 // indirect
+	github.com/go-ini/ini v1.39.3 // indirect
+	github.com/go-openapi/analysis v0.17.2 // indirect
+	github.com/go-openapi/errors v0.17.2 // indirect
+	github.com/go-openapi/jsonpointer v0.17.2 // indirect
+	github.com/go-openapi/jsonreference v0.17.2 // indirect
+	github.com/go-openapi/loads v0.17.2 // indirect
 	github.com/go-openapi/spec v0.17.2 // indirect
 	github.com/go-openapi/strfmt v0.17.2 // indirect
+	github.com/go-openapi/swag v0.17.2 // indirect
 	github.com/go-openapi/validate v0.17.2 // indirect
 	github.com/go-test/deep v1.0.1
 	github.com/gogo/protobuf v1.1.1 // indirect
@@ -57,6 +63,7 @@ require (
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/kr/pty v1.1.3 // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
@@ -75,7 +82,7 @@ require (
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cobra v0.0.3 // indirect
-	github.com/spf13/pflag v1.0.2
+	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20171017195756-830351dc03c6 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
@@ -103,7 +110,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/ini.v1 v1.39.2 // indirect
+	gopkg.in/ini.v1 v1.39.3 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.2.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
