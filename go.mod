@@ -13,7 +13,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff
-	github.com/docker/docker v1.13.1 // indirect
+	github.com/docker/docker v0.0.0-20180612054059-a9fbbdc8dd87
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/emicklei/go-restful v2.8.0+incompatible
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305
