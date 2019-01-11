@@ -735,14 +735,14 @@ func TestValidateDomains(t *testing.T) {
 				serviceAnnotationLoadBalancerSslDomains: missingDomain,
 			},
 			cloudIp: &resolvCip,
-			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "): lookup " + missingDomain + " on 127.0.0.53:53: no such host",
 		},
 		"missing domain in list": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + "," + missingDomain,
 			},
 			cloudIp: &resolvCip,
-			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "): lookup " + missingDomain + " on 127.0.0.53:53: no such host",
 		},
 		"other addresses": {
 			annotations: map[string]string{

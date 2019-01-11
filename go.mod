@@ -117,17 +117,17 @@ require (
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3 // indirect
-	k8s.io/api v0.0.0-20181213150558-05914d821849
-	k8s.io/apiextensions-apiserver v0.0.0-20181213153335-0fe22c71c476
+	k8s.io/api v0.0.0-20190111032252-67edc246be36
+	k8s.io/apiextensions-apiserver v0.0.0-20190111034747-7d26de67f177
 	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
-	k8s.io/apiserver v0.0.0-20181213151703-3ccfe8365421
+	k8s.io/apiserver v0.0.0-20190111033246-d50e9ac5404f
 	k8s.io/client-go v2.0.0-alpha.0.0.20181207190507-117d288bbeeb+incompatible
-	k8s.io/cloud-provider v0.0.0-20181213155341-c794cad641af
-	k8s.io/csi-api v0.0.0-20181213153755-0ae51d5aa502
+	k8s.io/cloud-provider v0.0.0-20190111040324-3951e04e619a
+	k8s.io/csi-api v0.0.0-20190111035140-6e3455e34a96
 	k8s.io/klog v0.1.0
-	k8s.io/kube-controller-manager v0.0.0-20181213155011-4b7e1e7b5903
+	k8s.io/kube-controller-manager v0.0.0-20190111040024-cf75039854d4
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
-	k8s.io/kubernetes v1.13.1
+	k8s.io/kubernetes v1.13.2
 	k8s.io/utils v0.0.0-20181114164612-8e7ff06bf0e2
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
