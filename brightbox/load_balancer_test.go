@@ -290,6 +290,30 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "Invalid Load Balancer Policy \"magic-routing\"",
 		},
+		"invalid-proxy-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProxyProtocol: "v1-ssl",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "Invalid Load Balancer Listener Proxy Protocol \"v1-ssl\"",
+		},
 		"Domains with TCP": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
@@ -353,6 +377,56 @@ func TestValidateService(t *testing.T) {
 				},
 			},
 			status: "SSL Ports are not supported with the tcp protocol",
+		},
+		"valid-proxy-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2SslCn,
+						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerTcpProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "",
+		},
+		"valid-http-proxy-protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2Ssl,
+						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerHttpProtocol,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: "",
 		},
 		"valid-listener-protocol": {
 			service: &v1.Service{

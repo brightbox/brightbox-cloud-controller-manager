@@ -31,11 +31,19 @@ import (
 )
 
 const (
+	// Listening protocols
 	loadBalancerTcpProtocol     = "tcp"
 	loadBalancerHttpProtocol    = "http"
 	loadBalancerHttpWsProtocol  = "http+ws"
 	defaultLoadBalancerProtocol = loadBalancerHttpProtocol
-	standardSSLPort             = 443
+
+	// Proxy protocols
+	loadBalancerProxyV1      = "v1"
+	loadBalancerProxyV2      = "v2"
+	loadBalancerProxyV2Ssl   = "v2-ssl"
+	loadBalancerProxyV2SslCn = "v2-ssl-cn"
+
+	standardSSLPort = 443
 
 	// Healthcheck on http port if there are no endpoints for the loadbalancer
 	defaultHealthCheckPort = 80
@@ -77,6 +85,11 @@ const (
 	// annotation used on the service to specify the idle connection
 	// timeout.
 	serviceAnnotationLoadBalancerListenerIdleTimeout = "service.beta.kubernetes.io/brightbox-load-balancer-listener-idle-timeout"
+
+	// ServiceAnnotationLoadBalancerListenerProxyProtocol is the
+	// annotation used on the service to activate the PROXY protocol to the backend
+	// and specify the type of information that should be contained within it
+	serviceAnnotationLoadBalancerListenerProxyProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-proxy-protocol"
 
 	// ServiceAnnotationLoadBalancerSslDomains is the annotation used
 	// on the service to specify the list of additional domains to add to the
@@ -138,6 +151,12 @@ var (
 		loadBalancerTcpProtocol:    loadBalancerTcpProtocol,
 		loadBalancerHttpProtocol:   "https",
 		loadBalancerHttpWsProtocol: "https+wss",
+	}
+	validListenerProxyProtocols = map[string]bool{
+		loadBalancerProxyV1:      true,
+		loadBalancerProxyV2:      true,
+		loadBalancerProxyV2Ssl:   true,
+		loadBalancerProxyV2SslCn: true,
 	}
 )
 
@@ -385,6 +404,10 @@ func validateAnnotations(annotationList map[string]string) error {
 				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; ok {
 					return fmt.Errorf("SSL Domains are not supported with the %s protocol", loadBalancerTcpProtocol)
 				}
+			}
+		case serviceAnnotationLoadBalancerListenerProxyProtocol:
+			if !validListenerProxyProtocols[value] {
+				return fmt.Errorf("Invalid Load Balancer Listener Proxy Protocol %q", value)
 			}
 		case serviceAnnotationLoadBalancerSSLPorts:
 			if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; !ok {
