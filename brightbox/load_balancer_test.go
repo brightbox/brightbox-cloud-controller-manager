@@ -17,6 +17,7 @@ package brightbox
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
@@ -44,6 +45,7 @@ const (
 	clusterName    = "test-cluster-name"
 	missingDomain  = "probablynotthere.co"
 	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
+	testTimeout    = 6000
 )
 
 //Constant variables you can take the address of!
@@ -929,8 +931,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          "16384",
-						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
 						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpProtocol,
@@ -987,13 +989,98 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 					},
 					{
 						Protocol: loadBalancerHttpProtocol,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
+					},
+				},
+				Domains: []string{resolvedDomain, fqdn},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    31347,
+					Request: "/healthz",
+				},
+				BufferSize: &bufferSize,
+				Policy:     &testPolicy,
+			},
+		},
+		"standard_proxy_protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: lbuid,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerBufferSize:            strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerIdleTimeout:   strconv.Itoa(testTimeout),
+						serviceAnnotationLoadBalancerPolicy:                testPolicy,
+						serviceAnnotationLoadBalancerSslDomains:            resolvedDomain + "," + fqdn,
+						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerHttpProtocol,
+						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2SslCn,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "https",
+							Protocol:   v1.ProtocolTCP,
+							Port:       443,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					LoadBalancerIP:        publicIP,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			nodes: []*v1.Node{
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-gdqms",
+					},
+				},
+				&v1.Node{
+					Spec: v1.NodeSpec{
+						ProviderID: "brightbox://srv-230b7",
+					},
+				},
+			},
+			lbopts: &brightbox.LoadBalancerOptions{
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-gdqms",
+					},
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol:      sslUpgradeProtocol[loadBalancerHttpProtocol],
+						In:            443,
+						Out:           31347,
+						Timeout:       testTimeout,
+						ProxyProtocol: loadBalancerProxyV2SslCn,
+					},
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						Timeout:       testTimeout,
+						In:            80,
+						Out:           31348,
+						ProxyProtocol: loadBalancerProxyV2SslCn,
 					},
 				},
 				Domains: []string{resolvedDomain, fqdn},
@@ -1011,8 +1098,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          "16384",
-						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
 						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHttpWsProtocol,
@@ -1069,11 +1156,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Protocol: sslUpgradeProtocol[loadBalancerHttpWsProtocol],
 						In:       443,
 						Out:      31347,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 					},
 					{
 						Protocol: loadBalancerHttpWsProtocol,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
 					},
@@ -1093,8 +1180,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          "16384",
-						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
 						serviceAnnotationLoadBalancerSSLPorts:            "fancy,3030",
@@ -1203,8 +1290,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					UID: lbuid,
 					Annotations: map[string]string{
 						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerTcpProtocol,
-						serviceAnnotationLoadBalancerBufferSize:          "16384",
-						serviceAnnotationLoadBalancerListenerIdleTimeout: "6000",
+						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
 						serviceAnnotationLoadBalancerPolicy:              testPolicy,
 					},
 				},

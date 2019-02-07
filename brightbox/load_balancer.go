@@ -585,6 +585,7 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	result := make([]brightbox.LoadBalancerListener, len(apiservice.Spec.Ports))
 	for i := range apiservice.Spec.Ports {
 		result[i].Protocol = getListenerProtocol(apiservice)
+		result[i].ProxyProtocol = getListenerProxyProtocol(apiservice)
 		if result[i].Protocol != loadBalancerTcpProtocol && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
 			result[i].Protocol = sslUpgradeProtocol[result[i].Protocol]
 		}
@@ -608,6 +609,10 @@ func getListenerProtocol(apiservice *v1.Service) string {
 	} else {
 		return defaultLoadBalancerProtocol
 	}
+}
+
+func getListenerProxyProtocol(apiservice *v1.Service) string {
+	return apiservice.Annotations[serviceAnnotationLoadBalancerListenerProxyProtocol]
 }
 
 func isSSLPort(port *v1.ServicePort, sslPorts *portSets) bool {
