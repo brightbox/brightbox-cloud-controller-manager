@@ -550,7 +550,8 @@ func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b 
 	for i := range a {
 		if (a[i].Protocol != b[i].Protocol) ||
 			(a[i].In != b[i].In) ||
-			(a[i].Out != b[i].Out) {
+			(a[i].Out != b[i].Out) ||
+			(a[i].ProxyProtocol != b[i].ProxyProtocol) {
 			return true
 		}
 	}

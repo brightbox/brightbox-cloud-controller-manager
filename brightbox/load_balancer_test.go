@@ -2506,6 +2506,179 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 			},
 			expected: true,
 		},
+		"add_proxy_protocol": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            443,
+						Out:           31347,
+						ProxyProtocol: "v2",
+					},
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            80,
+						Out:           31348,
+						ProxyProtocol: "v2",
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"remove_proxy_protocol": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            443,
+						Out:           31347,
+						ProxyProtocol: "v2",
+					},
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            80,
+						Out:           31348,
+						ProxyProtocol: "v2",
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       443,
+						Out:      31347,
+					},
+					{
+						Protocol: loadBalancerHttpProtocol,
+						In:       80,
+						Out:      31348,
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
+		"change_proxy_protocol": {
+			lb: &brightbox.LoadBalancer{
+				Id:   foundLba,
+				Name: groklbname,
+				Nodes: []brightbox.Server{
+					{
+						Id: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            443,
+						Out:           31347,
+						ProxyProtocol: "v2",
+					},
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            80,
+						Out:           31348,
+						ProxyProtocol: "v2",
+					},
+				},
+				Healthcheck: brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			lbopts: brightbox.LoadBalancerOptions{
+				Id:   foundLba,
+				Name: &groklbname,
+				Nodes: []brightbox.LoadBalancerNode{
+					{
+						Node: "srv-230b7",
+					},
+				},
+				Listeners: []brightbox.LoadBalancerListener{
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            443,
+						Out:           31347,
+						ProxyProtocol: "v2-ssl",
+					},
+					{
+						Protocol:      loadBalancerHttpProtocol,
+						In:            80,
+						Out:           31348,
+						ProxyProtocol: "v2-ssl",
+					},
+				},
+				Healthcheck: &brightbox.LoadBalancerHealthcheck{
+					Type:    loadBalancerHttpProtocol,
+					Port:    8080,
+					Request: "/healthz",
+				},
+			},
+			expected: true,
+		},
 		"change node": {
 			lb: &brightbox.LoadBalancer{
 				Id:   foundLba,
