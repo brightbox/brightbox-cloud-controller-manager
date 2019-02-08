@@ -14,7 +14,7 @@
 
 REGISTRY ?= brightbox
 BUILD ?= $(shell git describe --always --dirty)
-VERSION ?= $(shell git describe --always --dirty | egrep -o '^v[0-9]+\.[0-9]+\.[0-9]+')
+VERSION ?= $(shell git describe --always --dirty | egrep -o '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
 GOOS ?= linux
 ARCH ?= amd64
 SRC := $(git ls-files "*.go" | grep -v vendor)
