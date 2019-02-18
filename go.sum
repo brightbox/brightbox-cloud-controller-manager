@@ -40,6 +40,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/brightbox/gobrightbox v0.1.0 h1:7yp/YlXzyuwpuQY80YWaoucCvMEc8gN7Hz1xvnu5ym4=
 github.com/brightbox/gobrightbox v0.1.0/go.mod h1:D7SYz//mtrEYRSn4sahZfz9Ne/Azh58iRNgxX69L/qE=
+github.com/brightbox/gobrightbox v0.2.1 h1:60/s6dSEB+Me3KgeMtLDm4s3XIjrg0bLOg3mOUQ9mjg=
+github.com/brightbox/gobrightbox v0.2.1/go.mod h1:tCMIbaWUVxhNXF726UbcZpBbcjzNuh1k787aFQfuEN8=
 github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.1.0 h1:VwZ9smxzX8u14/125wHIX7ARV+YhR+L4JADswwxWK0Y=
 github.com/census-instrumentation/opencensus-proto v0.1.0/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

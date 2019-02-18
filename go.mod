@@ -11,7 +11,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.16.36 // indirect
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
-	github.com/brightbox/gobrightbox v0.1.0
+	github.com/brightbox/gobrightbox v0.2.1
 	github.com/census-instrumentation/opencensus-proto v0.1.0 // indirect
 	github.com/coreos/bbolt v1.3.2 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible // indirect
@@ -87,7 +87,6 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613 // indirect
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd // indirect
 	golang.org/x/oauth2 v0.0.0-20190212230446-3e8b2be13635
 	golang.org/x/sys v0.0.0-20190204203706-41f3e6584952 // indirect
 	google.golang.org/genproto v0.0.0-20190201180003-4b09977fb922 // indirect

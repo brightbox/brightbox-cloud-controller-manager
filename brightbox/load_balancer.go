@@ -545,6 +545,7 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	klog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
 	temp := grokLoadBalancerName(name)
+	truevar := true
 	result := &brightbox.LoadBalancerOptions{
 		Name:        &temp,
 		Nodes:       buildLoadBalancerNodes(nodes),
@@ -558,6 +559,9 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 	}
 	if policy, ok := apiservice.Annotations[serviceAnnotationLoadBalancerPolicy]; ok {
 		result.Policy = &policy
+	}
+	if result.Domains != nil {
+		result.HttpsRedirect = &truevar
 	}
 	return result
 }

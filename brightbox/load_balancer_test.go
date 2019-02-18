@@ -55,6 +55,7 @@ var (
 	lbname        string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
 	lberror       string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
 	testPolicy    string            = "round-robin"
+	redirectTrue  bool              = true
 	groklbname    string            = grokLoadBalancerName(lbname)
 	groknewlbname string            = grokLoadBalancerName(newlbname)
 	bufferSize    int               = 16384
@@ -1004,8 +1005,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize: &bufferSize,
-				Policy:     &testPolicy,
+				BufferSize:    &bufferSize,
+				Policy:        &testPolicy,
+				HttpsRedirect: &redirectTrue,
 			},
 		},
 		"standard_proxy_protocol": {
@@ -1089,8 +1091,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize: &bufferSize,
-				Policy:     &testPolicy,
+				BufferSize:    &bufferSize,
+				Policy:        &testPolicy,
+				HttpsRedirect: &redirectTrue,
 			},
 		},
 		"websocket": {
@@ -1171,8 +1174,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize: &bufferSize,
-				Policy:     &testPolicy,
+				BufferSize:    &bufferSize,
+				Policy:        &testPolicy,
+				HttpsRedirect: &redirectTrue,
 			},
 		},
 		"extraSSLports": {
@@ -1280,8 +1284,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize: &bufferSize,
-				Policy:     &testPolicy,
+				BufferSize:    &bufferSize,
+				Policy:        &testPolicy,
+				HttpsRedirect: &redirectTrue,
 			},
 		},
 		"OverrideToTcpListener": {
