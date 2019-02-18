@@ -449,7 +449,8 @@ func (authd *authdetails) tokenisedAuth(ctx context.Context) (*brightbox.Client,
 		ClientSecret: authd.APISecret,
 		Scopes:       infrastructureScope,
 		Endpoint: oauth2.Endpoint{
-			TokenURL: authd.tokenURL(),
+			TokenURL:  authd.tokenURL(),
+			AuthStyle: oauth2.AuthStyleInHeader,
 		},
 	}
 	klog.V(4).Infof("Obtaining authentication for user %s", authd.UserName)
