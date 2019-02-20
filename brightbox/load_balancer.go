@@ -158,6 +158,8 @@ var (
 		loadBalancerProxyV2Ssl:   true,
 		loadBalancerProxyV2SslCn: true,
 	}
+	truevar  = true
+	falsevar = false
 )
 
 // Return a name that is 'name'.'namespace'.'clusterName'
@@ -545,7 +547,6 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	klog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
 	temp := grokLoadBalancerName(name)
-	truevar := true
 	result := &brightbox.LoadBalancerOptions{
 		Name:        &temp,
 		Nodes:       buildLoadBalancerNodes(nodes),
@@ -562,6 +563,8 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 	}
 	if result.Domains != nil {
 		result.HttpsRedirect = &truevar
+	} else {
+		result.HttpsRedirect = &falsevar
 	}
 	return result
 }

@@ -55,7 +55,8 @@ var (
 	lbname        string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
 	lberror       string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
 	testPolicy    string            = "round-robin"
-	redirectTrue  bool              = true
+	trueVar       bool              = true
+	falseVar      bool              = false
 	groklbname    string            = grokLoadBalancerName(lbname)
 	groknewlbname string            = grokLoadBalancerName(newlbname)
 	bufferSize    int               = 16384
@@ -1007,7 +1008,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &redirectTrue,
+				HttpsRedirect: &trueVar,
 			},
 		},
 		"standard_proxy_protocol": {
@@ -1093,7 +1094,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &redirectTrue,
+				HttpsRedirect: &trueVar,
 			},
 		},
 		"websocket": {
@@ -1176,7 +1177,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &redirectTrue,
+				HttpsRedirect: &trueVar,
 			},
 		},
 		"extraSSLports": {
@@ -1286,7 +1287,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &redirectTrue,
+				HttpsRedirect: &trueVar,
 			},
 		},
 		"OverrideToTcpListener": {
@@ -1352,8 +1353,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    31348,
 					Request: "/",
 				},
-				BufferSize: &bufferSize,
-				Policy:     &testPolicy,
+				BufferSize:    &bufferSize,
+				Policy:        &testPolicy,
+				HttpsRedirect: &falseVar,
 			},
 		},
 		"overrideToHttpHealthcheck": {
@@ -1436,6 +1438,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					ThresholdUp:   4,
 					ThresholdDown: 5,
 				},
+				HttpsRedirect: &falsevar,
 			},
 		},
 		"httphealthcheck": {
@@ -1507,6 +1510,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 		},
 		"overrideToTcpHealthcheck": {
@@ -1581,6 +1585,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/",
 				},
+				HttpsRedirect: &falsevar,
 			},
 		},
 		"empty": {
@@ -1605,6 +1610,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    80,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 		},
 	}
@@ -2016,6 +2022,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: false,
 		},
@@ -2084,6 +2091,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: false,
 		},
@@ -2152,6 +2160,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2220,6 +2229,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2288,6 +2298,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2343,6 +2354,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: false,
 		},
@@ -2403,6 +2415,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2453,6 +2466,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2508,6 +2522,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2565,6 +2580,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2622,6 +2638,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2681,6 +2698,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2736,6 +2754,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2787,6 +2806,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2842,6 +2862,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2900,6 +2921,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -2955,6 +2977,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/check",
 				},
+				HttpsRedirect: &falsevar,
 			},
 			expected: true,
 		},
