@@ -19,7 +19,7 @@ require (
 	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305 // indirect
-	github.com/evanphx/json-patch v3.0.0+incompatible // indirect
+	github.com/evanphx/json-patch v4.1.1-0.20190203023257-5858425f7550+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa // indirect
 	github.com/go-openapi/jsonreference v0.0.0-20180322222742-3fb327e6747d // indirect
@@ -86,14 +86,14 @@ require (
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20181128191700-6db15a15d2d3
+	k8s.io/api v0.0.0-20190226173710-145d52631d00
 	k8s.io/apiextensions-apiserver v0.0.0-20181217193801-853f76028711 // indirect
-	k8s.io/apimachinery v0.0.0-20181128191346-49ce2735e507
-	k8s.io/apiserver v0.0.0-20181207191401-9601a7bf41ef
-	k8s.io/client-go v2.0.0-alpha.0.0.20181205110444-5e6a3d4e34f6+incompatible // indirect
+	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
+	k8s.io/apiserver v0.0.0-20190226174732-cf2f1d68202d
+	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible // indirect
 	k8s.io/csi-api v0.0.0-20181217194447-3690dd22ed3c // indirect
 	k8s.io/kube-controller-manager v0.0.0-20181217195536-4b1c4956778e // indirect
 	k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d // indirect
-	k8s.io/kubernetes v1.12.4
+	k8s.io/kubernetes v1.12.6
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 )
