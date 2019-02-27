@@ -19,10 +19,11 @@
 go get k8s.io/kubernetes@v$1 \
 	k8s.io/cloud-provider@kubernetes-$1\
 	k8s.io/api@kubernetes-$1\
-	k8s.io/apiextensions-apiserver@kubernetes-$1\
 	k8s.io/apimachinery@kubernetes-$1\
 	k8s.io/apiserver@kubernetes-$1\
+	k8s.io/apiextensions-apiserver@kubernetes-$1\
 	k8s.io/cloud-provider@kubernetes-$1\
 	k8s.io/csi-api@kubernetes-$1\
-	k8s.io/kube-controller-manager@kubernetes-$1
+	k8s.io/kube-controller-manager@kubernetes-$1 \
+	k8s.io/client-go@kubernetes-$1
 
