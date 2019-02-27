@@ -4,8 +4,6 @@ require (
 	bitbucket.org/ww/goautoneg v0.0.0-20120707110453-75cd24fc2f2c // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/NYTimes/gziphandler v1.0.1 // indirect
-	github.com/PuerkitoBio/purell v1.1.0 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/brightbox/gobrightbox v0.2.1
 	github.com/coreos/bbolt v1.3.2 // indirect
@@ -21,10 +19,7 @@ require (
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305 // indirect
 	github.com/evanphx/json-patch v4.1.1-0.20190203023257-5858425f7550+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa // indirect
-	github.com/go-openapi/jsonreference v0.0.0-20180322222742-3fb327e6747d // indirect
-	github.com/go-openapi/spec v0.0.0-20180801175345-384415f06ee2 // indirect
-	github.com/go-openapi/swag v0.0.0-20180715190254-becd2f08beaf // indirect
+	github.com/go-openapi/spec v0.17.0 // indirect
 	github.com/go-test/deep v1.0.1
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -47,13 +42,12 @@ require (
 	github.com/json-iterator/go v0.0.0-20180612202835-f2b4162afba3 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/mailru/easyjson v0.0.0-20180730094502-03f2033d19d5 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c // indirect
+	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.2 // indirect
@@ -87,12 +81,12 @@ require (
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0-20190226173710-145d52631d00
-	k8s.io/apiextensions-apiserver v0.0.0-20181217193801-853f76028711 // indirect
+	k8s.io/apiextensions-apiserver v0.0.0-20190226180157-bd0469a053ff // indirect
 	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
 	k8s.io/apiserver v0.0.0-20190226174732-cf2f1d68202d
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible // indirect
-	k8s.io/csi-api v0.0.0-20181217194447-3690dd22ed3c // indirect
-	k8s.io/kube-controller-manager v0.0.0-20181217195536-4b1c4956778e // indirect
+	k8s.io/csi-api v0.0.0-20190226180534-c059af402e32 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190226181408-1400125b9811 // indirect
 	k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d // indirect
 	k8s.io/kubernetes v1.12.6
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
