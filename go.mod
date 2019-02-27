@@ -101,7 +101,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20190202013456-d4288ab64945 // indirect
 	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb
 	k8s.io/apiserver v0.0.0-20190202011929-26bc712632e1
-	k8s.io/client-go v2.0.0-alpha.0.0.20181207190507-117d288bbeeb+incompatible // indirect
+	k8s.io/client-go v2.0.0-alpha.0.0.20190202011228-6e4752048fde+incompatible // indirect
 	k8s.io/cloud-provider v0.0.0-20190202015127-1102811e4825
 	k8s.io/csi-api v0.0.0-20190202013853-40846d1169de // indirect
 	k8s.io/klog v0.0.0-20181108234604-8139d8cb77af

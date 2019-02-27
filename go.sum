@@ -38,8 +38,6 @@ github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible/go.mod h1:5DmdJpM48aU
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLMYoU8P317H5OQ+Via4RmuPwCS0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
-github.com/brightbox/gobrightbox v0.1.0 h1:7yp/YlXzyuwpuQY80YWaoucCvMEc8gN7Hz1xvnu5ym4=
-github.com/brightbox/gobrightbox v0.1.0/go.mod h1:D7SYz//mtrEYRSn4sahZfz9Ne/Azh58iRNgxX69L/qE=
 github.com/brightbox/gobrightbox v0.2.1 h1:60/s6dSEB+Me3KgeMtLDm4s3XIjrg0bLOg3mOUQ9mjg=
 github.com/brightbox/gobrightbox v0.2.1/go.mod h1:tCMIbaWUVxhNXF726UbcZpBbcjzNuh1k787aFQfuEN8=
 github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
@@ -424,8 +422,8 @@ k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb h1:+mNFBkhBgd0wFJ1K18cOYw
 k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
 k8s.io/apiserver v0.0.0-20190202011929-26bc712632e1 h1:uq8hRNJF14LSNSUPfprB4dNPZEayOMb18lpzyEu711Q=
 k8s.io/apiserver v0.0.0-20190202011929-26bc712632e1/go.mod h1:6bqaTSOSJavUIXUtfaR9Os9JtTCm8ZqH2SUl2S60C4w=
-k8s.io/client-go v2.0.0-alpha.0.0.20181207190507-117d288bbeeb+incompatible h1:W6lN5qE44hKKAgH/DwNC4FWWKaEe6CtauRenWDPf6lU=
-k8s.io/client-go v2.0.0-alpha.0.0.20181207190507-117d288bbeeb+incompatible/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
+k8s.io/client-go v2.0.0-alpha.0.0.20190202011228-6e4752048fde+incompatible h1:xkYgpj1zwmLkSh7QASe/GUMTyjPI3hwHy7k/RcQSp2A=
+k8s.io/client-go v2.0.0-alpha.0.0.20190202011228-6e4752048fde+incompatible/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
 k8s.io/cloud-provider v0.0.0-20190202015127-1102811e4825 h1:FdJIWTMdj85j4lHCM57+xgn3HdN4KG4XmIFAVuwEC2c=
 k8s.io/cloud-provider v0.0.0-20190202015127-1102811e4825/go.mod h1:LlIffnLBu+GG7d4ppPzC8UnA1Ex8S+ntmSRVsnr7Xy4=
 k8s.io/csi-api v0.0.0-20190202013853-40846d1169de h1:HIoCm+yBrmgKZc9ITmKAkDuAnsBrvtmTNQiP77+qH0A=
