@@ -27,7 +27,7 @@ require (
 	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.8.1+incompatible // indirect
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170926063155-7524189396c6 // indirect
-	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
+	github.com/evanphx/json-patch v4.1.1-0.20190203023257-5858425f7550+incompatible // indirect
 	github.com/go-ini/ini v1.39.3 // indirect
 	github.com/go-openapi/jsonpointer v0.17.2 // indirect
 	github.com/go-openapi/jsonreference v0.17.2 // indirect
@@ -97,17 +97,17 @@ require (
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190202010724-74b699b93c15
-	k8s.io/apiextensions-apiserver v0.0.0-20190202013456-d4288ab64945 // indirect
-	k8s.io/apimachinery v0.0.0-20190117220443-572dfc7bdfcb
-	k8s.io/apiserver v0.0.0-20190202011929-26bc712632e1
-	k8s.io/client-go v2.0.0-alpha.0.0.20190202011228-6e4752048fde+incompatible // indirect
-	k8s.io/cloud-provider v0.0.0-20190202015127-1102811e4825
-	k8s.io/csi-api v0.0.0-20190202013853-40846d1169de // indirect
+	k8s.io/api v0.0.0-20190222213804-5cb15d344471
+	k8s.io/apiextensions-apiserver v0.0.0-20190228180357-d002e88f6236 // indirect
+	k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
+	k8s.io/apiserver v0.0.0-20190228174905-79427f02047f
+	k8s.io/client-go v2.0.0-alpha.0.0.20190228174230-b40b2a5939e4+incompatible // indirect
+	k8s.io/cloud-provider v0.0.0-20190228181926-f531db154915
+	k8s.io/csi-api v0.0.0-20190228180745-64f278f73b48 // indirect
 	k8s.io/klog v0.0.0-20181108234604-8139d8cb77af
-	k8s.io/kube-controller-manager v0.0.0-20190202014822-b1850e2558f8 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190228181625-2d4c0aa6bcf3 // indirect
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5 // indirect
-	k8s.io/kubernetes v1.13.3
+	k8s.io/kubernetes v1.13.4
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
