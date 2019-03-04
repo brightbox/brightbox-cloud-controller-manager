@@ -26,4 +26,8 @@ changelog:
 release:
   prerelease: true
 dockers:
-  - image: brightbox/brightbox-cloud-controller-manager
+  -
+    image_templates:
+    - "brightbox/brightbox-cloud-controller-manager:{{ .Tag }}"
+    - "brightbox/brightbox-cloud-controller-manager:{{ .Major }}.{{ .Minor }}"
+    - "brightbox/brightbox-cloud-controller-manager:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
