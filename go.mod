@@ -28,6 +28,7 @@ require (
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -80,14 +81,14 @@ require (
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190226173710-145d52631d00
-	k8s.io/apiextensions-apiserver v0.0.0-20190226180157-bd0469a053ff // indirect
+	k8s.io/api v0.0.0-20190325144926-266ff08fa05d
+	k8s.io/apiextensions-apiserver v0.0.0-20190325151511-42d4d5ce2c84 // indirect
 	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
-	k8s.io/apiserver v0.0.0-20190226174732-cf2f1d68202d
-	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible // indirect
-	k8s.io/csi-api v0.0.0-20190226180534-c059af402e32 // indirect
-	k8s.io/kube-controller-manager v0.0.0-20190226181408-1400125b9811 // indirect
+	k8s.io/apiserver v0.0.0-20190325150012-164c02b49fbe
+	k8s.io/client-go v2.0.0-alpha.0.0.20190325145348-5392b64e5c0b+incompatible // indirect
+	k8s.io/csi-api v0.0.0-20190325151908-c88f09ac8bf0 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190325152839-d7012745083c // indirect
 	k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d // indirect
-	k8s.io/kubernetes v1.12.6
+	k8s.io/kubernetes v1.12.7
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 )
