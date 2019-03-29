@@ -23,12 +23,11 @@ import (
 	"os"
 	"time"
 
-	//Pull in the cloud provider
 	_ "github.com/brightbox/brightbox-cloud-controller-manager/brightbox"
-	"k8s.io/apiserver/pkg/util/logs"
+	"k8s.io/component-base/logs"
 	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
-	_ "k8s.io/kubernetes/pkg/client/metrics/prometheus" // for client metric registration
-	_ "k8s.io/kubernetes/pkg/version/prometheus"        // for version metric registration
+	_ "k8s.io/kubernetes/pkg/util/prometheusclientgo" // load all the prometheus client-go plugins
+	_ "k8s.io/kubernetes/pkg/version/prometheus"      // for version metric registration
 )
 
 func main() {
@@ -42,7 +41,7 @@ func main() {
 	// utilflag.InitFlags()
 	// Workaround for this issue:
 	// https://github.com/kubernetes/kubernetes/issues/17162
-	// goflag.CommandLine.Parse([]string{})
+	//goflag.CommandLine.Parse([]string{})
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
