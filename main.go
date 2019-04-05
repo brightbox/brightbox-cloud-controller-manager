@@ -23,9 +23,14 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/brightbox/brightbox-cloud-controller-manager/brightbox"
 	"k8s.io/component-base/logs"
 	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
+
+	// Pull in Brightbox cloud-controller repo
+	_ "github.com/brightbox/brightbox-cloud-controller-manager/brightbox"
+	// NOTE: Importing all in-tree cloud-providers is not required when
+	// implementing an out-of-tree cloud-provider.
+	_ "k8s.io/kubernetes/pkg/cloudprovider/providers"
 	_ "k8s.io/kubernetes/pkg/util/prometheusclientgo" // load all the prometheus client-go plugins
 	_ "k8s.io/kubernetes/pkg/version/prometheus"      // for version metric registration
 )
@@ -39,9 +44,6 @@ func main() {
 	// utilflag.InitFlags() (by removing its pflag.Parse() call). For now, we have to set the
 	// normalize func and add the go flag set by hand.
 	// utilflag.InitFlags()
-	// Workaround for this issue:
-	// https://github.com/kubernetes/kubernetes/issues/17162
-	//goflag.CommandLine.Parse([]string{})
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
