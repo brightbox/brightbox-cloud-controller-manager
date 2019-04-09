@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/brightbox/gobrightbox"
@@ -813,14 +814,14 @@ func TestValidateDomains(t *testing.T) {
 				serviceAnnotationLoadBalancerSslDomains: missingDomain,
 			},
 			cloudIp: &resolvCip,
-			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "): lookup " + missingDomain + ": no such host",
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "):",
 		},
 		"missing domain in list": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + "," + missingDomain,
 			},
 			cloudIp: &resolvCip,
-			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "): lookup " + missingDomain + ": no such host",
+			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "):",
 		},
 		"other addresses": {
 			annotations: map[string]string{
@@ -842,7 +843,7 @@ func TestValidateDomains(t *testing.T) {
 			err := validateContextualAnnotations(tc.annotations, tc.cloudIp)
 			if err == nil {
 				t.Errorf("Expected error %q got nil", tc.status)
-			} else if err.Error() != tc.status {
+			} else if !strings.HasPrefix(err.Error(), tc.status) {
 				t.Errorf("Expected %q, got %q", tc.status, err.Error())
 			}
 		})
