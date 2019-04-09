@@ -76,13 +76,14 @@ require (
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/api v0.0.0-20190409092523-d687e77c8ae9
-	k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed // indirect
+	k8s.io/apiextensions-apiserver v0.0.0-20190409022649-727a075fdec8 // indirect
 	k8s.io/apimachinery v0.0.0-20190409092423-760d1845f48b
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // indirect
 	k8s.io/cloud-provider v0.0.0-20190409094043-ab62213bfde9
 	k8s.io/component-base v0.0.0-20190409093041-e34633071963
 	k8s.io/csi-translation-lib v0.0.0-20190409094144-966e4462e38a // indirect
 	k8s.io/klog v0.2.0
-	k8s.io/kube-controller-manager v0.0.0-20190314002447-97ed623e3835 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190409023523-97e4e67125a6 // indirect
 	k8s.io/kubernetes v1.14.1
 	k8s.io/utils v0.0.0-20190308190857-21c4ce38f2a7 // indirect
 )
