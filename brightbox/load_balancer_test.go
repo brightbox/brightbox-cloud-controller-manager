@@ -94,12 +94,14 @@ func TestLoadBalancerStatus(t *testing.T) {
 			},
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					v1.LoadBalancerIngress{
-						IP: publicIP,
-					},
-					v1.LoadBalancerIngress{
-						IP: publicIPv6,
-					},
+					/*
+						v1.LoadBalancerIngress{
+							IP: publicIP,
+						},
+						v1.LoadBalancerIngress{
+							IP: publicIPv6,
+						},
+					*/
 					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
 					},
@@ -131,21 +133,25 @@ func TestLoadBalancerStatus(t *testing.T) {
 			},
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					v1.LoadBalancerIngress{
-						IP: publicIP2,
-					},
-					v1.LoadBalancerIngress{
-						IP: publicIPv62,
-					},
+					/*
+						v1.LoadBalancerIngress{
+							IP: publicIP2,
+						},
+						v1.LoadBalancerIngress{
+							IP: publicIPv62,
+						},
+					*/
 					v1.LoadBalancerIngress{
 						Hostname: fqdn2,
 					},
-					v1.LoadBalancerIngress{
-						IP: publicIP,
-					},
-					v1.LoadBalancerIngress{
-						IP: publicIPv6,
-					},
+					/*
+						v1.LoadBalancerIngress{
+							IP: publicIP,
+						},
+						v1.LoadBalancerIngress{
+							IP: publicIPv6,
+						},
+					*/
 					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
 					},
@@ -882,12 +888,14 @@ func TestGetLoadBalancer(t *testing.T) {
 			},
 			lbstatus: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					v1.LoadBalancerIngress{
-						IP: publicIP,
-					},
-					v1.LoadBalancerIngress{
-						IP: publicIPv6,
-					},
+					/*
+						v1.LoadBalancerIngress{
+							IP: publicIP,
+						},
+						v1.LoadBalancerIngress{
+							IP: publicIPv6,
+						},
+					*/
 					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
 					},
@@ -1679,12 +1687,14 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 			},
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					v1.LoadBalancerIngress{
-						IP: publicIP,
-					},
-					v1.LoadBalancerIngress{
-						IP: publicIPv6,
-					},
+					/*
+						v1.LoadBalancerIngress{
+							IP: publicIP,
+						},
+						v1.LoadBalancerIngress{
+							IP: publicIPv6,
+						},
+					*/
 					v1.LoadBalancerIngress{
 						Hostname: reverseDNS,
 					},
