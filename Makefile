@@ -60,7 +60,7 @@ check-headers:
 check: check-headers gofmt govet golint
 
 .PHONY: container
-container: compile
+container: test compile
 	docker build -t ${REGISTRY}/${BIN}:${VERSION} .
 
 .PHONY: push
