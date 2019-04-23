@@ -30,7 +30,7 @@ clean:
 	GOOS=${GOOS} GOARCH=${ARCH} go clean -i -x ./...
 
 .PHONY: compile
-compile: ${BIN}
+compile: check-headers gofmt ${BIN}
 ${BIN}:
 	CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${ARCH} go build \
 	    -ldflags "-s -w ${LDFLAGS}" \
@@ -59,12 +59,16 @@ check-headers:
 .PHONY: check
 check: check-headers gofmt govet golint
 
-.PHONY: build
-build: compile
+.PHONY: container
+container: compile
 	docker build -t ${REGISTRY}/${BIN}:${VERSION} .
 
+.PHONY: push
+push: container
+	docker push ${REGISTRY}/${BIN}:${VERSION}
+
 .PHONY: test
-test: check
+test: check-headers gofmt
 	go test -v ./...
 
 main.go:

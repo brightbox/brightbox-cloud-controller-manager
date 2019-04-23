@@ -18,4 +18,4 @@ RUN apk add --no-cache ca-certificates
 
 ADD brightbox-cloud-controller-manager /bin/
 
-CMD ["/bin/brightbox-cloud-controller-manager"]
+ENTRYPOINT ["/bin/brightbox-cloud-controller-manager"]
