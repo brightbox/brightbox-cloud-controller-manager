@@ -315,14 +315,16 @@ func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
 	if len(lb.CloudIPs) > 0 {
 		status.Ingress = make([]v1.LoadBalancerIngress, 0, len(lb.CloudIPs)*4)
 		for _, v := range lb.CloudIPs {
-			status.Ingress = append(status.Ingress,
-				v1.LoadBalancerIngress{
-					IP: v.PublicIPv4,
-				},
-				v1.LoadBalancerIngress{
-					IP: v.PublicIPv6,
-				},
-			)
+			/*
+				status.Ingress = append(status.Ingress,
+					v1.LoadBalancerIngress{
+						IP: v.PublicIPv4,
+					},
+					v1.LoadBalancerIngress{
+						IP: v.PublicIPv6,
+					},
+				)
+			*/
 			if v.ReverseDns != "" {
 				status.Ingress = append(status.Ingress,
 					v1.LoadBalancerIngress{
