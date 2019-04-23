@@ -22,9 +22,6 @@ BIN := brightbox-cloud-controller-manager
 PKG := github.com/brightbox/${BIN}
 LDFLAGS := $(shell KUBE_ROOT="." KUBE_GO_PACKAGE=${PKG} hack/version.sh)
 
-.PHONY: all
-all: clean check build
-
 .PHONY: clean
 clean:
 	GOOS=${GOOS} GOARCH=${ARCH} go clean -i -x ./...
@@ -60,7 +57,7 @@ check-headers:
 check: check-headers gofmt govet golint
 
 .PHONY: container
-container: test compile
+container: clean test compile
 	docker build -t ${REGISTRY}/${BIN}:${VERSION} .
 
 .PHONY: push
