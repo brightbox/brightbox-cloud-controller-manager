@@ -4,7 +4,7 @@ require (
 	bitbucket.org/ww/goautoneg v0.0.0-20120707110453-75cd24fc2f2c // indirect
 	cloud.google.com/go v0.35.1 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.4.4 // indirect
-	github.com/Azure/azure-sdk-for-go v21.3.0+incompatible // indirect
+	github.com/Azure/azure-sdk-for-go v21.4.0+incompatible // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Azure/go-autorest v11.2.8+incompatible // indirect
 	github.com/NYTimes/gziphandler v1.0.1 // indirect
@@ -99,16 +99,16 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
-	k8s.io/apiextensions-apiserver v0.0.0-20190325193600-475668423e9f // indirect
+	k8s.io/apiextensions-apiserver v0.0.0-20190508191920-007dc40467c5 // indirect
 	k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
-	k8s.io/apiserver v0.0.0-20190319190228-a4358799e4fe
-	k8s.io/client-go v2.0.0-alpha.0.0.20190307161346-7621a5ebb88b+incompatible // indirect
-	k8s.io/cloud-provider v0.0.0-20190325195930-a624236cb1f2
-	k8s.io/csi-api v0.0.0-20190325194237-b07135bbe9d0 // indirect
+	k8s.io/apiserver v0.0.0-20190507070644-e9c02aff496d
+	k8s.io/client-go v0.0.0-20190507014756-65905f29c17c // indirect
+	k8s.io/cloud-provider v0.0.0-20190508230944-34a684e2373b
+	k8s.io/csi-api v0.0.0-20190508192151-6751c44073b1 // indirect
 	k8s.io/klog v0.0.0-20181108234604-8139d8cb77af
-	k8s.io/kube-controller-manager v0.0.0-20190325195521-79532aabeeed // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190508192804-61685b851ad0 // indirect
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5 // indirect
-	k8s.io/kubernetes v1.13.5
+	k8s.io/kubernetes v1.13.6
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
