@@ -89,17 +89,17 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
-	k8s.io/apiextensions-apiserver v0.0.0-20190409022649-727a075fdec8 // indirect
+	k8s.io/api v0.0.0-20190516230258-a675ac48af67
+	k8s.io/apiextensions-apiserver v0.0.0-20190516231611-bf6753f2aa24 // indirect
 	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
-	k8s.io/apiserver v0.0.0-20190409021813-1ec86e4da56c // indirect
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible // indirect
-	k8s.io/cloud-provider v0.0.0-20190409023720-1bc0c81fa51d
-	k8s.io/component-base v0.0.0-20190409021516-bd2732e5c3f7
+	k8s.io/apiserver v0.0.0-20190516230822-f89599b3f645 // indirect
+	k8s.io/client-go v11.0.1-0.20190516230509-ae8359b20417+incompatible // indirect
+	k8s.io/cloud-provider v0.0.0-20190516232619-2bf8e45c8454
+	k8s.io/component-base v0.0.0-20190516230545-9b07ebd4193b
 	k8s.io/klog v0.2.0
-	k8s.io/kube-controller-manager v0.0.0-20190409023523-97e4e67125a6 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190516232428-ac35535b6155 // indirect
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 // indirect
-	k8s.io/kubernetes v1.14.1
+	k8s.io/kubernetes v1.14.2
 	k8s.io/utils v0.0.0-20190308190857-21c4ce38f2a7 // indirect
 	sigs.k8s.io/structured-merge-diff v0.0.0-20190302045857-e85c7b244fd2 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
