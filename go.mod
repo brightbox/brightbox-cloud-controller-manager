@@ -19,7 +19,8 @@ require (
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305 // indirect
 	github.com/evanphx/json-patch v4.1.1-0.20190203023257-5858425f7550+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-openapi/spec v0.17.0 // indirect
+	github.com/go-openapi/strfmt v0.19.0 // indirect
+	github.com/go-openapi/validate v0.19.0 // indirect
 	github.com/go-test/deep v1.0.1
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -28,7 +29,6 @@ require (
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
-	github.com/google/uuid v1.1.1 // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -42,13 +42,11 @@ require (
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v0.0.0-20180612202835-f2b4162afba3 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.2 // indirect
@@ -75,20 +73,19 @@ require (
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	google.golang.org/genproto v0.0.0-20190226184841-fc2db5cae922 // indirect
 	google.golang.org/grpc v1.19.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190424021312-d89493788bfe
-	k8s.io/apiextensions-apiserver v0.0.0-20190424022812-2d1a72a1c28e // indirect
+	k8s.io/api v0.0.0-20190528110122-9ad12a4af326
+	k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3 // indirect
 	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
-	k8s.io/apiserver v0.0.0-20190424021922-1d865ba942b5
-	k8s.io/client-go v0.0.0-20190424021555-3c52a38b38d5 // indirect
-	k8s.io/csi-api v0.0.0-20190424061603-0eb6259a7b76 // indirect
-	k8s.io/kube-controller-manager v0.0.0-20190424061932-13dcbb940194 // indirect
+	k8s.io/apiserver v0.0.0-20190528110248-2d60c3dee270
+	k8s.io/client-go v0.0.0-20190528110200-4f3abb12cae2 // indirect
+	k8s.io/csi-api v0.0.0-20190528110700-04eca878a7da // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190528111014-463e5d26aa13 // indirect
 	k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d // indirect
-	k8s.io/kubernetes v1.12.8
+	k8s.io/kubernetes v1.12.9
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 )
