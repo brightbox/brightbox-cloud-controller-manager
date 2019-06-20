@@ -18,7 +18,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -39,15 +38,12 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	// Workaround for #76205
-	flag.CommandLine.String("cloud-provider-gce-lb-src-cidrs", "", "NOT USED (workaround for https://github.com/kubernetes/kubernetes/issues/76205)")
 	command := app.NewCloudControllerManagerCommand()
 
 	// TODO: once we switch everything over to Cobra commands, we can go back to calling
 	// utilflag.InitFlags() (by removing its pflag.Parse() call). For now, we have to set the
 	// normalize func and add the go flag set by hand.
 	// utilflag.InitFlags()
-
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
