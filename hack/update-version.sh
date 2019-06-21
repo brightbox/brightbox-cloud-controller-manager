@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2018 Brightbox Systems Ltd
+# Copyright 2019 Brightbox Systems Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 
 [ $# -eq 1 ] || { echo "Supply new version number" >&2; exit 1; }
 
-go get k8s.io/kubernetes@v$1 \
-	k8s.io/cloud-provider@kubernetes-$1\
-	k8s.io/api@kubernetes-$1\
-	k8s.io/apimachinery@kubernetes-$1\
-	k8s.io/apiserver@kubernetes-$1\
-	k8s.io/apiextensions-apiserver@kubernetes-$1\
-	k8s.io/csi-api@kubernetes-$1\
-	k8s.io/kube-controller-manager@kubernetes-$1 \
-	k8s.io/client-go@kubernetes-$1 \
-	k8s.io/component-base@kubernetes-$1
-
+sed -i '/^replace/d' go.mod
+for word in $(curl -LSs https://raw.githubusercontent.com/kubernetes/kubernetes/v${1}/go.mod | sed -n 's/\(k8s.io.*\) v0.0.0$/\1/p')
+do
+	echo "replace ${word} => ${word} kubernetes-$1" >> go.mod
+done
+go get k8s.io/kubernetes@v$1
+go mod tidy
