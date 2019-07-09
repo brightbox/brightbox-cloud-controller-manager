@@ -58,6 +58,7 @@ require (
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20190414153302-2ae31c8b6b30 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
@@ -97,17 +98,17 @@ require (
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190222213804-5cb15d344471
-	k8s.io/apiextensions-apiserver v0.0.0-20190606210424-3341abf3c63d // indirect
-	k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
-	k8s.io/apiserver v0.0.0-20190531163647-86e316accdba
-	k8s.io/client-go v0.0.0-20190521190702-177766529176 // indirect
-	k8s.io/cloud-provider v0.0.0-20190607004312-7b1211c3f329
-	k8s.io/csi-api v0.0.0-20190606210931-4f5b6ce1bc22 // indirect
+	k8s.io/api v0.0.0-20190708174845-9a6558301dae
+	k8s.io/apiextensions-apiserver v0.0.0-20190708181401-1050740228b9 // indirect
+	k8s.io/apimachinery v0.0.0-20190629003722-e20a3a656cff
+	k8s.io/apiserver v0.0.0-20190708175817-46cf859f20de
+	k8s.io/client-go v0.0.0-20190708175219-23c0fac11e3d // indirect
+	k8s.io/cloud-provider v0.0.0-20190708215234-7a14376b41ab
+	k8s.io/csi-api v0.0.0-20190708181911-3301e6b940bc // indirect
 	k8s.io/klog v0.0.0-20181108234604-8139d8cb77af
-	k8s.io/kube-controller-manager v0.0.0-20190606211922-a4c8cfe6e418 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190708182921-216fa70ea996 // indirect
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5 // indirect
-	k8s.io/kubernetes v1.13.7
+	k8s.io/kubernetes v1.13.8
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
