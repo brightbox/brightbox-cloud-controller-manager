@@ -17,7 +17,8 @@ require (
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170926063155-7524189396c6 // indirect
 	github.com/evanphx/json-patch v4.1.1-0.20190203023257-5858425f7550+incompatible // indirect
 	github.com/go-ini/ini v1.39.3 // indirect
-	github.com/go-openapi/spec v0.17.2 // indirect
+	github.com/go-openapi/strfmt v0.19.2 // indirect
+	github.com/go-openapi/validate v0.19.2 // indirect
 	github.com/go-test/deep v1.0.1
 	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -41,7 +42,6 @@ require (
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.2 // indirect
@@ -59,20 +59,17 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1 // indirect
-	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
-	golang.org/x/sys v0.0.0-20181218192612-074acd46bca6 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.42.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
-	k8s.io/api v0.0.0-20190228213716-6c46ec937460
-	k8s.io/apiextensions-apiserver v0.0.0-20190228220258-f117497580fb // indirect
+	k8s.io/api v0.0.0-20190503184017-f1b257a4ce96
+	k8s.io/apiextensions-apiserver v0.0.0-20190503184539-c338b28ceaa1 // indirect
 	k8s.io/apimachinery v0.0.0-20190223001710-c182ff3b9841
-	k8s.io/apiserver v0.0.0-20190228214804-d98fe311cc3c
-	k8s.io/client-go v2.0.0-alpha.0.0.20190228214142-3cf55fe6680b+incompatible // indirect
+	k8s.io/apiserver v0.0.0-20190503184203-cd980047a08b
+	k8s.io/client-go v0.0.0-20190503184104-3ec0d5188431 // indirect
 	k8s.io/kube-openapi v0.0.0-20180620173706-91cfa479c814 // indirect
-	k8s.io/kubernetes v1.11.8
+	k8s.io/kubernetes v1.11.10
 )
