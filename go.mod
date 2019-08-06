@@ -87,18 +87,18 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/api v0.0.0-20190708174958-539a33f6e817
-	k8s.io/apiextensions-apiserver v0.0.0-20190708181606-527eacf2d4b7 // indirect
+	k8s.io/api v0.0.0-20190805182251-6c9aa3caf3d6
+	k8s.io/apiextensions-apiserver v0.0.0-20190805184801-2defa3e98ef1 // indirect
 	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
-	k8s.io/apiserver v0.0.0-20190708180123-608cd7da68f7 // indirect
-	k8s.io/client-go v11.0.1-0.20190708175433-62e1c231c5dc+incompatible // indirect
-	k8s.io/cloud-provider v0.0.0-20190708183300-b168856027b7
-	k8s.io/component-base v0.0.0-20190708175518-244289f83105
-	k8s.io/csi-api v0.0.0-20190708182000-44d209a1f1e4 // indirect
+	k8s.io/apiserver v0.0.0-20190805183321-97412272efd4 // indirect
+	k8s.io/client-go v11.0.1-0.20190805182715-88a2adca7e76+incompatible // indirect
+	k8s.io/cloud-provider v0.0.0-20190805190417-1c521de1d7ab
+	k8s.io/component-base v0.0.0-20190805182801-8e5d805dafd7
+	k8s.io/csi-api v0.0.0-20190805185141-064a0ae59f74 // indirect
 	k8s.io/klog v0.2.0
-	k8s.io/kube-controller-manager v0.0.0-20190708182958-8144f4f499c6 // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190805190116-2ba75bc4ae6a // indirect
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 // indirect
-	k8s.io/kubernetes v1.14.4
+	k8s.io/kubernetes v1.14.5
 	k8s.io/utils v0.0.0-20190308190857-21c4ce38f2a7 // indirect
 	sigs.k8s.io/structured-merge-diff v0.0.0-20190302045857-e85c7b244fd2 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
