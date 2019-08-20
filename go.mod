@@ -5,6 +5,7 @@ require (
 	github.com/brightbox/gobrightbox v0.4.2
 	github.com/go-ini/ini v1.42.0 // indirect
 	github.com/go-test/deep v1.0.1
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	gopkg.in/ini.v1 v1.42.0 // indirect
 	k8s.io/api v0.0.0
@@ -12,45 +13,45 @@ require (
 	k8s.io/cloud-provider v0.0.0
 	k8s.io/component-base v0.0.0
 	k8s.io/klog v0.3.1
-	k8s.io/kubernetes v1.15.2
+	k8s.io/kubernetes v1.15.3
 )
 
-replace k8s.io/api => k8s.io/api v0.0.0-20190805141119-fdd30b57c827
+replace k8s.io/api => k8s.io/api v0.0.0-20190819141258-3544db3b9e44
 
-replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190805143126-cdb999c96590
+replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190819143637-0dbe462fe92d
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
 
-replace k8s.io/apiserver => k8s.io/apiserver v0.0.0-20190805142138-368b2058237c
+replace k8s.io/apiserver => k8s.io/apiserver v0.0.0-20190819142446-92cc630367d0
 
-replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190805143448-a07e59fb081d
+replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190819144027-541433d7ce35
 
-replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190805141520-2fe0317bcee0
+replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190819141724-e14f31a72a77
 
-replace k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20190805144409-8484242760e7
+replace k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20190819145148-d91c85d212d5
 
-replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20190805144246-c01ee70854a1
+replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20190819145008-029dd04813af
 
 replace k8s.io/code-generator => k8s.io/code-generator v0.0.0-20190612205613-18da4a14b22b
 
-replace k8s.io/component-base => k8s.io/component-base v0.0.0-20190805141645-3a5e5ac800ae
+replace k8s.io/component-base => k8s.io/component-base v0.0.0-20190819141909-f0f7c184477d
 
-replace k8s.io/cri-api => k8s.io/cri-api v0.0.0-20190531030430-6117653b35f1
+replace k8s.io/cri-api => k8s.io/cri-api v0.0.0-20190817025403-3ae76f584e79
 
-replace k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.0.0-20190805144531-3985229e1802
+replace k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.0.0-20190819145328-4831a4ced492
 
-replace k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.0.0-20190805142416-fd821fbbb94e
+replace k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.0.0-20190819142756-13daafd3604f
 
-replace k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.0.0-20190805144128-269742da31dd
+replace k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.0.0-20190819144832-f53437941eef
 
-replace k8s.io/kube-proxy => k8s.io/kube-proxy v0.0.0-20190805143734-7f1675b90353
+replace k8s.io/kube-proxy => k8s.io/kube-proxy v0.0.0-20190819144346-2e47de1df0f0
 
-replace k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.0.0-20190805144012-2a1ed1f3d8a4
+replace k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.0.0-20190819144657-d1a724e0828e
 
-replace k8s.io/kubelet => k8s.io/kubelet v0.0.0-20190805143852-517ff267f8d1
+replace k8s.io/kubelet => k8s.io/kubelet v0.0.0-20190819144524-827174bad5e8
 
-replace k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190805144654-3d5bf3a310c1
+replace k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190819145509-592c9a46fd00
 
-replace k8s.io/metrics => k8s.io/metrics v0.0.0-20190805143318-16b07057415d
+replace k8s.io/metrics => k8s.io/metrics v0.0.0-20190819143841-305e1cef1ab1
 
-replace k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190805142637-3b65bc4bb24f
+replace k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190819143045-c84c31c165c4
