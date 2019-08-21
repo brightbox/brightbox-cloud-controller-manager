@@ -46,7 +46,7 @@ const (
 	clusterName    = "test-cluster-name"
 	missingDomain  = "probablynotthere.co"
 	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
-	testTimeout    = 6000
+	testTimeout    = 1<<32 - 1
 )
 
 //Constant variables you can take the address of!
@@ -703,7 +703,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCTimeout: "100000",
+						serviceAnnotationLoadBalancerHCTimeout: strconv.Itoa(1 << 32),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -720,7 +720,8 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"100000\": value out of range)",
+			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"" +
+				strconv.Itoa(1<<32) + "\": value out of range)",
 		},
 		"invalid-value-for-buffer-size": {
 			service: &v1.Service{
@@ -1267,23 +1268,23 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
 						In:       443,
 						Out:      31347,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 					},
 					{
 						Protocol: loadBalancerHttpProtocol,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
 					},
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       5050,
 						Out:      31348,
 					},
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHttpProtocol],
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       3030,
 						Out:      31348,
 					},
@@ -1352,7 +1353,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: loadBalancerTcpProtocol,
-						Timeout:  6000,
+						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
 					},
