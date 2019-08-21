@@ -163,6 +163,7 @@ func (c *cloud) getLoadBalancer(id string) (*brightbox.LoadBalancer, error) {
 
 func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("createLoadBalancer (%q)", *newLB.Name)
+	klog.V(6).Infof("%+v", newLB)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -172,6 +173,7 @@ func (c *cloud) createLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brigh
 
 func (c *cloud) updateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("updateLoadBalancer (%q, %q)", newLB.Id, *newLB.Name)
+	klog.V(6).Infof("%+v", newLB)
 	client, err := c.cloudClient()
 	if err != nil {
 		return nil, err
@@ -507,7 +509,7 @@ func (c *cloud) syncServerGroup(group *brightbox.ServerGroup, newIds []string) (
 
 //Equality test between load balancer and load balancer options - to avoid unnecessary api calls
 func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.LoadBalancerOptions) bool {
-	klog.V(8).Infof("Update LoadBalancer Required (%v, %v)", *newLb.Name, lb.Name)
+	klog.V(6).Infof("Update LoadBalancer Required (%v, %v)", *newLb.Name, lb.Name)
 	return (newLb.Name != nil && *newLb.Name != lb.Name) ||
 		(newLb.Healthcheck != nil && isUpdateLoadBalancerHealthcheckRequired(newLb.Healthcheck, &lb.Healthcheck)) ||
 		isUpdateLoadBalancerNodeRequired(newLb.Nodes, lb.Nodes) ||
@@ -516,14 +518,14 @@ func isUpdateLoadBalancerRequired(lb *brightbox.LoadBalancer, newLb brightbox.Lo
 }
 
 func isUpdateLoadBalancerHealthcheckRequired(new *brightbox.LoadBalancerHealthcheck, old *brightbox.LoadBalancerHealthcheck) bool {
-	klog.V(8).Infof("Update LoadBalancer Healthcheck Required (%#v, %#v)", *new, *old)
+	klog.V(6).Infof("Update LoadBalancer Healthcheck Required (%#v, %#v)", *new, *old)
 	return (new.Type != old.Type) ||
 		(new.Port != old.Port) ||
 		(new.Request != old.Request)
 }
 
 func isUpdateLoadBalancerNodeRequired(a []brightbox.LoadBalancerNode, b []brightbox.Server) bool {
-	klog.V(8).Infof("Update LoadBalancer Node Required (%v, %v)", a, b)
+	klog.V(6).Infof("Update LoadBalancer Node Required (%v, %v)", a, b)
 	// If one is nil, the other must also be nil.
 	if (a == nil) != (b == nil) {
 		return true
@@ -540,7 +542,7 @@ func isUpdateLoadBalancerNodeRequired(a []brightbox.LoadBalancerNode, b []bright
 }
 
 func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b []brightbox.LoadBalancerListener) bool {
-	klog.V(8).Infof("Update LoadBalancer Listener Required (%v, %v)", a, b)
+	klog.V(6).Infof("Update LoadBalancer Listener Required (%v, %v)", a, b)
 	// If one is nil, the other must also be nil.
 	if (a == nil) != (b == nil) {
 		return true
@@ -552,6 +554,7 @@ func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b 
 		if (a[i].Protocol != b[i].Protocol) ||
 			(a[i].In != b[i].In) ||
 			(a[i].Out != b[i].Out) ||
+			(a[i].Timeout != 0 && b[i].Timeout != 0 && a[i].Timeout != b[i].Timeout) ||
 			(a[i].ProxyProtocol != b[i].ProxyProtocol) {
 			return true
 		}
@@ -560,7 +563,7 @@ func isUpdateLoadBalancerListenerRequired(a []brightbox.LoadBalancerListener, b 
 }
 
 func isUpdateLoadBalancerDomainsRequired(a []string, acme *brightbox.LoadBalancerAcme) bool {
-	klog.V(8).Infof("Update LoadBalancer Domains Required (%v)", a)
+	klog.V(6).Infof("Update LoadBalancer Domains Required (%v)", a)
 	if acme == nil {
 		return a != nil
 	}

@@ -684,10 +684,12 @@ func getHealthCheckPort(apiservice *v1.Service, nodeport int) int {
 
 //If annotation is missing returns zero value
 func parseUintAnnotation(annotationList map[string]string, annotation string) (int, error) {
+	klog.V(6).Infof("parseUintAnnotation(%+v, %+v)", annotationList, annotation)
 	strValue, ok := annotationList[annotation]
 	if !ok {
 		return 0, nil
 	}
 	val, err := strconv.ParseUint(strValue, 10, maxBits)
+	klog.V(6).Infof("Value Converted from %+v to %+v", strValue, val)
 	return int(val), err
 }
