@@ -49,7 +49,7 @@ const (
 	defaultHealthCheckPort = 80
 
 	// Maximum number of bits in unsigned integers specified in annotations.
-	maxBits = 16
+	maxBits = 32
 
 	// The minimum size of the buffer in a load balancer
 	validMinimumBufferSize = 1024
