@@ -46,7 +46,8 @@ const (
 	clusterName    = "test-cluster-name"
 	missingDomain  = "probablynotthere.co"
 	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
-	testTimeout    = 1<<32 - 1
+	tooBigInt      = 1 << maxBits
+	testTimeout    = tooBigInt - 1
 )
 
 //Constant variables you can take the address of!
@@ -703,7 +704,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCTimeout: strconv.Itoa(1 << 32),
+						serviceAnnotationLoadBalancerHCTimeout: strconv.Itoa(tooBigInt),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -721,7 +722,7 @@ func TestValidateService(t *testing.T) {
 				},
 			},
 			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"" +
-				strconv.Itoa(1<<32) + "\": value out of range)",
+				strconv.Itoa(tooBigInt) + "\": value out of range)",
 		},
 		"invalid-value-for-buffer-size": {
 			service: &v1.Service{
