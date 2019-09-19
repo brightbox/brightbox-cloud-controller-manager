@@ -20,6 +20,6 @@ set -o pipefail
 KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 
 main_patch="${KUBE_ROOT}/hack/main.go.diff"
-main_source="https://raw.githubusercontent.com/kubernetes/kubernetes/master/cmd/cloud-controller-manager/controller-manager.go"
+main_source="https://raw.githubusercontent.com/kubernetes/kubernetes/release-${1}/cmd/cloud-controller-manager/controller-manager.go"
 curl -sL -o main.go "${main_source}"
 patch main.go <"${main_patch}"

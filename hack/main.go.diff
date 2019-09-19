@@ -1,5 +1,5 @@
---- main.go.orig	2019-04-05 17:32:14.625241793 +0100
-+++ main.go	2019-04-05 17:32:38.522397821 +0100
+--- main.go.orig	2019-09-19 10:20:57.216068291 +0100
++++ main.go	2019-09-19 10:22:14.896202447 +0100
 @@ -1,18 +1,16 @@
 -/*
 -Copyright 2016 The Kubernetes Authors.
@@ -16,7 +16,7 @@
 -See the License for the specific language governing permissions and
 -limitations under the License.
 -*/
-+// Copyright 2018 Brightbox Systems Ltd
++// Copyright 2019 Brightbox Systems Ltd
 +//
 +// Licensed under the Apache License, Version 2.0 (the "License");
 +// you may not use this file except in compliance with the License.
@@ -32,16 +32,16 @@
  
  // The external controller manager is responsible for running controller loops that
  // are cloud provider dependent. It uses the API to listen to new events on resources.
-@@ -28,9 +26,11 @@
+@@ -27,10 +25,9 @@
  	"k8s.io/component-base/logs"
  	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
  
-+	// Pull in Brightbox cloud-controller repo
+-	// NOTE: Importing all in-tree cloud-providers is not required when
+-	// implementing an out-of-tree cloud-provider.
 +	_ "github.com/brightbox/brightbox-cloud-controller-manager/brightbox"
- 	// NOTE: Importing all in-tree cloud-providers is not required when
- 	// implementing an out-of-tree cloud-provider.
++
+ 	_ "k8s.io/component-base/metrics/prometheus/clientgo" // load all the prometheus client-go plugins
 -	_ "k8s.io/kubernetes/pkg/cloudprovider/providers"
-+	// _ "k8s.io/kubernetes/pkg/cloudprovider/providers"
- 	_ "k8s.io/kubernetes/pkg/util/prometheusclientgo" // load all the prometheus client-go plugins
- 	_ "k8s.io/kubernetes/pkg/version/prometheus"      // for version metric registration
  )
+ 
+ func main() {
