@@ -99,16 +99,16 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0-20190817221950-ebce17126a01
-	k8s.io/apiextensions-apiserver v0.0.0-20190817224053-878b1211abf1 // indirect
+	k8s.io/apiextensions-apiserver v0.0.0-20190919022157-e8460a76b3ad // indirect
 	k8s.io/apimachinery v0.0.0-20190817221809-bf4de9df677c
-	k8s.io/apiserver v0.0.0-20190817222818-b43e7957483c
+	k8s.io/apiserver v0.0.0-20190911072125-c44d086f3b43
 	k8s.io/client-go v0.0.0-20190817222206-ee6c071a42cf // indirect
 	k8s.io/cloud-provider v0.0.0-20190817225039-d8c73f92a440
 	k8s.io/csi-api v0.0.0-20190817224343-f69faaf9e0bc // indirect
 	k8s.io/klog v0.0.0-20181108234604-8139d8cb77af
-	k8s.io/kube-controller-manager v0.0.0-20190817224845-a4b958a6159f // indirect
+	k8s.io/kube-controller-manager v0.0.0-20190919022507-e2174d7479d8 // indirect
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5 // indirect
-	k8s.io/kubernetes v1.13.10
+	k8s.io/kubernetes v1.13.11
 	k8s.io/utils v0.0.0-20180726175726-66066c83e385 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 )
