@@ -44,11 +44,14 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 		if err != nil {
 			return nil, err
 		}
-		ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeInternalIP)
-		if err != nil {
-			return nil, err
-		}
-		addresses = append(addresses, *ipv4_node, *ipv6_node)
+		// *** Don't store IPv6 addresses until Dual Stack mode is working properly *** //
+		//
+		//ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeInternalIP)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//addresses = append(addresses, *ipv4_node, *ipv6_node)
+		addresses = append(addresses, *ipv4_node)
 	}
 	for _, cip := range srv.CloudIPs {
 		ipv4_node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
