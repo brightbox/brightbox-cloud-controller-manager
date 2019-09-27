@@ -61,10 +61,10 @@ var (
 			Type:    v1.NodeInternalIP,
 			Address: serverExistIP,
 		},
-		{
-			Type:    v1.NodeInternalIP,
-			Address: serverExistIPv6,
-		},
+		//		{
+		//			Type:    v1.NodeInternalIP,
+		//			Address: serverExistIPv6,
+		//		},
 	}
 	expectedShutdownNodeAddresses = []v1.NodeAddress{
 		{
@@ -87,10 +87,10 @@ var (
 			Type:    v1.NodeExternalDNS,
 			Address: serverShutdownExternalName + "." + domain,
 		},
-		{
-			Type:    v1.NodeInternalIP,
-			Address: serverShutdownIPv6,
-		},
+		//		{
+		//			Type:    v1.NodeInternalIP,
+		//			Address: serverShutdownIPv6,
+		//		},
 	}
 )
 
@@ -212,10 +212,10 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgy6)
-	if err == nil {
-		t.Errorf("Expected error, got %+v", addresses)
-	}
+	//addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgy6)
+	//if err == nil {
+	//	t.Errorf("Expected error, got %+v", addresses)
+	//}
 	addresses, err = client.NodeAddressesByProviderID(context.TODO(), providerPrefix+serverDodgyCIP)
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
@@ -363,7 +363,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 					Id:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
 					IPv4Address: serverExistIP,
-					IPv6Address: serverExistIPv6,
+					//IPv6Address: serverExistIPv6,
 				},
 			},
 			CloudIPs: []brightbox.CloudIP{},
