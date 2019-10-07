@@ -40,7 +40,7 @@ func TestGetMetadataClient(t *testing.T) {
 		t.Errorf("Failed to get metadata client: %s", err.Error())
 	}
 	switch mdc.(type) {
-	case (*ec2metadata.EC2Metadata):
+	case (*ec2metadata.Client):
 	default:
 		t.Errorf("Returned incorrect metadata client")
 	}
