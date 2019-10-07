@@ -3,12 +3,10 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 go 1.12
 
 require (
-	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
+	github.com/aws/aws-sdk-go-v2 v0.13.0
 	github.com/brightbox/gobrightbox v0.4.2
-	github.com/go-ini/ini v1.47.0 // indirect
 	github.com/go-test/deep v1.0.4
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	gopkg.in/ini.v1 v1.47.0 // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/cloud-provider v0.0.0
