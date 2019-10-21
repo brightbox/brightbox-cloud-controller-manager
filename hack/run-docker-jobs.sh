@@ -15,7 +15,7 @@
 
 
 set -e
-first_release=14
+first_release=13
 last_release=16
 
 launch_job() {
