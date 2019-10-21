@@ -12,47 +12,47 @@ require (
 	k8s.io/cloud-provider v0.0.0
 	k8s.io/component-base v0.0.0
 	k8s.io/klog v0.4.0
-	k8s.io/kubernetes v1.16.1
+	k8s.io/kubernetes v1.16.2
 )
 
-replace k8s.io/api => k8s.io/api v0.0.0-20191003000013-35e20aa79eb8
+replace k8s.io/api => k8s.io/api v0.0.0-20191016110408-35e52d86657a
 
-replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191003002041-49e3d608220c
+replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
 
-replace k8s.io/apiserver => k8s.io/apiserver v0.0.0-20191003001037-3c8b233e046c
+replace k8s.io/apiserver => k8s.io/apiserver v0.0.0-20191016112112-5190913f932d
 
-replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20191003002408-6e42c232ac7d
+replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
 
-replace k8s.io/client-go => k8s.io/client-go v0.0.0-20191003000419-f68efa97b39e
+replace k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 
-replace k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20191003003426-b4b1f434fead
+replace k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20191016115326-20453efc2458
 
-replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20191003003255-c493acd9e2ff
+replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20191016115129-c07a134afb42
 
-replace k8s.io/code-generator => k8s.io/code-generator v0.0.0-20190927045949-f81bca4f5e85
+replace k8s.io/code-generator => k8s.io/code-generator v0.0.0-20191004115455-8e001e5d1894
 
-replace k8s.io/component-base => k8s.io/component-base v0.0.0-20191003000551-f573d376509c
+replace k8s.io/component-base => k8s.io/component-base v0.0.0-20191016111319-039242c015a9
 
 replace k8s.io/cri-api => k8s.io/cri-api v0.0.0-20190828162817-608eb1dad4ac
 
-replace k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.0.0-20191003003551-0eecdcdcc049
+replace k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.0.0-20191016115521-756ffa5af0bd
 
-replace k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.0.0-20191003001317-a019a9d85a86
+replace k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.0.0-20191016112429-9587704a8ad4
 
-replace k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.0.0-20191003003129-09316795c0dd
+replace k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.0.0-20191016114939-2b2b218dc1df
 
-replace k8s.io/kube-proxy => k8s.io/kube-proxy v0.0.0-20191003002707-f6b7b0f55cc0
+replace k8s.io/kube-proxy => k8s.io/kube-proxy v0.0.0-20191016114407-2e83b6f20229
 
-replace k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.0.0-20191003003001-314f0beee0a9
+replace k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.0.0-20191016114748-65049c67a58b
 
-replace k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191003004222-1f3c0cd90ca9
+replace k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 
-replace k8s.io/kubelet => k8s.io/kubelet v0.0.0-20191003002833-e367e4712542
+replace k8s.io/kubelet => k8s.io/kubelet v0.0.0-20191016114556-7841ed97f1b2
 
-replace k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20191003003732-7d49cdad1c12
+replace k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20191016115753-cf0698c3a16b
 
-replace k8s.io/metrics => k8s.io/metrics v0.0.0-20191003002233-837aead57baf
+replace k8s.io/metrics => k8s.io/metrics v0.0.0-20191016113814-3b1a734dba6e
 
-replace k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20191003001538-80f33ca02582
+replace k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20191016112829-06bb3c9d77c9
