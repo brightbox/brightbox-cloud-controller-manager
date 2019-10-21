@@ -57,7 +57,7 @@ check-headers:
 check: check-headers gofmt govet golint
 
 .PHONY: container
-container: clean test compile
+container: clean check-headers gofmt
 	docker build -t ${REGISTRY}/${BIN}:${VERSION} .
 
 .PHONY: push
