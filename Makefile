@@ -20,7 +20,7 @@ ARCH ?= amd64
 SRC := $(git ls-files "*.go" | grep -v vendor)
 BIN := brightbox-cloud-controller-manager
 PKG := github.com/brightbox/${BIN}
-LDFLAGS := $(shell KUBE_ROOT="." KUBE_GO_PACKAGE=${PKG} hack/version.sh)
+#LDFLAGS := $(shell KUBE_ROOT="." KUBE_GO_PACKAGE=${PKG} hack/version.sh)
 
 .PHONY: clean
 clean:
@@ -30,7 +30,7 @@ clean:
 compile: check-headers gofmt ${BIN}
 ${BIN}:
 	CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${ARCH} go build \
-	    -ldflags "-s -w ${LDFLAGS}" \
+	    -ldflags "-s -w" \
 	    -o ${BIN}
 
 .PHONY: version
@@ -67,6 +67,20 @@ push: container
 .PHONY: test
 test: check-headers gofmt
 	go test -v ./...
+
+.PHONY: secret
+secret: ${HOME}/.docker/config.json
+	-kubectl create secret generic regcred \
+	    --from-file=.dockerconfigjson=$? \
+	    --type=kubernetes.io/dockerconfigjson
+
+.PHONY: k8s_build
+k8s_build: secret
+	hack/run-docker-jobs.sh
+
+.PHONY: delete_k8s_build
+delete_k8s_build:
+	kubectl delete jobs -l build=cloud-controller-build
 
 main.go:
 	@./hack/create-main.sh

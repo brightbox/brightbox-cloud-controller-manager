@@ -1,4 +1,4 @@
-# Copyright 2018 Brightbox Systems Ltd
+# Copyright 2019 Brightbox Systems Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+FROM golang as builder
+
+WORKDIR /app
+
+COPY go.mod .
+COPY go.sum .
+
+RUN GOCACHE=/tmp go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOCACHE=/tmp go build \
+        -ldflags "-s -w" \
+	-o brightbox-cloud-controller-manager
+
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates
 
-ADD brightbox-cloud-controller-manager /bin/
+COPY --from=builder /app/brightbox-cloud-controller-manager /bin/
 
 ENTRYPOINT ["/bin/brightbox-cloud-controller-manager"]
