@@ -19,9 +19,9 @@ first_release=13
 last_release=16
 
 launch_job() {
-	local release=${1}
-	local version=$(git describe --always release-${release} | egrep -o '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
-	local name=cloud-controller-build-$(echo $version | tr . -) 
+        local release=${1}
+        local version=$(git describe --always release-${release} | egrep -o '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
+        local name=cloud-controller-build-$(echo $version | tr . -)
 
 kubectl apply -f - <<-EOF
 apiVersion: batch/v1
@@ -37,6 +37,13 @@ spec:
       containers:
       - name: ${name}
         image: gcr.io/kaniko-project/executor:latest
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 1890Mi
+            cpu: 2
         args: ["--dockerfile=Dockerfile",
                 "--context=git://github.com/brightbox/brightbox-cloud-controller-manager.git#refs/heads/release-${release}",
                 "--destination=brightbox/brightbox-cloud-controller-manager:${version}"]
@@ -55,8 +62,8 @@ EOF
 }
 
 echo "Running jobs on k8s"
-for word in $(seq ${first_release} ${last_release})
+for word in $(seq ${last_release} -1 ${first_release})
 do
-	launch_job 1.${word}
+        launch_job 1.${word}
 done
 
