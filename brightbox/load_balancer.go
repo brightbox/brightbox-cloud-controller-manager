@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	"github.com/brightbox/gobrightbox"
 	"k8s.io/api/core/v1"
 	"k8s.io/cloud-provider"
@@ -185,7 +186,7 @@ func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
 	klog.V(4).Infof("GetLoadBalancer(%v)", name)
-	lb, err := c.getLoadBalancerByName(name)
+	lb, err := c.GetLoadBalancerByName(name)
 	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
 
@@ -209,11 +210,11 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureMappedCloudIP(lb, cip)
+	err = c.EnsureMappedCloudIP(lb, cip)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureOldCloudIPsDeposed(lb, cip, name)
+	err = c.EnsureOldCloudIPsDeposed(lb, cip, name)
 	if err != nil {
 		return nil, err
 	}
@@ -222,11 +223,11 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 			return nil, err
 		}
 	}
-	lb, err = c.getLoadBalancer(lb.Id)
+	lb, err = c.GetLoadBalancerById(lb.Id)
 	if err != nil {
 		return nil, err
 	}
-	return toLoadBalancerStatus(lb), errorIfNotComplete(lb, cip.Id, name)
+	return toLoadBalancerStatus(lb), k8ssdk.ErrorIfNotComplete(lb, cip.Id, name)
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
@@ -252,18 +253,18 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		return err
 	}
 	if lb != nil {
-		lb, err = c.getLoadBalancer(lb.Id)
+		lb, err = c.GetLoadBalancerById(lb.Id)
 		if err != nil {
 			return err
 		}
 	}
-	return errorIfNotErased(lb)
+	return k8ssdk.ErrorIfNotErased(lb)
 }
 
 //Take all the servers out of the server group and remove it
 func (c *cloud) ensureServerGroupDeleted(name string) error {
 	klog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
-	group, err := c.getServerGroupByName(name)
+	group, err := c.GetServerGroupByName(name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Server Group for %q", name)
 		return err
@@ -271,12 +272,12 @@ func (c *cloud) ensureServerGroupDeleted(name string) error {
 	if group == nil {
 		return nil
 	}
-	group, err = c.syncServerGroup(group, nil)
+	group, err = c.SyncServerGroup(group, nil)
 	if err != nil {
 		klog.V(4).Infof("Error removing servers from %q", group.Id)
 		return err
 	}
-	if err := c.destroyServerGroup(group.Id); err != nil {
+	if err := c.DestroyServerGroup(group.Id); err != nil {
 		klog.V(4).Infof("Error destroying Server Group %q", group.Id)
 		return err
 	}
@@ -286,7 +287,7 @@ func (c *cloud) ensureServerGroupDeleted(name string) error {
 //Remove the firewall policy
 func (c *cloud) ensureFirewallClosed(name string) error {
 	klog.V(4).Infof("ensureFirewallClosed (%q)", name)
-	fp, err := c.getFirewallPolicyByName(name)
+	fp, err := c.GetFirewallPolicyByName(name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Firewall Policy %q", name)
 		return err
@@ -294,7 +295,7 @@ func (c *cloud) ensureFirewallClosed(name string) error {
 	if fp == nil {
 		return nil
 	}
-	if err := c.destroyFirewallPolicy(fp.Id); err != nil {
+	if err := c.DestroyFirewallPolicy(fp.Id); err != nil {
 		klog.V(4).Infof("Error destroying Firewall Policy %q", fp.Id)
 		return err
 	}
@@ -303,13 +304,13 @@ func (c *cloud) ensureFirewallClosed(name string) error {
 
 //Remove load balancer by name
 func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBalancer, error) {
-	lb, err := c.getLoadBalancerByName(name)
+	lb, err := c.GetLoadBalancerByName(name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Load Balancer %q", name)
 		return nil, err
 	}
 	if lb != nil {
-		if err = c.destroyLoadBalancer(lb.Id); err != nil {
+		if err = c.DestroyLoadBalancer(lb.Id); err != nil {
 			klog.V(4).Infof("Error destroying Load Balancer %q", lb.Id)
 			return nil, err
 		}
@@ -320,12 +321,12 @@ func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBal
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
 func (c *cloud) ensureCloudIPsDeleted(name string) error {
 	klog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
-	cloudIpList, err := c.getCloudIPs()
+	cloudIpList, err := c.GetCloudIPs()
 	if err != nil {
 		klog.V(4).Infof("Error retrieving list of CloudIPs")
 		return err
 	}
-	return c.destroyCloudIPs(cloudIpList, name)
+	return c.DestroyCloudIPs(cloudIpList, name)
 }
 
 func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
@@ -509,7 +510,7 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 			return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
 		}
 	}
-	cloudIpList, err := c.getCloudIPs()
+	cloudIpList, err := c.GetCloudIPs()
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +520,7 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 		}
 	}
 	if ip == "" {
-		return c.allocateCloudIP(name)
+		return c.AllocateCloudIP(name)
 	} else {
 		return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 	}
@@ -527,7 +528,7 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 
 func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
-	current_lb, err := c.getLoadBalancerByName(name)
+	current_lb, err := c.GetLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -537,10 +538,10 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 	}
 	newLB := buildLoadBalancerOptions(name, apiservice, nodes)
 	if current_lb == nil {
-		return c.createLoadBalancer(newLB)
-	} else if isUpdateLoadBalancerRequired(current_lb, *newLB) {
+		return c.Cloud.CreateLoadBalancer(newLB)
+	} else if k8ssdk.IsUpdateLoadBalancerRequired(current_lb, *newLB) {
 		newLB.Id = current_lb.Id
-		return c.updateLoadBalancer(newLB)
+		return c.Cloud.UpdateLoadBalancer(newLB)
 	}
 	klog.V(4).Infof("No Load Balancer update required for %q, skipping", current_lb.Id)
 	return current_lb, nil
@@ -548,9 +549,8 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	klog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
-	temp := grokLoadBalancerName(name)
 	result := &brightbox.LoadBalancerOptions{
-		Name:        &temp,
+		Name:        &name,
 		Nodes:       buildLoadBalancerNodes(nodes),
 		Listeners:   buildLoadBalancerListeners(apiservice),
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),
@@ -581,7 +581,7 @@ func buildLoadBalancerNodes(nodes []*v1.Node) []brightbox.LoadBalancerNode {
 			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
 			continue
 		}
-		result = append(result, brightbox.LoadBalancerNode{Node: mapProviderIDToServerID(nodes[i].Spec.ProviderID)})
+		result = append(result, brightbox.LoadBalancerNode{Node: k8ssdk.MapProviderIDToServerID(nodes[i].Spec.ProviderID)})
 	}
 	return result
 }

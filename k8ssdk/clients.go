@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package brightbox
+package k8ssdk
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws/ec2metadata"
@@ -25,13 +25,15 @@ type EC2Metadata interface {
 	GetMetadata(path string) (string, error)
 }
 
-type cloud struct {
+// Cloud allows access to the Brightbox Cloud and/or any EC2 compatible metadata.
+type Cloud struct {
 	client              CloudAccess
 	metadataClientCache EC2Metadata
 }
 
-// Obtain a metadata client
-func (c *cloud) metadataClient() (EC2Metadata, error) {
+// MetadataClient returns the EC2 Metadata client, or creates a new client
+// from the default AWS config if one doesn't exist.
+func (c *Cloud) MetadataClient() (EC2Metadata, error) {
 	if c.metadataClientCache == nil {
 		cfg, err := external.LoadDefaultAWSConfig()
 		if err != nil {
@@ -43,8 +45,8 @@ func (c *cloud) metadataClient() (EC2Metadata, error) {
 	return c.metadataClientCache, nil
 }
 
-// Fetch the cloud client from cache or anew
-func (c *cloud) cloudClient() (CloudAccess, error) {
+// CloudClient returns the Brightbox Cloud client, or creates a new client from the current environment if one doesn't exist.
+func (c *Cloud) CloudClient() (CloudAccess, error) {
 	if c.client == nil {
 		client, err := obtainCloudClient()
 		if err != nil {

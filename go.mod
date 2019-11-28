@@ -1,6 +1,6 @@
 module github.com/brightbox/brightbox-cloud-controller-manager
 
-go 1.12
+go 1.13
 
 require (
 	github.com/aws/aws-sdk-go-v2 v0.13.0

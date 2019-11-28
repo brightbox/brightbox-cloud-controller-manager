@@ -17,6 +17,7 @@ package brightbox
 import (
 	"context"
 
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cloud-provider"
 )
@@ -32,7 +33,7 @@ var (
 // providers, use GetZoneByProviderID or GetZoneByNodeName since
 // GetZone can no longer be called from the kubelets.
 func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
-	client, err := c.metadataClient()
+	client, err := c.MetadataClient()
 	if err != nil {
 		return emptyZone, err
 	}
@@ -45,7 +46,7 @@ func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 
 //Create a Zone object from a zone name string
 func createZone(zoneName string) (cloudprovider.Zone, error) {
-	respRegion, err := mapZoneHandleToRegion(zoneName)
+	respRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 	if err != nil {
 		return emptyZone, err
 	}
@@ -61,7 +62,7 @@ func createZone(zoneName string) (cloudprovider.Zone, error) {
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
-	serverID := mapProviderIDToServerID(providerID)
+	serverID := k8ssdk.MapProviderIDToServerID(providerID)
 	return c.getZoneByServerID(ctx, serverID)
 }
 
@@ -70,13 +71,13 @@ func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
-	serverID := mapNodeNameToServerID(nodeName)
+	serverID := k8ssdk.MapNodeNameToServerID(nodeName)
 	return c.getZoneByServerID(ctx, serverID)
 }
 
 // Common function that gets the zone via a standard Brightbox serverid
 func (c *cloud) getZoneByServerID(ctx context.Context, identifier string) (cloudprovider.Zone, error) {
-	client, err := c.cloudClient()
+	client, err := c.CloudClient()
 	if err != nil {
 		return emptyZone, err
 	}

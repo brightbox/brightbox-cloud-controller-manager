@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"strconv"
 
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	"github.com/brightbox/gobrightbox"
 	"k8s.io/api/core/v1"
 	"k8s.io/klog"
@@ -50,17 +51,17 @@ func (c *cloud) ensureFirewallOpenForService(name string, apiservice *v1.Service
 
 func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.ServerGroup, error) {
 	klog.V(4).Infof("ensureServerGroup(%v)", name)
-	group, err := c.getServerGroupByName(name)
+	group, err := c.GetServerGroupByName(name)
 	if err != nil {
 		return nil, err
 	}
 	if group == nil {
-		group, err = c.createServerGroup(name)
+		group, err = c.CreateServerGroup(name)
 	}
 	if err != nil {
 		return nil, err
 	}
-	group, err = c.syncServerGroup(group, mapNodesToServerIDs(nodes))
+	group, err = c.SyncServerGroup(group, mapNodesToServerIDs(nodes))
 	if err == nil {
 		return group, nil
 	}
@@ -69,12 +70,12 @@ func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.Ser
 
 func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
 	klog.V(4).Infof("ensureFireWallPolicy (%q)", group.Name)
-	fp, err := c.getFirewallPolicyByName(group.Name)
+	fp, err := c.GetFirewallPolicyByName(group.Name)
 	if err != nil {
 		return nil, err
 	}
 	if fp == nil {
-		return c.createFirewallPolicy(group)
+		return c.CreateFirewallPolicy(group)
 	}
 	return fp, nil
 }
@@ -90,11 +91,11 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 		Description:     &fp.Name,
 	}
 	if len(fp.Rules) == 0 {
-		_, err := c.createFirewallRule(&newRule)
+		_, err := c.CreateFirewallRule(&newRule)
 		return err
 	} else if isUpdateFirewallRuleRequired(fp.Rules[0], newRule) {
 		newRule.Id = fp.Rules[0].Id
-		_, err := c.updateFirewallRule(&newRule)
+		_, err := c.UpdateFirewallRule(&newRule)
 		return err
 	}
 	klog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].Id)
@@ -130,7 +131,7 @@ func mapNodesToServerIDs(nodes []*v1.Node) []string {
 			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
 			continue
 		}
-		result = append(result, mapProviderIDToServerID(nodes[i].Spec.ProviderID))
+		result = append(result, k8ssdk.MapProviderIDToServerID(nodes[i].Spec.ProviderID))
 	}
 	return result
 }

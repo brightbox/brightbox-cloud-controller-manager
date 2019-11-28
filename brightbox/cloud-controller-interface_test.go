@@ -19,7 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/cloud-provider"
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -119,8 +120,8 @@ func TestInterfaceAdaption(t *testing.T) {
 		{"LoadBalancer", interfaceLoadBalancer},
 	}
 
-	ts := getAuthEnvTokenHandler(t)
-	defer resetAuthEnvironment()
+	ts := k8ssdk.GetAuthEnvTokenHandler(t)
+	defer k8ssdk.ResetAuthEnvironment()
 	defer ts.Close()
 	cloud, err := cloudprovider.GetCloudProvider(provider, config)
 	if err != nil {
@@ -136,8 +137,8 @@ func TestInterfaceAdaption(t *testing.T) {
 
 func TestGetCloudProviderFailure(t *testing.T) {
 	var config io.Reader = strings.NewReader(config_const)
-	resetAuthEnvironment()
-	defer resetAuthEnvironment()
+	k8ssdk.ResetAuthEnvironment()
+	defer k8ssdk.ResetAuthEnvironment()
 	cloud, err := cloudprovider.GetCloudProvider(provider, config)
 	if err == nil {
 		t.Errorf("Expected error, didn't get one")

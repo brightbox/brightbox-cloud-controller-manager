@@ -21,9 +21,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brightbox/gobrightbox"
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox"
 	"github.com/go-test/deep"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -59,8 +60,8 @@ var (
 	testPolicy    string            = "round-robin"
 	trueVar       bool              = true
 	falseVar      bool              = false
-	groklbname    string            = grokLoadBalancerName(lbname)
-	groknewlbname string            = grokLoadBalancerName(newlbname)
+	groklbname    string            = lbname
+	groknewlbname string            = newlbname
 	bufferSize    int               = 16384
 	resolvCip     brightbox.CloudIP = brightbox.CloudIP{
 		Id:         "cip-vsalc",
@@ -196,7 +197,7 @@ func TestErrorIfAcmeNotComplete(t *testing.T) {
 				Domains: []brightbox.LoadBalancerAcmeDomain{
 					{
 						Identifier: resolvedDomain,
-						Status:     validAcmeDomainStatus,
+						Status:     k8ssdk.ValidAcmeDomainStatus,
 					},
 					{
 						Identifier:  missingDomain,
@@ -210,7 +211,7 @@ func TestErrorIfAcmeNotComplete(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			err := errorIfAcmeNotComplete(tc.acme)
+			err := k8ssdk.ErrorIfAcmeNotComplete(tc.acme)
 			if err == nil {
 				t.Errorf("Expected error %q got nil", tc.status)
 			} else if err.Error() != tc.status {
@@ -912,9 +913,7 @@ func TestGetLoadBalancer(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
 			lb, exists, err := client.GetLoadBalancer(
 				context.TODO(),
@@ -1627,9 +1626,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
 
 			lbopts := buildLoadBalancerOptions(desc, tc.service, tc.nodes)
@@ -1709,9 +1706,7 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
 			lbstatus, err := client.EnsureLoadBalancer(context.TODO(), clusterName, tc.service, tc.nodes)
 			if err != nil {
@@ -1779,8 +1774,8 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
-				Name:   grokLoadBalancerName(lbname),
-				Status: lbActive,
+				Name:   lbname,
+				Status: k8ssdk.LbActive,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-gdqms",
@@ -1854,8 +1849,8 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
-				Name:   grokLoadBalancerName(lbname),
-				Status: lbActive,
+				Name:   lbname,
+				Status: k8ssdk.LbActive,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-gdqms",
@@ -1925,8 +1920,8 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancer{
-				Name:   grokLoadBalancerName(newlbname),
-				Status: lbActive,
+				Name:   newlbname,
+				Status: k8ssdk.LbActive,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-230b7",
@@ -1949,9 +1944,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
 			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
 			lbopts, err := client.ensureLoadBalancerFromService(desc, tc.service, tc.nodes)
@@ -1983,11 +1976,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Domains: []brightbox.LoadBalancerAcmeDomain{
 						{
 							Identifier: resolvedDomain,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 						{
 							Identifier: fqdn,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 					},
 				},
@@ -2052,11 +2045,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Domains: []brightbox.LoadBalancerAcmeDomain{
 						{
 							Identifier: resolvedDomain,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 						{
 							Identifier: fqdn,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 					},
 				},
@@ -2121,11 +2114,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Domains: []brightbox.LoadBalancerAcmeDomain{
 						{
 							Identifier: resolvedDomain,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 						{
 							Identifier: fqdn,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 					},
 				},
@@ -2190,11 +2183,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Domains: []brightbox.LoadBalancerAcmeDomain{
 						{
 							Identifier: resolvedDomain,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 						{
 							Identifier: fqdn,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 					},
 				},
@@ -2259,11 +2252,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Domains: []brightbox.LoadBalancerAcmeDomain{
 						{
 							Identifier: resolvedDomain,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 						{
 							Identifier: fqdn,
-							Status:     validAcmeDomainStatus,
+							Status:     k8ssdk.ValidAcmeDomainStatus,
 						},
 					},
 				},
@@ -2998,7 +2991,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			if change := isUpdateLoadBalancerRequired(tc.lb, tc.lbopts); change != tc.expected {
+			if change := k8ssdk.IsUpdateLoadBalancerRequired(tc.lb, tc.lbopts); change != tc.expected {
 				t.Errorf("Expected %v got %v", tc.expected, change)
 			}
 		})
@@ -3055,11 +3048,9 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
-			err := client.ensureMappedCloudIP(tc.lb, tc.cip)
+			err := client.EnsureMappedCloudIP(tc.lb, tc.cip)
 			if err != nil && !tc.err {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -3307,9 +3298,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
 			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
 			cip, err := client.ensureAllocatedCloudIP(desc, tc.service)
@@ -3467,10 +3456,9 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
-			err := client.ensureOldCloudIPsDeposed(tc.lb, tc.cip, tc.name)
+			client := makeFakeInstanceCloudClient()
+
+			err := client.EnsureOldCloudIPsDeposed(tc.lb, tc.cip, tc.name)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -3486,9 +3474,8 @@ func TestDeletionByNameFunctions(t *testing.T) {
 	}
 	for _, name := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
+
 			client.ensureServerGroupDeleted(name)
 			client.ensureLoadBalancerDeletedByName(name)
 			client.ensureFirewallClosed(name)
@@ -3609,9 +3596,7 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			client := &cloud{
-				client: fakeInstanceCloudClient(context.TODO()),
-			}
+			client := makeFakeInstanceCloudClient()
 
 			err := client.EnsureLoadBalancerDeleted(
 				context.TODO(),
@@ -3673,7 +3658,7 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 	return &brightbox.LoadBalancer{
 		Id:          newLB.Id,
 		Name:        *newLB.Name,
-		Status:      lbActive,
+		Status:      k8ssdk.LbActive,
 		Nodes:       server_list,
 		Listeners:   newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
@@ -3694,14 +3679,14 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 	return []brightbox.LoadBalancer{
 		{
 			Id:       "lba-test1",
-			Name:     grokLoadBalancerName(lbname),
+			Name:     lbname,
 			Status:   "deleted",
 			CloudIPs: nil,
 		},
 		{
 			Id:     foundLba,
-			Name:   grokLoadBalancerName(lbname),
-			Status: lbActive,
+			Name:   lbname,
+			Status: k8ssdk.LbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         "cip-12345",
@@ -3714,13 +3699,13 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		},
 		{
 			Id:     "lba-test3",
-			Name:   grokLoadBalancerName("abob"),
-			Status: lbActive,
+			Name:   "abob",
+			Status: k8ssdk.LbActive,
 		},
 		{
 			Id:     errorLba,
-			Name:   grokLoadBalancerName(lberror),
-			Status: lbActive,
+			Name:   lberror,
+			Status: k8ssdk.LbActive,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         publicCipId,

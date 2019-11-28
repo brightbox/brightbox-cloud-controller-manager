@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brightbox/gobrightbox"
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -29,9 +30,7 @@ const (
 
 func interfaceGetZone(zoneName string) func(*testing.T) {
 	return func(t *testing.T) {
-		client := &cloud{
-			metadataClientCache: fakeZoneMetadataClient(zoneName),
-		}
+		client := makeFakeMetadataClient(zoneName)
 		zone, err := client.GetZone(context.TODO())
 		if err != nil {
 			if zoneName != "" && zoneName != "dummy" {
@@ -46,7 +45,7 @@ func interfaceGetZone(zoneName string) func(*testing.T) {
 			if zone.FailureDomain != zoneName {
 				t.Errorf("Expected %v, got %v", zoneName, zone.FailureDomain)
 			}
-			testRegion, err := mapZoneHandleToRegion(zoneName)
+			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -59,12 +58,11 @@ func interfaceGetZone(zoneName string) func(*testing.T) {
 
 func interfaceGetZoneByProviderID(ProviderName string, zoneName string) func(*testing.T) {
 	return func(t *testing.T) {
-		client := &cloud{
-			client: fakeZoneCloudClient(context.TODO()),
-		}
+		client := makeFakeZoneCloudClient()
+
 		zone, err := client.GetZoneByProviderID(context.TODO(), ProviderName)
 		if err != nil {
-			if ProviderName != providerPrefix+dodgyServer {
+			if ProviderName != k8ssdk.ProviderPrefix+dodgyServer {
 				t.Errorf("Failed to obtain zone: %s", err.Error())
 			}
 			// dodgy providerName should fail
@@ -72,7 +70,7 @@ func interfaceGetZoneByProviderID(ProviderName string, zoneName string) func(*te
 			if zone.FailureDomain != zoneName {
 				t.Errorf("Expected %v, got %v", zoneName, zone.FailureDomain)
 			}
-			testRegion, err := mapZoneHandleToRegion(zoneName)
+			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -85,9 +83,7 @@ func interfaceGetZoneByProviderID(ProviderName string, zoneName string) func(*te
 
 func interfaceGetZoneByNodeName(NodeName types.NodeName, zoneName string) func(*testing.T) {
 	return func(t *testing.T) {
-		client := &cloud{
-			client: fakeZoneCloudClient(context.TODO()),
-		}
+		client := makeFakeZoneCloudClient()
 		zone, err := client.GetZoneByNodeName(context.TODO(), NodeName)
 		if err != nil {
 			if NodeName != dodgyServer {
@@ -98,7 +94,7 @@ func interfaceGetZoneByNodeName(NodeName types.NodeName, zoneName string) func(*
 			if zone.FailureDomain != zoneName {
 				t.Errorf("Expected %v, got %v", zoneName, zone.FailureDomain)
 			}
-			testRegion, err := mapZoneHandleToRegion(zoneName)
+			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
 				t.Errorf(err.Error())
 			}
@@ -118,9 +114,9 @@ func TestGetZone(t *testing.T) {
 
 func TestGetZoneByProviderID(t *testing.T) {
 	testCases := map[string]string{
-		"brightbox://srv-testy":      "gb1-a",
-		"brightbox://srv-teste":      "gb1-b",
-		providerPrefix + dodgyServer: "",
+		"brightbox://srv-testy":             "gb1-a",
+		"brightbox://srv-teste":             "gb1-b",
+		k8ssdk.ProviderPrefix + dodgyServer: "",
 	}
 	for name, zone := range testCases {
 		t.Run(name, interfaceGetZoneByProviderID(name, zone))
@@ -140,9 +136,9 @@ func TestGetZoneByNodeName(t *testing.T) {
 }
 
 func TestGetZoneCloudClientFailure(t *testing.T) {
-	resetAuthEnvironment()
-	defer resetAuthEnvironment()
-	client := &cloud{}
+	k8ssdk.ResetAuthEnvironment()
+	defer k8ssdk.ResetAuthEnvironment()
+	client := makeFakeCloudClient()
 	zone, err := client.GetZoneByNodeName(context.TODO(), types.NodeName("srv-duffy"))
 	if err == nil {
 		t.Errorf("Expected error")
@@ -174,7 +170,7 @@ func (f *fakeZoneMetadata) GetMetadata(target string) (string, error) {
 }
 
 type fakeZoneCloud struct {
-	CloudAccess
+	k8ssdk.CloudAccess
 	serverzone map[string]string
 }
 
@@ -202,5 +198,23 @@ func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 				Handle: result,
 			},
 		}, nil
+	}
+}
+
+func makeFakeMetadataClient(zoneName string) *cloud {
+	return &cloud{
+		k8ssdk.MakeTestClient(
+			nil,
+			fakeZoneMetadataClient(zoneName),
+		),
+	}
+}
+
+func makeFakeZoneCloudClient() *cloud {
+	return &cloud{
+		k8ssdk.MakeTestClient(
+			fakeZoneCloudClient(context.TODO()),
+			nil,
+		),
 	}
 }

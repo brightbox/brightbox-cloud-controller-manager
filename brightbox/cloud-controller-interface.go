@@ -17,9 +17,14 @@ package brightbox
 import (
 	"io"
 
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	"k8s.io/cloud-provider"
 	"k8s.io/klog"
 )
+
+type cloud struct {
+	*k8ssdk.Cloud
+}
 
 // Initialize provides the cloud with a kubernetes client builder and
 // may spawn goroutines to perform housekeeping activities within the
@@ -66,7 +71,7 @@ func (c *cloud) Routes() (cloudprovider.Routes, bool) {
 // ProviderName returns the cloud provider ID.
 func (c *cloud) ProviderName() string {
 	klog.V(4).Infof("ProviderName called")
-	return providerName
+	return k8ssdk.ProviderName
 }
 
 // HasClusterID returns true if a ClusterID is required and set
@@ -77,7 +82,7 @@ func (c *cloud) HasClusterID() bool {
 
 // Register this provider's creation function with the manager
 func init() {
-	cloudprovider.RegisterCloudProvider(providerName, newCloudConnection)
+	cloudprovider.RegisterCloudProvider(k8ssdk.ProviderName, newCloudConnection)
 }
 
 // Read a config and generate a cloud structure
@@ -89,8 +94,10 @@ func newCloudConnection(config io.Reader) (cloudprovider.Interface, error) {
 	if config != nil {
 		klog.Warningf("supplied config is not read by this version. Using environment")
 	}
-	newCloud := &cloud{}
-	_, err := newCloud.cloudClient()
+	newCloud := &cloud{
+		&k8ssdk.Cloud{},
+	}
+	_, err := newCloud.CloudClient()
 	if err != nil {
 		return nil, err
 	}

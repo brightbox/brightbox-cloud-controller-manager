@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package brightbox
+package k8ssdk
 
 import (
 	"testing"
@@ -30,14 +30,14 @@ func TestMapProviderIDToServerID(t *testing.T) {
 			expected:   "srv-testy",
 		},
 		"cloud prefix": {
-			providerID: providerPrefix + "srv-testy",
+			providerID: ProviderPrefix + "srv-testy",
 			expected:   "srv-testy",
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			result := mapProviderIDToServerID(tc.providerID)
+			result := MapProviderIDToServerID(tc.providerID)
 			if result != tc.expected {
 				t.Errorf("Expected server id %q, but got %q", tc.expected, result)
 			}
@@ -66,7 +66,7 @@ func TestMapZoneHandleToRegion(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			result, err := mapZoneHandleToRegion(tc.zoneHandle)
+			result, err := MapZoneHandleToRegion(tc.zoneHandle)
 			if err != nil {
 				if tc.expected != "" {
 					t.Errorf(err.Error())

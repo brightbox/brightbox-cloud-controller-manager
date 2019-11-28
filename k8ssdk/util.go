@@ -12,30 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package brightbox
+package k8ssdk
 
 import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	providerName   = "brightbox"
-	providerPrefix = providerName + "://"
+	ProviderName   = "brightbox"
+	ProviderPrefix = ProviderName + "://"
 )
 
 // Parse the provider id string and return a string that should be a server id
 // Should be no need for  error checking here, since the input string
 // is constrained in format by the k8s process
-func mapProviderIDToServerID(providerID string) string {
-	if strings.HasPrefix(providerID, providerPrefix) {
-		return strings.TrimPrefix(providerID, providerPrefix)
+func MapProviderIDToServerID(providerID string) string {
+	if strings.HasPrefix(providerID, ProviderPrefix) {
+		return strings.TrimPrefix(providerID, ProviderPrefix)
 	}
 	return providerID
 }
@@ -43,7 +41,7 @@ func mapProviderIDToServerID(providerID string) string {
 // Parse the zone handle and return the embedded region id
 // Zone names are of the form: ${region-name}-${ix}
 // So we look for the last '-' and trim just before that
-func mapZoneHandleToRegion(zoneHandle string) (string, error) {
+func MapZoneHandleToRegion(zoneHandle string) (string, error) {
 	ix := strings.LastIndex(zoneHandle, "-")
 	if ix == -1 {
 		return "", fmt.Errorf("unexpected zone: %s", zoneHandle)
@@ -53,18 +51,18 @@ func mapZoneHandleToRegion(zoneHandle string) (string, error) {
 
 // mapNodeNameToServerID maps a k8s NodeName to a Brightbox Server ID
 // This is a simple string cast.
-func mapNodeNameToServerID(nodeName types.NodeName) string {
+func MapNodeNameToServerID(nodeName types.NodeName) string {
 	return string(nodeName)
 }
 
 // mapServerIDToNodeName maps a Brightbox Server ID to a nodename
 // Again a simpl string cast
-func mapServerIDToNodeName(name string) types.NodeName {
+func MapServerIDToNodeName(name string) types.NodeName {
 	return types.NodeName(name)
 }
 
-func mapProviderIDToNodeName(providerID string) types.NodeName {
-	return mapServerIDToNodeName(mapProviderIDToServerID(providerID))
+func MapProviderIDToNodeName(providerID string) types.NodeName {
+	return MapServerIDToNodeName(MapProviderIDToServerID(providerID))
 }
 
 // getEnvVarWithDefault retrieves the value of the environment variable
@@ -106,11 +104,6 @@ func getSyncLists(oldList []string, newList []string) ([]string, []string) {
 	return insList, delList
 }
 
-//Add the nasty hack to the load balancer name to trigger speed
-func grokLoadBalancerName(name string) string {
-	return name + " #type:container"
-}
-
 func sameStringSlice(x, y []string) bool {
 	if len(x) != len(y) {
 		return false
@@ -135,31 +128,4 @@ func sameStringSlice(x, y []string) bool {
 		return true
 	}
 	return false
-}
-
-type portSets struct {
-	names   sets.String
-	numbers sets.Int64
-}
-
-// getPortSets returns a portSets structure representing port names and numbers
-// that the comma-separated string describes. If the input is empty or equal to
-// "*", a nil pointer is returned.
-func getPortSets(annotation string) (ports *portSets) {
-	if annotation != "" && annotation != "*" {
-		ports = &portSets{
-			sets.NewString(),
-			sets.NewInt64(),
-		}
-		portStringSlice := strings.Split(annotation, ",")
-		for _, item := range portStringSlice {
-			port, err := strconv.Atoi(item)
-			if err != nil {
-				ports.names.Insert(item)
-			} else {
-				ports.numbers.Insert(int64(port))
-			}
-		}
-	}
-	return
 }

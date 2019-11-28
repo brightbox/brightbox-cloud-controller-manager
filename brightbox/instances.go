@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cloud-provider"
@@ -31,7 +33,7 @@ import (
 // make this clearer.
 func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
 	klog.V(4).Infof("NodeAddresses (%q)", name)
-	srv, err := c.getServer(ctx, mapNodeNameToServerID(name))
+	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +72,13 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 // services cannot be used in this method to obtain nodeaddresses
 func (c *cloud) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
 	klog.V(4).Infof("NodeAddressesByProviderID (%q)", providerID)
-	return c.NodeAddresses(ctx, mapProviderIDToNodeName(providerID))
+	return c.NodeAddresses(ctx, k8ssdk.MapProviderIDToNodeName(providerID))
 }
 
 // InstanceID returns the cloud provider ID of the node with the specified NodeName.
 func (c *cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
 	klog.V(4).Infof("InstanceID (%q)", nodeName)
-	srv, err := c.getServer(ctx, mapNodeNameToServerID(nodeName))
+	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(nodeName), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", cloudprovider.InstanceNotFound
 	}
@@ -95,7 +97,7 @@ func (c *cloud) ExternalID(ctx context.Context, nodeName types.NodeName) (string
 // InstanceType returns the type of the specified instance.
 func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, error) {
 	klog.V(4).Infof("InstanceType (%q)", name)
-	srv, err := c.getServer(ctx, mapNodeNameToServerID(name))
+	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +107,7 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 // InstanceTypeByProviderID returns the type of the specified instance.
 func (c *cloud) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
 	klog.V(4).Infof("InstanceTypeByProviderID (%q)", providerID)
-	return c.InstanceType(ctx, mapProviderIDToNodeName(providerID))
+	return c.InstanceType(ctx, k8ssdk.MapProviderIDToNodeName(providerID))
 }
 
 // AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
@@ -119,7 +121,7 @@ func (c *cloud) AddSSHKeyToAllInstances(ctx context.Context, user string, keyDat
 // On most clouds (e.g. GCE) this is the hostname, so we provide the hostname
 func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
 	klog.V(4).Infof("CurrentNodeName (%q)", hostname)
-	return mapServerIDToNodeName(hostname), nil
+	return k8ssdk.MapServerIDToNodeName(hostname), nil
 }
 
 // InstanceExistsByProviderID returns true if the instance for the given provider id still is running.
@@ -136,7 +138,7 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 }
 
 func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string, active_value bool) (bool, error) {
-	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
+	srv, err := c.GetServer(ctx, k8ssdk.MapProviderIDToServerID(providerID), cloudprovider.InstanceNotFound)
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {
 			return false, nil

@@ -1,4 +1,4 @@
-// Copyright 2018 Brightbox Systems Ltd
+// Copyright 2019 Brightbox Systems Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,97 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package brightbox
+package k8ssdk
 
 import (
-	"flag"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-
-	"github.com/aws/aws-sdk-go-v2/aws/ec2metadata"
-	"k8s.io/klog"
 )
 
-func init() {
-	klog.InitFlags(nil)
-	flag.Set("alsologtostderr", "true")
-	flag.Set("v", "4")
-	flag.Parse()
-}
-
-func TestGetMetadataClient(t *testing.T) {
-	client := &cloud{}
-	mdc, err := client.metadataClient()
-	if err != nil {
-		t.Errorf("Failed to get metadata client: %s", err.Error())
-	}
-	switch mdc.(type) {
-	case (*ec2metadata.Client):
-	default:
-		t.Errorf("Returned incorrect metadata client")
-	}
-}
-
-func TestInvalidCloudClient(t *testing.T) {
-	resetAuthEnvironment()
-	defer resetAuthEnvironment()
-	client := &cloud{}
-	_, err := client.cloudClient()
-	if err == nil {
-		t.Errorf("Expected account error")
-	}
-	setAuthEnvClientID()
-	setAuthEnvUsername()
-	_, err = client.cloudClient()
-	if err == nil {
-		t.Errorf("Expected User Credentials error")
-	}
-	setAuthEnvPassword()
-	_, err = client.cloudClient()
-	if err == nil {
-		t.Errorf("Expected User Credentials error")
-	}
-	clearAuthEnvUsername()
-	_, err = client.cloudClient()
-	if err == nil {
-		t.Errorf("Expected User Credentials error")
-	}
-	//	switch cc.(type) {
-	//	case (*brightbox.Client):
-	//	default:
-	//		t.Errorf("Returned incorrect cloud client")
-	//	}
-}
-
-func TestBadPasswordCloudClient(t *testing.T) {
-	ts := getAuthEnvTokenHandler(t)
-	defer resetAuthEnvironment()
-	defer ts.Close()
-	client := &cloud{}
-	setAuthEnvUsername()
-	_, err := client.cloudClient()
-	if err == nil {
-		t.Errorf("Expected User Credentials error")
-	}
-}
-
-func TestUsernameValidation(t *testing.T) {
-	ts := getAuthEnvTokenHandler(t)
-	defer resetAuthEnvironment()
-	defer ts.Close()
-	setAuthEnvUsername()
-	setAuthEnvPassword()
-	client := &cloud{}
-	_, err := client.cloudClient()
-	if err != nil {
-		t.Errorf("Expected User Credentials validation, got %s", err.Error())
-	}
-}
-
-func resetAuthEnvironment() {
+func ResetAuthEnvironment() {
 	vars := []string{
 		clientEnvVar,
 		clientSecretEnvVar,
@@ -116,32 +36,32 @@ func resetAuthEnvironment() {
 	}
 }
 
-func setAuthEnvClientID() {
+func SetAuthEnvClientID() {
 	os.Setenv(clientSecretEnvVar, "not default")
 }
 
-func setAuthEnvUsername() {
+func SetAuthEnvUsername() {
 	os.Setenv(usernameEnvVar, "itsy@bitzy.com")
 }
 
-func setAuthEnvPassword() {
+func SetAuthEnvPassword() {
 	os.Setenv(passwordEnvVar, "madeuppassword")
 }
 
-func setAuthEnvAPIURL(value string) {
+func SetAuthEnvAPIURL(value string) {
 	os.Setenv(apiUrlEnvVar, value)
 }
 
-func setAuthEnvAccount() {
+func SetAuthEnvAccount() {
 	os.Setenv(accountEnvVar, "acc-testy")
 }
 
-func clearAuthEnvUsername() {
+func ClearAuthEnvUsername() {
 	os.Unsetenv(usernameEnvVar)
 }
 
-func getAuthEnvTokenHandler(t *testing.T) *httptest.Server {
-	resetAuthEnvironment()
+func GetAuthEnvTokenHandler(t *testing.T) *httptest.Server {
+	ResetAuthEnvironment()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		expected := "/token"
@@ -173,7 +93,14 @@ func getAuthEnvTokenHandler(t *testing.T) *httptest.Server {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	}))
-	setAuthEnvAPIURL(ts.URL)
-	setAuthEnvAccount()
+	SetAuthEnvAPIURL(ts.URL)
+	SetAuthEnvAccount()
 	return ts
+}
+
+func MakeTestClient(testClient CloudAccess, testMetadata EC2Metadata) *Cloud {
+	return &Cloud{
+		client:              testClient,
+		metadataClientCache: testMetadata,
+	}
 }
