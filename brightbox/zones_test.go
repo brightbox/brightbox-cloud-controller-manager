@@ -62,7 +62,7 @@ func interfaceGetZoneByProviderID(ProviderName string, zoneName string) func(*te
 
 		zone, err := client.GetZoneByProviderID(context.TODO(), ProviderName)
 		if err != nil {
-			if ProviderName != k8ssdk.ProviderPrefix+dodgyServer {
+			if ProviderName != k8ssdk.MapServerIDToProviderID(dodgyServer) {
 				t.Errorf("Failed to obtain zone: %s", err.Error())
 			}
 			// dodgy providerName should fail
@@ -114,9 +114,9 @@ func TestGetZone(t *testing.T) {
 
 func TestGetZoneByProviderID(t *testing.T) {
 	testCases := map[string]string{
-		"brightbox://srv-testy":             "gb1-a",
-		"brightbox://srv-teste":             "gb1-b",
-		k8ssdk.ProviderPrefix + dodgyServer: "",
+		"brightbox://srv-testy":                     "gb1-a",
+		"brightbox://srv-teste":                     "gb1-b",
+		k8ssdk.MapServerIDToProviderID(dodgyServer): "",
 	}
 	for name, zone := range testCases {
 		t.Run(name, interfaceGetZoneByProviderID(name, zone))

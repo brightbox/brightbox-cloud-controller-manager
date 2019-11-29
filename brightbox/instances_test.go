@@ -147,8 +147,8 @@ func TestNodeNameChecks(t *testing.T) {
 		{
 			"InstanceTypeByProviderID",
 			providerIdTestFactory(client.InstanceTypeByProviderID,
-				k8ssdk.ProviderPrefix+serverExist,
-				k8ssdk.ProviderPrefix+serverMissing,
+				k8ssdk.MapServerIDToProviderID(serverExist),
+				k8ssdk.MapServerIDToProviderID(serverMissing),
 				typeHandle),
 		},
 	}
@@ -199,19 +199,19 @@ func TestNodeAddresses(t *testing.T) {
 func TestNodeAddressesByProviderID(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 
-	addresses, err := client.NodeAddressesByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverBust)
+	addresses, err := client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverBust))
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverDodgy4)
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgy4))
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	//addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverDodgy6)
+	//addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgy6))
 	//if err == nil {
 	//	t.Errorf("Expected error, got %+v", addresses)
 	//}
-	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverDodgyCIP)
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgyCIP))
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
@@ -220,25 +220,25 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 func TestInstanceExistsByProviderID(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 
-	exists, err := client.InstanceExistsByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverExist)
+	exists, err := client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverExist))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !exists {
 		t.Errorf("expected Instance to exist")
 	}
-	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverMissing)
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverMissing))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if exists {
 		t.Errorf("expected Instance to be missing")
 	}
-	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverShutdown)
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverShutdown))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if exists {
 		t.Errorf("expected Instance to be missing")
 	}
-	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverBust)
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverBust))
 	if err == nil {
 		t.Errorf("expected Instance to fail")
 	} else if err == cloudprovider.InstanceNotFound {
@@ -249,19 +249,19 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 func TestInstanceShutdownByProviderID(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 
-	down, err := client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverExist)
+	down, err := client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverExist))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
 		t.Errorf("expected Instance to be active not down")
 	}
-	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverMissing)
+	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverMissing))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
 		t.Errorf("expected Instance to be missing not down")
 	}
-	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.ProviderPrefix+serverShutdown)
+	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverShutdown))
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !down {

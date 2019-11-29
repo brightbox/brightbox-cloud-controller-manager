@@ -38,6 +38,11 @@ func MapProviderIDToServerID(providerID string) string {
 	return providerID
 }
 
+// Add the provider prefix to the server ID
+func MapServerIDToProviderID(serverID string) string {
+	return ProviderPrefix + serverID
+}
+
 // Parse the zone handle and return the embedded region id
 // Zone names are of the form: ${region-name}-${ix}
 // So we look for the last '-' and trim just before that
@@ -56,13 +61,17 @@ func MapNodeNameToServerID(nodeName types.NodeName) string {
 }
 
 // mapServerIDToNodeName maps a Brightbox Server ID to a nodename
-// Again a simpl string cast
+// Again a simple string cast
 func MapServerIDToNodeName(name string) types.NodeName {
 	return types.NodeName(name)
 }
 
 func MapProviderIDToNodeName(providerID string) types.NodeName {
 	return MapServerIDToNodeName(MapProviderIDToServerID(providerID))
+}
+
+func MapNodeNameToProviderID(nodeName types.NodeName) string {
+	return MapServerIDToProviderID(MapNodeNameToServerID(nodeName))
 }
 
 // getEnvVarWithDefault retrieves the value of the environment variable
