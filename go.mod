@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.13.0
 	github.com/brightbox/gobrightbox v0.4.2
 	github.com/go-test/deep v1.0.4
+	github.com/stretchr/testify v1.3.0
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0

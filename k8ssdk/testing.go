@@ -15,6 +15,8 @@
 package k8ssdk
 
 import (
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk/mocks"
+
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -103,4 +105,8 @@ func MakeTestClient(testClient CloudAccess, testMetadata EC2Metadata) *Cloud {
 		client:              testClient,
 		metadataClientCache: testMetadata,
 	}
+}
+
+func MakeMockTestClient() *Cloud {
+	return MakeTestClient(&mocks.CloudAccess{}, &mocks.EC2Metadata{})
 }
