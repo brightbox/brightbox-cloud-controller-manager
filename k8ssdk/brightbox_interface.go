@@ -153,7 +153,7 @@ func (c *Cloud) GetFirewallPolicyByName(name string) (*brightbox.FirewallPolicy,
 }
 
 func (c *Cloud) GetServerGroups() ([]brightbox.ServerGroup, error) {
-	klog.V(4).Infof("GetServerGroups")
+	klog.V(4).Info("GetServerGroups")
 	client, err := c.CloudClient()
 	if err != nil {
 		return nil, err
