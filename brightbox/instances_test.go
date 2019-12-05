@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk/mocks"
 	brightbox "github.com/brightbox/gobrightbox"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -324,6 +325,7 @@ func currentDomain() string {
 }
 
 type fakeInstanceCloud struct {
+	mocks.CloudAccess
 }
 
 func fakeInstanceCloudClient(ctx context.Context) *fakeInstanceCloud {

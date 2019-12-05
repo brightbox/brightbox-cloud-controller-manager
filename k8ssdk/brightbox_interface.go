@@ -276,6 +276,15 @@ func (c *Cloud) DestroyLoadBalancer(id string) error {
 	return client.DestroyLoadBalancer(id)
 }
 
+func (c *Cloud) DestroyServer(id string) error {
+	klog.V(4).Infof("DestroyServer %q", id)
+	client, err := c.CloudClient()
+	if err != nil {
+		return err
+	}
+	return client.DestroyServer(id)
+}
+
 func (c *Cloud) DestroyServerGroup(id string) error {
 	klog.V(4).Infof("DestroyServerGroup %q", id)
 	client, err := c.CloudClient()

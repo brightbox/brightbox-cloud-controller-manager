@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk/mocks"
 	brightbox "github.com/brightbox/gobrightbox"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -170,7 +171,7 @@ func (f *fakeZoneMetadata) GetMetadata(target string) (string, error) {
 }
 
 type fakeZoneCloud struct {
-	k8ssdk.CloudAccess
+	mocks.CloudAccess
 	serverzone map[string]string
 }
 
