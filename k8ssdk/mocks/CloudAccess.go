@@ -1,4 +1,4 @@
-// Copyright 2018 Brightbox Systems Ltd
+// Copyright 2019 Brightbox Systems Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -395,6 +395,29 @@ func (_m *CloudAccess) Server(identifier string) (*brightbox.Server, error) {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*brightbox.Server)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(identifier)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServerGroup provides a mock function with given fields: identifier
+func (_m *CloudAccess) ServerGroup(identifier string) (*brightbox.ServerGroup, error) {
+	ret := _m.Called(identifier)
+
+	var r0 *brightbox.ServerGroup
+	if rf, ok := ret.Get(0).(func(string) *brightbox.ServerGroup); ok {
+		r0 = rf(identifier)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*brightbox.ServerGroup)
 		}
 	}
 

@@ -56,6 +56,9 @@ type CloudAccess interface {
 	// ServerGroups retrieves a list of all server groups
 	ServerGroups() ([]brightbox.ServerGroup, error)
 
+	//Fetch a server group
+	ServerGroup(identifier string) (*brightbox.ServerGroup, error)
+
 	//creates a new server group
 	CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error)
 
