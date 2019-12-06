@@ -162,7 +162,7 @@ func (c *Cloud) GetServerGroups() ([]brightbox.ServerGroup, error) {
 }
 
 func (c *Cloud) GetServerGroup(identifier string) (*brightbox.ServerGroup, error) {
-	klog.V(4).Info("GetServerGroup")
+	klog.V(4).Infof("GetServerGroup %q", identifier)
 	client, err := c.CloudClient()
 	if err != nil {
 		return nil, err
