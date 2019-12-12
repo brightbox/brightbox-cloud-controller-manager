@@ -1,5 +1,6 @@
 #!/bin/sh
-# Copyright 2019 Brightbox Systems Ltd
+
+# Copyright 2018 Brightbox Systems Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -e
-first_release=16
-last_release=16
+first_release=14
+last_release=17
 
 launch_job() {
 	local release=${1}
