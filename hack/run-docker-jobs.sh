@@ -15,8 +15,8 @@
 
 
 set -e
-first_release=13
-last_release=16
+first_release=14
+last_release=17
 
 launch_job() {
         local release=${1}
