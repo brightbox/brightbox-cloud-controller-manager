@@ -186,6 +186,29 @@ func (_m *CloudAccess) CreateLoadBalancer(newDetails *brightbox.LoadBalancerOpti
 	return r0, r1
 }
 
+// CreateServer provides a mock function with given fields: newServer
+func (_m *CloudAccess) CreateServer(newServer *brightbox.ServerOptions) (*brightbox.Server, error) {
+	ret := _m.Called(newServer)
+
+	var r0 *brightbox.Server
+	if rf, ok := ret.Get(0).(func(*brightbox.ServerOptions) *brightbox.Server); ok {
+		r0 = rf(newServer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*brightbox.Server)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*brightbox.ServerOptions) error); ok {
+		r1 = rf(newServer)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateServerGroup provides a mock function with given fields: newServerGroup
 func (_m *CloudAccess) CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
 	ret := _m.Called(newServerGroup)

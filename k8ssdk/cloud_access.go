@@ -21,6 +21,9 @@ type CloudAccess interface {
 	//Fetch a server
 	Server(identifier string) (*brightbox.Server, error)
 
+	//creates a new server
+	CreateServer(newServer *brightbox.ServerOptions) (*brightbox.Server, error)
+
 	//Fetch a list of LoadBalancers
 	LoadBalancers() ([]brightbox.LoadBalancer, error)
 

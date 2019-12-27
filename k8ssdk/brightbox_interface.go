@@ -80,6 +80,16 @@ func isNotFound(e error) bool {
 	}
 }
 
+func (c *Cloud) CreateServer(newDetails *brightbox.ServerOptions) (*brightbox.Server, error) {
+	klog.V(4).Infof("CreateServer (%q)", *newDetails.Name)
+	klog.V(6).Infof("%+v", newDetails)
+	client, err := c.CloudClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.CreateServer(newDetails)
+}
+
 func isAlive(lb *brightbox.LoadBalancer) bool {
 	return lb.Status == LbActive || lb.Status == LbCreating
 }
