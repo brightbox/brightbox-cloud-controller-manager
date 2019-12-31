@@ -64,8 +64,8 @@ github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx2
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/brightbox/gobrightbox v0.4.2 h1:cjBc9Rjv5XkgMsZUCt2/8XDC1DJHJgP4nl523lyG+98=
 github.com/brightbox/gobrightbox v0.4.2/go.mod h1:DKd0xhyHUJfy3E4o0EnIZ7VaFiPg/w+4iUwKAh3b+XA=
-github.com/brightbox/k8ssdk v0.1.0 h1:OSPDxWsaEYbvnFZ2N+vcjyOvoDdDvQM3GAaRFoE/M4o=
-github.com/brightbox/k8ssdk v0.1.0/go.mod h1:TwLsbPt2F5NQBnWcAVEAw8qbDUjiLeKzuUoTaGZJBpM=
+github.com/brightbox/k8ssdk v0.1.1 h1:skr+Ak1fBb86FgUdf9tVRuvS/4IUmppJwgJkkNVcyfU=
+github.com/brightbox/k8ssdk v0.1.1/go.mod h1:S5QjMNYKG40HOu+i76D8SqV0ij5MlPiZJv75O3oFzl8=
 github.com/caddyserver/caddy v1.0.3/go.mod h1:G+ouvOY32gENkJC+jhgl62TyhvqEsFaDiZ4uw0RzP1E=
 github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cespare/prettybench v0.0.0-20150116022406-03b8cfe5406c/go.mod h1:Xe6ZsFhtM8HrDku0pxJ3/Lr51rwykrzgFwpmTzleatY=
