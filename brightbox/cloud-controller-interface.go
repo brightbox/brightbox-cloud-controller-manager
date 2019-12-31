@@ -17,8 +17,8 @@ package brightbox
 import (
 	"io"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
-	"k8s.io/cloud-provider"
+	"github.com/brightbox/k8ssdk"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 )
 

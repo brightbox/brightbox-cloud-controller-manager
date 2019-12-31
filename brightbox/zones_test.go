@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk/mocks"
 	brightbox "github.com/brightbox/gobrightbox"
+	"github.com/brightbox/k8ssdk"
+	"github.com/brightbox/k8ssdk/mocks"
 	"k8s.io/apimachinery/pkg/types"
 )
 

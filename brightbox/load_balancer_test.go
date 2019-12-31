@@ -21,8 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	brightbox "github.com/brightbox/gobrightbox"
+	"github.com/brightbox/k8ssdk"
 	"github.com/go-test/deep"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

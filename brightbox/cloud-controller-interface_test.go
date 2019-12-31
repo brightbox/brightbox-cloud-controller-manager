@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	"github.com/brightbox/k8ssdk"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/kubernetes/pkg/controller"
 )
