@@ -71,7 +71,7 @@ func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
-	serverID := k8ssdk.MapNodeNameToServerID(nodeName)
+	serverID := mapNodeNameToServerID(nodeName)
 	return c.getZoneByServerID(ctx, serverID)
 }
 

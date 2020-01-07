@@ -33,7 +33,7 @@ import (
 // make this clearer.
 func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
 	klog.V(4).Infof("NodeAddresses (%q)", name)
-	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
+	srv, err := c.GetServer(ctx, mapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +72,13 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 // services cannot be used in this method to obtain nodeaddresses
 func (c *cloud) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
 	klog.V(4).Infof("NodeAddressesByProviderID (%q)", providerID)
-	return c.NodeAddresses(ctx, k8ssdk.MapProviderIDToNodeName(providerID))
+	return c.NodeAddresses(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // InstanceID returns the cloud provider ID of the node with the specified NodeName.
 func (c *cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
 	klog.V(4).Infof("InstanceID (%q)", nodeName)
-	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(nodeName), cloudprovider.InstanceNotFound)
+	srv, err := c.GetServer(ctx, mapNodeNameToServerID(nodeName), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", cloudprovider.InstanceNotFound
 	}
@@ -97,7 +97,7 @@ func (c *cloud) ExternalID(ctx context.Context, nodeName types.NodeName) (string
 // InstanceType returns the type of the specified instance.
 func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, error) {
 	klog.V(4).Infof("InstanceType (%q)", name)
-	srv, err := c.GetServer(ctx, k8ssdk.MapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
+	srv, err := c.GetServer(ctx, mapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", err
 	}
@@ -107,7 +107,7 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 // InstanceTypeByProviderID returns the type of the specified instance.
 func (c *cloud) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
 	klog.V(4).Infof("InstanceTypeByProviderID (%q)", providerID)
-	return c.InstanceType(ctx, k8ssdk.MapProviderIDToNodeName(providerID))
+	return c.InstanceType(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
@@ -121,23 +121,14 @@ func (c *cloud) AddSSHKeyToAllInstances(ctx context.Context, user string, keyDat
 // On most clouds (e.g. GCE) this is the hostname, so we provide the hostname
 func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
 	klog.V(4).Infof("CurrentNodeName (%q)", hostname)
-	return k8ssdk.MapServerIDToNodeName(hostname), nil
+	return mapServerIDToNodeName(hostname), nil
 }
 
-// InstanceExistsByProviderID returns true if the instance for the given provider id still is running.
+// InstanceExistsByProviderID returns true if the instance for the given provider exists.
 // If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
+// This method should still return true for instances that exist but are stopped/sleeping.
 func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
 	klog.V(4).Infof("InstanceExistsByProviderID (%q)", providerID)
-	return c.instanceTestByProviderID(ctx, providerID, false)
-}
-
-// InstanceShutdownByProviderID returns true if the instance is shutdown in cloudprovider
-func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
-	klog.V(4).Infof("InstanceShutdownByProviderID (%q)", providerID)
-	return c.instanceTestByProviderID(ctx, providerID, true)
-}
-
-func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string, active_value bool) (bool, error) {
 	srv, err := c.GetServer(ctx, k8ssdk.MapProviderIDToServerID(providerID), cloudprovider.InstanceNotFound)
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {
@@ -145,11 +136,48 @@ func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string,
 		}
 		return false, err
 	}
-	if srv.Status != "active" {
-		klog.Warningf("the instance %s is not active", srv.Id)
-		return active_value, nil
+	switch srv.Status {
+	case k8ssdk.Active,
+		k8ssdk.Inactive,
+		k8ssdk.Deleting,
+		k8ssdk.Creating,
+		k8ssdk.Unavailable:
+		klog.V(4).Infof("the instance %s exists", srv.Id)
+		return true, nil
+	case k8ssdk.Deleted,
+		k8ssdk.Failed:
+		klog.V(4).Infof("the instance %s does not exist", srv.Id)
+		return false, nil
+	default:
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
 	}
-	return !active_value, nil
+}
+
+// InstanceShutdownByProviderID returns true if the instance still exists and is shutdown in cloudprovider
+func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
+	klog.V(4).Infof("InstanceShutdownByProviderID (%q)", providerID)
+	srv, err := c.GetServer(ctx, k8ssdk.MapProviderIDToServerID(providerID), cloudprovider.InstanceNotFound)
+	if err != nil {
+		if err == cloudprovider.InstanceNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	switch srv.Status {
+	case k8ssdk.Inactive,
+		k8ssdk.Unavailable:
+		klog.V(4).Infof("the instance %s is shutdown", srv.Id)
+		return true, nil
+	case k8ssdk.Active,
+		k8ssdk.Creating,
+		k8ssdk.Deleting,
+		k8ssdk.Deleted,
+		k8ssdk.Failed:
+		klog.V(4).Infof("the instance %s is not shutdown", srv.Id)
+		return false, nil
+	default:
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
+	}
 }
 
 func parseIPString(ipString string, ipType string, objectId string,

@@ -21,20 +21,20 @@ import (
 
 // mapNodeNameToServerID maps a k8s NodeName to a Brightbox Server ID
 // This is a simple string cast.
-func MapNodeNameToServerID(nodeName types.NodeName) string {
+func mapNodeNameToServerID(nodeName types.NodeName) string {
 	return string(nodeName)
 }
 
 // mapServerIDToNodeName maps a Brightbox Server ID to a nodename
 // Again a simple string cast
-func MapServerIDToNodeName(name string) types.NodeName {
+func mapServerIDToNodeName(name string) types.NodeName {
 	return types.NodeName(name)
 }
 
-func MapProviderIDToNodeName(providerID string) types.NodeName {
-	return MapServerIDToNodeName(k8ssdk.MapProviderIDToServerID(providerID))
+func mapProviderIDToNodeName(providerID string) types.NodeName {
+	return mapServerIDToNodeName(k8ssdk.MapProviderIDToServerID(providerID))
 }
 
-func MapNodeNameToProviderID(nodeName types.NodeName) string {
-	return k8ssdk.MapServerIDToProviderID(MapNodeNameToServerID(nodeName))
+func mapNodeNameToProviderID(nodeName types.NodeName) string {
+	return k8ssdk.MapServerIDToProviderID(mapNodeNameToServerID(nodeName))
 }
