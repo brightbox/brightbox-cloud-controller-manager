@@ -119,20 +119,11 @@ func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.Nod
 	return mapServerIDToNodeName(hostname), nil
 }
 
-// InstanceExistsByProviderID returns true if the instance for the given provider id still is running.
+// InstanceExistsByProviderID returns true if the instance for the given provider exists.
 // If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
+// This method should still return true for instances that exist but are stopped/sleeping.
 func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
 	klog.V(4).Infof("InstanceExistsByProviderID (%q)", providerID)
-	return c.instanceTestByProviderID(ctx, providerID, false)
-}
-
-// InstanceShutdownByProviderID returns true if the instance is shutdown in cloudprovider
-func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
-	klog.V(4).Infof("InstanceShutdownByProviderID (%q)", providerID)
-	return c.instanceTestByProviderID(ctx, providerID, true)
-}
-
-func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string, active_value bool) (bool, error) {
 	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {
@@ -140,11 +131,48 @@ func (c *cloud) instanceTestByProviderID(ctx context.Context, providerID string,
 		}
 		return false, err
 	}
-	if srv.Status != "active" {
-		klog.Warningf("the instance %s is not active", srv.Id)
-		return active_value, nil
+	switch srv.Status {
+	case Active,
+		Inactive,
+		Deleting,
+		Creating,
+		Unavailable:
+		klog.V(4).Infof("the instance %s exists", srv.Id)
+		return true, nil
+	case Deleted,
+		Failed:
+		klog.V(4).Infof("the instance %s does not exist", srv.Id)
+		return false, nil
+	default:
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
 	}
-	return !active_value, nil
+}
+
+// InstanceShutdownByProviderID returns true if the instance still exists and is shutdown in cloudprovider
+func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
+	klog.V(4).Infof("InstanceShutdownByProviderID (%q)", providerID)
+	srv, err := c.getServer(ctx, mapProviderIDToServerID(providerID))
+	if err != nil {
+		if err == cloudprovider.InstanceNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	switch srv.Status {
+	case Inactive,
+		Unavailable:
+		klog.V(4).Infof("the instance %s is shutdown", srv.Id)
+		return true, nil
+	case Active,
+		Creating,
+		Deleting,
+		Deleted,
+		Failed:
+		klog.V(4).Infof("the instance %s is not shutdown", srv.Id)
+		return false, nil
+	default:
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
+	}
 }
 
 func parseIPString(ipString string, ipType string, objectId string,

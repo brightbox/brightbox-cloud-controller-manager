@@ -39,8 +39,19 @@ const (
 
 	defaultTimeoutSeconds = 10
 
-	lbActive              = "active"
-	lbCreating            = "creating"
+	//Server States
+	Active      = "active"
+	Inactive    = "inactive"
+	Creating    = "creating"
+	Deleting    = "deleting"
+	Deleted     = "deleted"
+	Failed      = "failed"
+	Unavailable = "unavailable"
+
+	//LoadBalancer States
+	lbActive   = Active
+	lbCreating = Creating
+
 	cipMapped             = "mapped"
 	validAcmeDomainStatus = "valid"
 )
