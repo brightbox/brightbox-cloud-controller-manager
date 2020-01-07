@@ -40,6 +40,11 @@ func mapProviderIDToServerID(providerID string) string {
 	return providerID
 }
 
+// Add the provider prefix to the server ID
+func mapServerIDToProviderID(serverID string) string {
+	return providerPrefix + serverID
+}
+
 // Parse the zone handle and return the embedded region id
 // Zone names are of the form: ${region-name}-${ix}
 // So we look for the last '-' and trim just before that

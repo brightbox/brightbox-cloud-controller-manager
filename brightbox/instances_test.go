@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	serverDeleted              = "srv-goner"
 	serverExist                = "srv-exist"
 	serverMissing              = "srv-missy"
 	serverShutdown             = "srv-downy"
@@ -230,19 +231,25 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !exists {
-		t.Errorf("expected Instance to exist")
+		t.Errorf("Active: expected Instance to exist")
+	}
+	exists, err = client.InstanceExistsByProviderID(context.TODO(), mapServerIDToProviderID(serverDeleted))
+	if err != nil {
+		t.Errorf(err.Error())
+	} else if exists {
+		t.Errorf("Deleted: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverMissing)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if exists {
-		t.Errorf("expected Instance to be missing")
+		t.Errorf("Missing: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverShutdown)
 	if err != nil {
 		t.Errorf(err.Error())
-	} else if exists {
-		t.Errorf("expected Instance to be missing")
+	} else if !exists {
+		t.Errorf("Inactive: expected Instance to exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), providerPrefix+serverBust)
 	if err == nil {
@@ -260,19 +267,25 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
-		t.Errorf("expected Instance to be active not down")
+		t.Errorf("Active: expected Instance to be not shutdown")
+	}
+	down, err = client.InstanceShutdownByProviderID(context.TODO(), mapServerIDToProviderID(serverDeleted))
+	if err != nil {
+		t.Errorf(err.Error())
+	} else if down {
+		t.Errorf("Deleted: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix+serverMissing)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if down {
-		t.Errorf("expected Instance to be missing not down")
+		t.Errorf("Missing: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdownByProviderID(context.TODO(), providerPrefix+serverShutdown)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else if !down {
-		t.Errorf("expected Instance to be down")
+		t.Errorf("Inactive: expected Instance to be shutdown")
 	}
 }
 
@@ -374,6 +387,37 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Status:   "inactive",
 			Hostname: serverShutdown,
 			Fqdn:     serverShutdown + "." + domain,
+			Zone: brightbox.Zone{
+				Id:     "zon-testy",
+				Handle: zoneHandle,
+			},
+			ServerType: brightbox.ServerType{
+				Id:     "typ-wusvn",
+				Handle: "2gb.ssd",
+			},
+			Interfaces: []brightbox.ServerInterface{
+				{
+					Id:          "int-ds42l",
+					MacAddress:  "02:24:19:00:00:ef",
+					IPv4Address: serverShutdownIP,
+					IPv6Address: serverShutdownIPv6,
+				},
+			},
+			CloudIPs: []brightbox.CloudIP{
+				{
+					Id:         serverShutdownExternalName,
+					PublicIP:   serverShutdownExternalIP,
+					Fqdn:       serverShutdownExternalName + "." + domain,
+					ReverseDns: "",
+				},
+			},
+		}, nil
+	case serverDeleted:
+		return &brightbox.Server{
+			Id:       identifier,
+			Status:   "deleted",
+			Hostname: serverDeleted,
+			Fqdn:     serverDeleted + "." + domain,
 			Zone: brightbox.Zone{
 				Id:     "zon-testy",
 				Handle: zoneHandle,
