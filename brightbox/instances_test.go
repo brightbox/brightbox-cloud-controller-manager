@@ -176,7 +176,7 @@ func TestNodeAddresses(t *testing.T) {
 	}
 	for _, example := range instance_tests {
 		t.Run(
-			k8ssdk.MapNodeNameToServerID(example.server),
+			mapNodeNameToServerID(example.server),
 			func(t *testing.T) {
 				addresses, err := client.NodeAddresses(context.TODO(), example.server)
 				if err != nil {
