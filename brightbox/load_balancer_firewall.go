@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
 	"github.com/brightbox/gobrightbox"
+	"github.com/brightbox/k8ssdk"
 	"k8s.io/api/core/v1"
 	"k8s.io/klog"
 )

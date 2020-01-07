@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk/mocks"
 	brightbox "github.com/brightbox/gobrightbox"
+	"github.com/brightbox/k8ssdk"
+	"github.com/brightbox/k8ssdk/mocks"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"

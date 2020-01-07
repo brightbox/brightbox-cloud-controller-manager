@@ -3,9 +3,9 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go-v2 v0.17.0
 	github.com/beorn7/perks v1.0.0 // indirect
 	github.com/brightbox/gobrightbox v0.4.2
+	github.com/brightbox/k8ssdk v0.2.0
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.3 // indirect
@@ -22,14 +22,12 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.4.0
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
 	golang.org/x/net v0.0.0-20191004110552-13f9640d40b9 // indirect
-	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
 	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.23.1 // indirect
@@ -49,7 +47,7 @@ replace k8s.io/api => k8s.io/api v0.16.4
 
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.16.4
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.16.5-0.20191028221656-72ed19daf4bb
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.16.5-beta.1
 
 replace k8s.io/apiserver => k8s.io/apiserver v0.16.4
 
@@ -61,11 +59,11 @@ replace k8s.io/cloud-provider => k8s.io/cloud-provider v0.16.4
 
 replace k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.16.4
 
-replace k8s.io/code-generator => k8s.io/code-generator v0.16.5-beta.0
+replace k8s.io/code-generator => k8s.io/code-generator v0.16.5-beta.1
 
 replace k8s.io/component-base => k8s.io/component-base v0.16.4
 
-replace k8s.io/cri-api => k8s.io/cri-api v0.16.5-0.20190828162817-608eb1dad4ac
+replace k8s.io/cri-api => k8s.io/cri-api v0.16.5-beta.1
 
 replace k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.16.4
 

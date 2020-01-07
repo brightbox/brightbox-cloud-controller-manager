@@ -17,7 +17,7 @@ package brightbox
 import (
 	"context"
 
-	"github.com/brightbox/brightbox-cloud-controller-manager/k8ssdk"
+	"github.com/brightbox/k8ssdk"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cloud-provider"
 )
