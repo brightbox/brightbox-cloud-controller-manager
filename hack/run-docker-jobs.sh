@@ -18,12 +18,13 @@ set -e
 first_release=14
 last_release=17
 
-launch_job() {
+create_job_manifest() {
         local release=${1}
-        local version=$(git describe --always release-${release} | egrep -o '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
+        local version=$(git describe --always release-${release} | sed 's/^v\([0-9]*\.[0-9]*\.[0-9]*\).*$/\1/')
         local name=cloud-controller-build-$(echo $version | tr . -)
 
-kubectl apply -f - <<-EOF
+cat <<-EOF
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -64,6 +65,6 @@ EOF
 echo "Running jobs on k8s"
 for word in $(seq ${last_release} -1 ${first_release})
 do
-        launch_job 1.${word}
-done
+        create_job_manifest 1.${word}
+done | kubectl apply -f -
 
