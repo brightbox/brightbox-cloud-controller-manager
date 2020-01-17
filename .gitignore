@@ -21,5 +21,5 @@ brightbox-cloud-controller-manager
 dist
 
 #vendor
-vendor
-!cloud_build/vendor
+vendor/
+!cloud-build/vendor/
