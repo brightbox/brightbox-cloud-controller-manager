@@ -20,8 +20,18 @@ last_release=17
 
 create_job_manifest() {
         local release=${1}
+	local prefix="cloud-controller-build"
         local version=$(git describe --always release-${release} | sed 's/^v\([0-9]*\.[0-9]*\.[0-9]*\).*$/\1/')
-        local name=cloud-controller-build-$(echo $version | tr . -)
+        local name=${prefix}-$(echo $version | tr . -)
+	local image="gcr.io/kaniko-project/executor:latest"
+        local requestsCpu="1700m"
+        local requestsMemory="1Gi"
+        local limitsCpu="2"
+        local limitsMemory="1890Mi"
+        local gitRepo="git://github.com/brightbox/brightbox-cloud-controller-manager.git"
+        local dockerTarget="brightbox/brightbox-cloud-controller-manager"
+        local secretName="regcred"
+	local holdTime=600
 
 cat <<-EOF
 ---
@@ -30,32 +40,32 @@ kind: Job
 metadata:
   name: ${name}
   labels:
-    build: cloud-controller-build
+    build: ${prefix}
 spec:
-  ttlSecondsAfterFinished: 600
+  ttlSecondsAfterFinished: ${holdTime}
   template:
     spec:
       containers:
       - name: ${name}
-        image: gcr.io/kaniko-project/executor:latest
+        image: ${image}
         resources:
           requests:
-            memory: 1Gi
-            cpu: 500m
+            memory: ${requestsMemory}
+            cpu: ${requestsCpu}
           limits:
-            memory: 1890Mi
-            cpu: 2
+            memory: ${limitsMemory}
+            cpu: ${limitsCpu}
         args: ["--dockerfile=Dockerfile",
-                "--context=git://github.com/brightbox/brightbox-cloud-controller-manager.git#refs/heads/release-${release}",
-                "--destination=brightbox/brightbox-cloud-controller-manager:${version}"]
+                "--context=${gitRepo}#refs/heads/release-${release}",
+                "--destination=${dockerTarget}:${version}"]
         volumeMounts:
-          - name: kaniko-secret
+          - name: ${secretName}
             mountPath: /root
       restartPolicy: Never
       volumes:
-        - name: kaniko-secret
+        - name: ${secretName}
           secret:
-            secretName: regcred
+            secretName: ${secretName}
             items:
               - key: .dockerconfigjson
                 path: .docker/config.json
@@ -67,4 +77,3 @@ for word in $(seq ${last_release} -1 ${first_release})
 do
         create_job_manifest 1.${word}
 done | kubectl apply -f -
-
