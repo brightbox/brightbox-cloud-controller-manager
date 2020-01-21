@@ -30,7 +30,11 @@ func init() {
 	klog.InitFlags(nil)
 	flag.Set("alsologtostderr", "true")
 	flag.Set("v", "4")
+}
+
+func TestMain(m *testing.M) {
 	flag.Parse()
+	os.Exit(m.Run())
 }
 
 func TestGetMetadataClient(t *testing.T) {
