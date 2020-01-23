@@ -1,0 +1,5 @@
+---
+BUNDLE_CLEAN: "true"
+BUNDLE_PATH: "vendor/bundle"
+BUNDLE_FROZEN: "true"
+BUNDLE_WITHOUT: "development:test"
