@@ -72,8 +72,7 @@ spec:
 EOF
 }
 
-echo "Running jobs on k8s"
 for word in $(seq ${last_release} -1 ${first_release})
 do
         create_job_manifest 1.${word}
-done | kubectl apply -f -
+done 
