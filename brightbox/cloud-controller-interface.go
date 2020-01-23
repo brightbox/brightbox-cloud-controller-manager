@@ -18,7 +18,7 @@ import (
 	"io"
 
 	"github.com/brightbox/k8ssdk"
-	"k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 )
 

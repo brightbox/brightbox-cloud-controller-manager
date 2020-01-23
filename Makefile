@@ -76,7 +76,10 @@ secret: ${HOME}/.docker/config.json
 
 .PHONY: k8s_build
 k8s_build: secret
-	hack/run-docker-jobs.sh
+	cloud-build/create_docker_jobs | kubectl apply -f -
+
+k8s_jobs: secret
+	cloud-build/create_docker_jobs
 
 .PHONY: delete_k8s_build
 delete_k8s_build:
