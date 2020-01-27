@@ -22,4 +22,6 @@ dist
 
 #vendor
 vendor
-!cloud-build/vendor
+
+#cloud-build client
+cloud-build/kubernetes-client
