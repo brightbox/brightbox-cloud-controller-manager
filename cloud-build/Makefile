@@ -1,4 +1,4 @@
-default: kubernetes-client
+vendor: kubernetes-client
 	bundle install --clean --without development test --deployment
 
 kubernetes-client: kubeapi.json
