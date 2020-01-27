@@ -25,3 +25,4 @@ vendor
 
 #cloud-build client
 cloud-build/kubernetes-client
+cloud-build/kubeapi.json
