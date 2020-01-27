@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require 'active_support/core_ext/hash/keys'
-require 'open3'
 require 'yaml'
 
 first_release = 14
@@ -19,9 +18,7 @@ config = {
   holdTime: 600
 }
 
-def create_job_manifest(release, config)
-  version = `git describe --always release-#{release}`.strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
-  name = "#{config[:prefix]}-#{version.tr('.', '-')}"
+def create_job_manifest(release, config, version, name)
   {
     apiVersion: 'batch/v1',
     kind: 'Job',
@@ -80,14 +77,23 @@ def create_job_manifest(release, config)
         }
       }
     }
-  }.deep_transform_keys(&:to_s).to_yaml
+  }
+end
+
+def create_job(release, config)
+  version = `git describe --always release-#{release}`.strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
+  name = "#{config[:prefix]}-#{version.tr('.', '-')}"
+  create_job_manifest(release, config, version, name).
+    to_hash.deep_stringify_keys.to_yaml
 end
 
 jobs = (first_release..last_release).inject('') do |memo, release|
-  memo << create_job_manifest("1.#{release}", config)
+  memo << create_job("1.#{release}", config)
 end
 
 puts jobs
+
+# require 'open3'
 # stdout_str, status = Open3.capture2('kubectl apply -f -', stdin_data: jobs)
 # puts stdout_str
 # exit status.exitstatus
