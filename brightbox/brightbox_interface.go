@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
-	"github.com/brightbox/gobrightbox"
+	brightbox "github.com/brightbox/gobrightbox"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"k8s.io/cloud-provider"
@@ -115,6 +116,15 @@ type CloudAccess interface {
 	DestroyCloudIP(identifier string) error
 }
 
+func trimmed(name string) string {
+	return strings.TrimSpace(
+		strings.TrimSuffix(
+			strings.TrimSpace(name),
+			"#type:container",
+		),
+	)
+}
+
 func (c *cloud) getServer(ctx context.Context, id string) (*brightbox.Server, error) {
 	klog.V(4).Infof("getServer (%q)", id)
 	client, err := c.cloudClient()
@@ -156,7 +166,9 @@ func (c *cloud) getLoadBalancerByName(name string) (*brightbox.LoadBalancer, err
 		return nil, err
 	}
 	for i := range lbList {
-		if isAlive(&lbList[i]) && lbName == lbList[i].Name {
+		klog.V(4).Infof("Name check: %q == %q", trimmed(lbName), trimmed(lbList[i].Name))
+
+		if isAlive(&lbList[i]) && trimmed(lbName) == trimmed(lbList[i].Name) {
 			return &lbList[i], nil
 		}
 	}
