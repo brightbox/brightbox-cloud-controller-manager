@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/brightbox/gobrightbox v0.4.2
-	github.com/brightbox/k8ssdk v0.2.0
+	github.com/brightbox/k8ssdk v0.2.1
 	github.com/go-test/deep v1.0.4
 	k8s.io/api v0.16.6
 	k8s.io/apimachinery v0.16.6
