@@ -26,70 +26,62 @@ def config
   }
 end
 
-def make(target, attribute, attrs = {})
-  create_object = lambda { |class_name, attrs|
-    "Kubernetes::#{class_name}".constantize.new(attrs)
-  }
-  new_class = target.class.openapi_types[attribute.to_sym]
-  target.public_send(
-    :"#{attribute}=",
-    case new_class
-    when nil
-      raise ArgumentError, attribute
-    when /^Array<(?<class_name>\S+)>$/
-      [create_object.call(Regexp.last_match[:class_name], attrs)]
-    when /^Hash</
-      attrs
-    else
-      create_object.call(new_class, attrs)
-    end
-  )
-end
-
 def create_job_manifest(release, config, version, name)
-  job = Kubernetes::IoK8sApiBatchV1Job.new(
-    api_version: 'batch/v1',
-    kind: 'Job'
+  Kubernetes::IoK8sApiBatchV1Job.new(
+    api_version: "batch/v1",
+    kind: "Job",
+    metadata: Kubernetes::IoK8sApimachineryPkgApisMetaV1ObjectMeta.new(
+      name: name,
+      labels: { build: config[:prefix] }
+    ),
+    spec: Kubernetes::IoK8sApiBatchV1JobSpec.new(
+      ttl_seconds_after_finished: config[:holdTime],
+      template: Kubernetes::IoK8sApiCoreV1PodTemplateSpec.new(
+        spec: Kubernetes::IoK8sApiCoreV1PodSpec.new(
+          restart_policy: "Never",
+          containers: [
+            Kubernetes::IoK8sApiCoreV1Container.new(
+              name: name,
+              image: config[:image],
+              resources: Kubernetes::IoK8sApiCoreV1ResourceRequirements.new(
+                requests: {
+                  memory: config[:requestsMemory],
+                  cpu: config[:requestsCpu],
+                },
+                limits: {
+                  memory: config[:limitsMemory],
+                  cpu: config[:limitsCpu],
+                },
+              ),
+              args: [
+                "--dockerfile=Dockerfile",
+                "--context=#{config[:gitRepo]}#refs/heads/release-#{release}",
+                "--destination=#{config[:dockerTarget]}:#{version}"
+              ],
+              volume_mounts: [
+                Kubernetes::IoK8sApiCoreV1VolumeMount.new(
+                  name: config[:secretName], mount_path: "/root"
+                )
+              ]
+            )
+          ],
+          volumes: [
+            Kubernetes::IoK8sApiCoreV1Volume.new(
+              name: config[:secretName],
+              secret: Kubernetes::IoK8sApiCoreV1SecretVolumeSource.new(
+                secret_name: config[:secretName],
+                items: [
+                  Kubernetes::IoK8sApiCoreV1KeyToPath.new(
+                    key: ".dockerconfigjson", path: ".docker/config.json"
+                  )
+                ]
+              )
+            )
+          ],
+        )
+      )
+    ),
   )
-  make(job, :metadata,
-       name: name,
-       labels: { build: config[:prefix] })
-  make(job, :spec,
-       ttl_seconds_after_finished: config[:holdTime])
-  make(job.spec, :template)
-  make(job.spec.template, :spec,
-       restart_policy: 'Never')
-  spec = job.spec.template.spec
-  make(spec, :volumes,
-       name: config[:secretName])
-  volume = spec.volumes.first
-  make(volume, :secret,
-       secret_name: config[:secretName])
-  make(volume.secret, :items,
-       key: '.dockerconfigjson',
-       path: '.docker/config.json')
-  make(spec, :containers,
-       name: name,
-       image: config[:image],
-       args: [
-         '--dockerfile=Dockerfile',
-         "--context=#{config[:gitRepo]}#refs/heads/release-#{release}",
-         "--destination=#{config[:dockerTarget]}:#{version}"
-       ])
-  container = spec.containers.first
-  make(container, :resources,
-       requests: {
-         memory: config[:requestsMemory],
-         cpu: config[:requestsCpu]
-       },
-       limits: {
-         memory: config[:limitsMemory],
-         cpu: config[:limitsCpu]
-       })
-  make(container, :volume_mounts,
-       name: config[:secretName],
-       mount_path: '/root')
-  job
 end
 
 def create_job(release, config)
