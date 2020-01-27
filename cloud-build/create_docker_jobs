@@ -11,18 +11,20 @@ require 'yaml'
 
 first_release = 14
 last_release = 17
-config = {
-  prefix: 'cloud-controller-build',
-  image: 'gcr.io/kaniko-project/executor:latest',
-  requestsCpu: '1700m',
-  requestsMemory: '1Gi',
-  limitsCpu: '2',
-  limitsMemory: '1890Mi',
-  gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
-  dockerTarget: 'brightbox/brightbox-cloud-controller-manager',
-  secretName: 'regcred',
-  holdTime: 600
-}
+def config
+  {
+    prefix: 'cloud-controller-build',
+    image: 'gcr.io/kaniko-project/executor:latest',
+    requestsCpu: '1700m',
+    requestsMemory: '1Gi',
+    limitsCpu: '2',
+    limitsMemory: '1890Mi',
+    gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
+    dockerTarget: 'brightbox/brightbox-cloud-controller-manager',
+    secretName: 'regcred',
+    holdTime: 600
+  }
+end
 
 def make(target, attribute, attrs = {})
   create_object = lambda { |class_name, attrs|
@@ -93,8 +95,8 @@ end
 def create_job(release, config)
   version = `git describe --always release-#{release}`.strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
   name = "#{config[:prefix]}-#{version.tr('.', '-')}"
-  create_job_manifest(release, config, version, name).
-    to_hash.deep_stringify_keys.to_yaml
+  create_job_manifest(release, config, version, name)
+    .to_hash.deep_stringify_keys.to_yaml
 end
 
 jobs = (first_release..last_release).inject('') do |memo, release|
