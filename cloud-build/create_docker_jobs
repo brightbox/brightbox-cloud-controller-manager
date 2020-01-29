@@ -28,8 +28,8 @@ end
 
 def create_job_manifest(release, config, version, name)
   Kubernetes::IoK8sApiBatchV1Job.new(
-    api_version: "batch/v1",
-    kind: "Job",
+    api_version: 'batch/v1',
+    kind: 'Job',
     metadata: Kubernetes::IoK8sApimachineryPkgApisMetaV1ObjectMeta.new(
       name: name,
       labels: { build: config[:prefix] }
@@ -38,7 +38,7 @@ def create_job_manifest(release, config, version, name)
       ttl_seconds_after_finished: config[:holdTime],
       template: Kubernetes::IoK8sApiCoreV1PodTemplateSpec.new(
         spec: Kubernetes::IoK8sApiCoreV1PodSpec.new(
-          restart_policy: "Never",
+          restart_policy: 'Never',
           containers: [
             Kubernetes::IoK8sApiCoreV1Container.new(
               name: name,
@@ -46,21 +46,21 @@ def create_job_manifest(release, config, version, name)
               resources: Kubernetes::IoK8sApiCoreV1ResourceRequirements.new(
                 requests: {
                   memory: config[:requestsMemory],
-                  cpu: config[:requestsCpu],
+                  cpu: config[:requestsCpu]
                 },
                 limits: {
                   memory: config[:limitsMemory],
-                  cpu: config[:limitsCpu],
-                },
+                  cpu: config[:limitsCpu]
+                }
               ),
               args: [
-                "--dockerfile=Dockerfile",
+                '--dockerfile=Dockerfile',
                 "--context=#{config[:gitRepo]}#refs/heads/release-#{release}",
                 "--destination=#{config[:dockerTarget]}:#{version}"
               ],
               volume_mounts: [
                 Kubernetes::IoK8sApiCoreV1VolumeMount.new(
-                  name: config[:secretName], mount_path: "/root"
+                  name: config[:secretName], mount_path: '/root'
                 )
               ]
             )
@@ -72,15 +72,15 @@ def create_job_manifest(release, config, version, name)
                 secret_name: config[:secretName],
                 items: [
                   Kubernetes::IoK8sApiCoreV1KeyToPath.new(
-                    key: ".dockerconfigjson", path: ".docker/config.json"
+                    key: '.dockerconfigjson', path: '.docker/config.json'
                   )
                 ]
               )
             )
-          ],
+          ]
         )
       )
-    ),
+    )
   )
 end
 
