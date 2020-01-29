@@ -19,9 +19,9 @@ kubernetes-client: kubeapi.json
 	docker run --rm -v $(CURDIR):/local \
 		-u $(shell id -u $(USER)):$(shell id -g $(USER)) \
 		openapitools/openapi-generator-cli generate \
+		-g ruby \
 		-c /local/config.json \
 		-i /local/$< \
-		-g ruby \
 		-o /local/$@
 
 kubeapi.json:
