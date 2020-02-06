@@ -20,7 +20,7 @@ kubernetes-client: kubeapi.json
 		-u $(shell id -u $(USER)):$(shell id -g $(USER)) \
 		openapitools/openapi-generator-cli generate \
 		-g ruby \
-		-c /local/config.json \
+		-p "moduleName=Kubernetes" \
 		-i /local/$< \
 		-o /local/$@
 
