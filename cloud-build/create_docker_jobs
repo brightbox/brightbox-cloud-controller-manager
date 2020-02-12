@@ -9,8 +9,8 @@ require 'active_support/core_ext/hash/keys'
 require 'active_support/core_ext/string/inflections'
 require 'yaml'
 
-first_release = 14
-last_release = 17
+current_release = 17
+first_release = current_release - 2
 def config
   {
     prefix: 'cloud-controller-build',
@@ -91,7 +91,7 @@ def create_job(release, config)
     .to_hash.deep_stringify_keys.to_yaml
 end
 
-jobs = (first_release..last_release).inject('') do |memo, release|
+jobs = (first_release..current_release).inject('') do |memo, release|
   memo << create_job("1.#{release}", config)
 end
 
