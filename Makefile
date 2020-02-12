@@ -50,7 +50,7 @@ govet:
 	go vet ${SRC}
 
 .PHONY: check-headers
-check-headers: 
+check-headers:
 	@./hack/verify-boilerplate.sh
 
 .PHONY: check
@@ -75,11 +75,16 @@ secret: ${HOME}/.docker/config.json
 	    --type=kubernetes.io/dockerconfigjson
 
 .PHONY: k8s_build
-k8s_build: secret
+k8s_build: secret cloud-build
 	cloud-build/create_docker_jobs | kubectl apply -f -
 
-k8s_jobs: secret
+.PHONY: k8s_jobs
+k8s_jobs: secret cloud-build
 	cloud-build/create_docker_jobs
+
+.PHONY: cloud-build
+cloud-build:
+	$(MAKE) -C $@
 
 .PHONY: delete_k8s_build
 delete_k8s_build:

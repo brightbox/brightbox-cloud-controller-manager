@@ -1,78 +1,103 @@
-#!/bin/sh
-# Copyright 2019 Brightbox Systems Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env ruby
 
+ENV['BUNDLE_GEMFILE'] = File.expand_path('Gemfile', __dir__)
+require 'bundler'
+Bundler.require(:default)
 
-set -e
-first_release=14
-last_release=17
+require 'kubernetes'
+require 'active_support/core_ext/hash/keys'
+require 'active_support/core_ext/string/inflections'
+require 'yaml'
 
-create_job_manifest() {
-        local release=${1}
-	local prefix="cloud-controller-build"
-        local version=$(git describe --always release-${release} | sed 's/^v\([0-9]*\.[0-9]*\.[0-9]*\).*$/\1/')
-        local name=${prefix}-$(echo $version | tr . -)
-	local image="gcr.io/kaniko-project/executor:latest"
-        local requestsCpu="1700m"
-        local requestsMemory="1Gi"
-        local limitsCpu="2"
-        local limitsMemory="1890Mi"
-        local gitRepo="git://github.com/brightbox/brightbox-cloud-controller-manager.git"
-        local dockerTarget="brightbox/brightbox-cloud-controller-manager"
-        local secretName="regcred"
-	local holdTime=600
+first_release = 14
+last_release = 17
+def config
+  {
+    prefix: 'cloud-controller-build',
+    image: 'gcr.io/kaniko-project/executor:latest',
+    requestsCpu: '1700m',
+    requestsMemory: '1Gi',
+    limitsCpu: '2',
+    limitsMemory: '1890Mi',
+    gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
+    dockerTarget: 'brightbox/brightbox-cloud-controller-manager',
+    secretName: 'regcred',
+    holdTime: 600
+  }
+end
 
-cat <<-EOF
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: ${name}
-  labels:
-    build: ${prefix}
-spec:
-  ttlSecondsAfterFinished: ${holdTime}
-  template:
-    spec:
-      containers:
-      - name: ${name}
-        image: ${image}
-        resources:
-          requests:
-            memory: ${requestsMemory}
-            cpu: ${requestsCpu}
-          limits:
-            memory: ${limitsMemory}
-            cpu: ${limitsCpu}
-        args: ["--dockerfile=Dockerfile",
-                "--context=${gitRepo}#refs/heads/release-${release}",
-                "--destination=${dockerTarget}:${version}"]
-        volumeMounts:
-          - name: ${secretName}
-            mountPath: /root
-      restartPolicy: Never
-      volumes:
-        - name: ${secretName}
-          secret:
-            secretName: ${secretName}
-            items:
-              - key: .dockerconfigjson
-                path: .docker/config.json
-EOF
-}
+def create_job_manifest(release, config, version, name)
+  Kubernetes::IoK8sApiBatchV1Job.new(
+    api_version: 'batch/v1',
+    kind: 'Job',
+    metadata: Kubernetes::IoK8sApimachineryPkgApisMetaV1ObjectMeta.new(
+      name: name,
+      labels: { build: config[:prefix] }
+    ),
+    spec: Kubernetes::IoK8sApiBatchV1JobSpec.new(
+      ttl_seconds_after_finished: config[:holdTime],
+      template: Kubernetes::IoK8sApiCoreV1PodTemplateSpec.new(
+        spec: Kubernetes::IoK8sApiCoreV1PodSpec.new(
+          restart_policy: 'Never',
+          containers: [
+            Kubernetes::IoK8sApiCoreV1Container.new(
+              name: name,
+              image: config[:image],
+              resources: Kubernetes::IoK8sApiCoreV1ResourceRequirements.new(
+                requests: {
+                  memory: config[:requestsMemory],
+                  cpu: config[:requestsCpu]
+                },
+                limits: {
+                  memory: config[:limitsMemory],
+                  cpu: config[:limitsCpu]
+                }
+              ),
+              args: [
+                '--dockerfile=Dockerfile',
+                "--context=#{config[:gitRepo]}#refs/heads/release-#{release}",
+                "--destination=#{config[:dockerTarget]}:#{version}"
+              ],
+              volume_mounts: [
+                Kubernetes::IoK8sApiCoreV1VolumeMount.new(
+                  name: config[:secretName], mount_path: '/root'
+                )
+              ]
+            )
+          ],
+          volumes: [
+            Kubernetes::IoK8sApiCoreV1Volume.new(
+              name: config[:secretName],
+              secret: Kubernetes::IoK8sApiCoreV1SecretVolumeSource.new(
+                secret_name: config[:secretName],
+                items: [
+                  Kubernetes::IoK8sApiCoreV1KeyToPath.new(
+                    key: '.dockerconfigjson', path: '.docker/config.json'
+                  )
+                ]
+              )
+            )
+          ]
+        )
+      )
+    )
+  )
+end
 
-for word in $(seq ${last_release} -1 ${first_release})
-do
-        create_job_manifest 1.${word}
-done 
+def create_job(release, config)
+  version = `git describe --always release-#{release}`.strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
+  name = "#{config[:prefix]}-#{version.tr('.', '-')}"
+  create_job_manifest(release, config, version, name)
+    .to_hash.deep_stringify_keys.to_yaml
+end
+
+jobs = (first_release..last_release).inject('') do |memo, release|
+  memo << create_job("1.#{release}", config)
+end
+
+puts jobs
+
+# require 'open3'
+# stdout_str, status = Open3.capture2('kubectl apply -f -', stdin_data: jobs)
+# puts stdout_str
+# exit status.exitstatus
