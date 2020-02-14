@@ -86,7 +86,7 @@ end
 
 def create_job(release, config)
   version = `git describe --always release-#{release}`
-              .strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
+            .strip.sub(/^v([0-9]+\.[0-9]+\.[0-9]+).*$/, '\1')
   name = "#{config[:prefix]}-#{version.tr('.', '-')}"
   create_job_manifest(release, config, version, name)
     .to_hash.deep_stringify_keys.to_yaml
