@@ -19,7 +19,7 @@ import (
 
 	"github.com/brightbox/k8ssdk"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 )
 
 var (

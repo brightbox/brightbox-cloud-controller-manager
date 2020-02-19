@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/brightbox/gobrightbox/status"
 	"github.com/brightbox/k8ssdk"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 )
 
@@ -137,15 +138,15 @@ func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		return false, err
 	}
 	switch srv.Status {
-	case k8ssdk.Active,
-		k8ssdk.Inactive,
-		k8ssdk.Deleting,
-		k8ssdk.Creating,
-		k8ssdk.Unavailable:
+	case status.Active,
+		status.Inactive,
+		status.Deleting,
+		status.Creating,
+		status.Unavailable:
 		klog.V(4).Infof("the instance %s exists", srv.Id)
 		return true, nil
-	case k8ssdk.Deleted,
-		k8ssdk.Failed:
+	case status.Deleted,
+		status.Failed:
 		klog.V(4).Infof("the instance %s does not exist", srv.Id)
 		return false, nil
 	default:
@@ -164,15 +165,15 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 		return false, err
 	}
 	switch srv.Status {
-	case k8ssdk.Inactive,
-		k8ssdk.Unavailable:
+	case status.Inactive,
+		status.Unavailable:
 		klog.V(4).Infof("the instance %s is shutdown", srv.Id)
 		return true, nil
-	case k8ssdk.Active,
-		k8ssdk.Creating,
-		k8ssdk.Deleting,
-		k8ssdk.Deleted,
-		k8ssdk.Failed:
+	case status.Active,
+		status.Creating,
+		status.Deleting,
+		status.Deleted,
+		status.Failed:
 		klog.V(4).Infof("the instance %s is not shutdown", srv.Id)
 		return false, nil
 	default:

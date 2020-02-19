@@ -23,10 +23,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/brightbox/gobrightbox"
+	brightbox "github.com/brightbox/gobrightbox"
 	"github.com/brightbox/k8ssdk"
-	"k8s.io/api/core/v1"
-	"k8s.io/cloud-provider"
+	v1 "k8s.io/api/core/v1"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/api/v1/service"
 )
@@ -223,7 +223,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 			return nil, err
 		}
 	}
-	lb, err = c.GetLoadBalancerById(lb.Id)
+	lb, err = c.GetLoadBalancerByID(lb.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		return err
 	}
 	if lb != nil {
-		lb, err = c.GetLoadBalancerById(lb.Id)
+		lb, err = c.GetLoadBalancerByID(lb.Id)
 		if err != nil {
 			return err
 		}

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	brightbox "github.com/brightbox/gobrightbox"
+	"github.com/brightbox/gobrightbox/status"
 	"github.com/brightbox/k8ssdk"
 	"github.com/go-test/deep"
 	v1 "k8s.io/api/core/v1"
@@ -1775,7 +1776,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
 				Name:   lbname,
-				Status: k8ssdk.LbActive,
+				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-gdqms",
@@ -1850,7 +1851,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			lbopts: &brightbox.LoadBalancer{
 				Id:     foundLba,
 				Name:   lbname,
-				Status: k8ssdk.LbActive,
+				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-gdqms",
@@ -1921,7 +1922,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Name:   newlbname,
-				Status: k8ssdk.LbActive,
+				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
 						Id: "srv-230b7",
@@ -3658,7 +3659,7 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 	return &brightbox.LoadBalancer{
 		Id:          newLB.Id,
 		Name:        *newLB.Name,
-		Status:      k8ssdk.LbActive,
+		Status:      status.Active,
 		Nodes:       server_list,
 		Listeners:   newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
@@ -3686,7 +3687,7 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		{
 			Id:     foundLba,
 			Name:   lbname,
-			Status: k8ssdk.LbActive,
+			Status: status.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         "cip-12345",
@@ -3700,12 +3701,12 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		{
 			Id:     "lba-test3",
 			Name:   "abob",
-			Status: k8ssdk.LbActive,
+			Status: status.Active,
 		},
 		{
 			Id:     errorLba,
 			Name:   lberror,
-			Status: k8ssdk.LbActive,
+			Status: status.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					Id:         publicCipId,
