@@ -321,12 +321,12 @@ func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBal
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
 func (c *cloud) ensureCloudIPsDeleted(name string) error {
 	klog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
-	cloudIpList, err := c.GetCloudIPs()
+	cloudIPList, err := c.GetCloudIPs()
 	if err != nil {
 		klog.V(4).Infof("Error retrieving list of CloudIPs")
 		return err
 	}
-	return c.DestroyCloudIPs(cloudIpList, name)
+	return c.DestroyCloudIPs(cloudIPList, name)
 }
 
 func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
