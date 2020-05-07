@@ -64,10 +64,10 @@ var (
 			Type:    v1.NodeInternalIP,
 			Address: serverExistIP,
 		},
-		//		{
-		//			Type:    v1.NodeInternalIP,
-		//			Address: serverExistIPv6,
-		//		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverExistIPv6,
+		},
 	}
 	expectedShutdownNodeAddresses = []v1.NodeAddress{
 		{
@@ -90,10 +90,10 @@ var (
 			Type:    v1.NodeExternalDNS,
 			Address: serverShutdownExternalName + "." + domain,
 		},
-		//		{
-		//			Type:    v1.NodeInternalIP,
-		//			Address: serverShutdownIPv6,
-		//		},
+		{
+			Type:    v1.NodeInternalIP,
+			Address: serverShutdownIPv6,
+		},
 	}
 )
 
@@ -121,7 +121,7 @@ func TestAddSSHKey(t *testing.T) {
 func TestNodeNameChecks(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 
-	var instance_tests = []struct {
+	var instanceTests = []struct {
 		name string
 		fn   func(*testing.T)
 	}{
@@ -154,7 +154,7 @@ func TestNodeNameChecks(t *testing.T) {
 				typeHandle),
 		},
 	}
-	for _, example := range instance_tests {
+	for _, example := range instanceTests {
 		t.Run(example.name, example.fn)
 	}
 }
@@ -162,7 +162,7 @@ func TestNodeNameChecks(t *testing.T) {
 func TestNodeAddresses(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 
-	var instance_tests = []struct {
+	var instanceTests = []struct {
 		server                types.NodeName
 		expectedNodeAddresses []v1.NodeAddress
 	}{
@@ -175,7 +175,7 @@ func TestNodeAddresses(t *testing.T) {
 			expectedNodeAddresses: expectedShutdownNodeAddresses,
 		},
 	}
-	for _, example := range instance_tests {
+	for _, example := range instanceTests {
 		t.Run(
 			mapNodeNameToServerID(example.server),
 			func(t *testing.T) {
@@ -183,10 +183,10 @@ func TestNodeAddresses(t *testing.T) {
 				if err != nil {
 					t.Fatalf(err.Error())
 				}
-				len_expected := len(example.expectedNodeAddresses)
-				len_addresses := len(addresses)
-				if len_addresses != len_expected {
-					t.Errorf("Expected %d items, got %d", len_expected, len_addresses)
+				lenExpected := len(example.expectedNodeAddresses)
+				lenAddresses := len(addresses)
+				if lenAddresses != lenExpected {
+					t.Errorf("Expected %d items, got %d", lenExpected, lenAddresses)
 				}
 				for _, expected := range example.expectedNodeAddresses {
 					if !containsNodeAddress(addresses, expected) {
@@ -209,10 +209,10 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
 	}
-	//addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgy6))
-	//if err == nil {
-	//	t.Errorf("Expected error, got %+v", addresses)
-	//}
+	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgy6))
+	if err == nil {
+		t.Errorf("Expected error, got %+v", addresses)
+	}
 	addresses, err = client.NodeAddressesByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDodgyCIP))
 	if err == nil {
 		t.Errorf("Expected error, got %+v", addresses)
@@ -371,7 +371,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 					Id:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
 					IPv4Address: serverExistIP,
-					//IPv6Address: serverExistIPv6,
+					IPv6Address: serverExistIPv6,
 				},
 			},
 			CloudIPs: []brightbox.CloudIP{},
