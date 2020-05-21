@@ -65,7 +65,7 @@ var (
 			Address: serverExistIP,
 		},
 		{
-			Type:    v1.NodeInternalIP,
+			Type:    v1.NodeExternalIP,
 			Address: serverExistIPv6,
 		},
 	}
@@ -91,7 +91,7 @@ var (
 			Address: serverShutdownExternalName + "." + domain,
 		},
 		{
-			Type:    v1.NodeInternalIP,
+			Type:    v1.NodeExternalIP,
 			Address: serverShutdownIPv6,
 		},
 	}

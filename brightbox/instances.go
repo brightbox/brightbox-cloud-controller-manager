@@ -47,7 +47,7 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 		if err != nil {
 			return nil, err
 		}
-		ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeInternalIP)
+		ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
