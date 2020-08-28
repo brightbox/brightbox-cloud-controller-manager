@@ -28,6 +28,7 @@ import (
 	_ "github.com/brightbox/brightbox-cloud-controller-manager/brightbox"
 
 	_ "k8s.io/component-base/metrics/prometheus/clientgo" // load all the prometheus client-go plugins
+	_ "k8s.io/component-base/metrics/prometheus/version"  // for version metric registration
 )
 
 func main() {
