@@ -9,8 +9,9 @@ require 'active_support/core_ext/hash/keys'
 require 'active_support/core_ext/string/inflections'
 require 'yaml'
 
-current_release = 18
+current_release = 19
 first_release = current_release - 2
+
 def config
   {
     prefix: 'cloud-controller-build',
