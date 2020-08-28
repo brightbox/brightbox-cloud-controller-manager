@@ -21,7 +21,7 @@ import (
 	brightbox "github.com/brightbox/gobrightbox"
 	"github.com/brightbox/k8ssdk"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var defaultRegionCidr = "10.0.0.0/8"

@@ -19,7 +19,7 @@ import (
 
 	"github.com/brightbox/k8ssdk"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type cloud struct {
@@ -36,47 +36,57 @@ func (c *cloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, 
 // LoadBalancer returns a balancer interface. Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
-	klog.V(4).Infof("LoadBalancer called")
+	klog.V(4).Info("LoadBalancer called")
 	return c, true
 }
 
 // Instances returns an instances interface. Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) Instances() (cloudprovider.Instances, bool) {
-	klog.V(4).Infof("Instances called")
+	klog.V(4).Info("Instances called")
 	return c, true
+}
+
+// InstancesV2 is an implementation for instances and should only be implemented by external cloud providers.
+// Implementing InstancesV2 is behaviorally identical to Instances but is optimized to significantly reduce
+// API calls to the cloud provider when registering and syncing nodes.
+// Also returns true if the interface is supported, false otherwise.
+// WARNING: InstancesV2 is an experimental interface and is subject to change in v1.20.
+func (c *cloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
+	klog.V(4).Info("InstancesV2 called")
+	return nil, false
 }
 
 // Zones returns a zones interface. Also returns true if the interface
 // is supported, false otherwise.
 func (c *cloud) Zones() (cloudprovider.Zones, bool) {
-	klog.V(4).Infof("Zones called")
+	klog.V(4).Info("Zones called")
 	return c, true
 }
 
 // Clusters returns a clusters interface.  Also returns true if the
 // interface is supported, false otherwise.
 func (c *cloud) Clusters() (cloudprovider.Clusters, bool) {
-	klog.V(4).Infof("Clusters called")
+	klog.V(4).Info("Clusters called")
 	return nil, false
 }
 
 // Routes returns a routes interface along with whether the interface
 // is supported.
 func (c *cloud) Routes() (cloudprovider.Routes, bool) {
-	klog.V(4).Infof("Routes called")
+	klog.V(4).Info("Routes called")
 	return nil, false
 }
 
 // ProviderName returns the cloud provider ID.
 func (c *cloud) ProviderName() string {
-	klog.V(4).Infof("ProviderName called")
+	klog.V(4).Info("ProviderName called")
 	return k8ssdk.ProviderName
 }
 
 // HasClusterID returns true if a ClusterID is required and set
 func (c *cloud) HasClusterID() bool {
-	klog.V(4).Infof("HasClusterID called")
+	klog.V(4).Info("HasClusterID called")
 	return true
 }
 
@@ -92,7 +102,7 @@ func init() {
 func newCloudConnection(config io.Reader) (cloudprovider.Interface, error) {
 	klog.V(4).Infof("newCloudConnection called with %+v", config)
 	if config != nil {
-		klog.Warningf("supplied config is not read by this version. Using environment")
+		klog.Warning("supplied config is not read by this version. Using environment")
 	}
 	newCloud := &cloud{
 		&k8ssdk.Cloud{},
