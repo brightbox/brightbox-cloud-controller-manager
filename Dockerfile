@@ -23,9 +23,7 @@ RUN GOCACHE=/tmp go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOCACHE=/tmp go build \
-        -ldflags "-s -w" \
-	-o brightbox-cloud-controller-manager
+RUN GOCACHE=/tmp make brightbox-cloud-controller-manager
 
 FROM alpine:latest
 
