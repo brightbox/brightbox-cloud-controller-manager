@@ -16,7 +16,7 @@
 
 [ $# -eq 1 ] || { echo "Supply new version number" >&2; exit 1; }
 
-sed -i '/^replace/d' go.mod
+sed -i '/^replace k8s.io/d' go.mod
 curl -LSs \
 	https://raw.githubusercontent.com/kubernetes/kubernetes/v${1}/go.mod | \
 	sed -n "s/\\(k8s.io.*\\) v0.0.0$/replace \\1 => \\1 kubernetes-${1}/p" >> go.mod
