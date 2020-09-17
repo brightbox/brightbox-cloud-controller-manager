@@ -15,6 +15,8 @@ require (
 	k8s.io/kubernetes v1.18.8
 )
 
+replace vbom.ml/util => github.com/fvbommel/util v0.0.0-20160121211510-db5cfe13f5cc
+
 replace k8s.io/api => k8s.io/api v0.18.8
 
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.8
