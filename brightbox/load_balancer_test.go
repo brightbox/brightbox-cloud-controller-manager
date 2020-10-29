@@ -358,7 +358,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "SSL Domains are not supported with the TCP protocol",
+			status: "SSL Domains are not supported with the tcp protocol",
 		},
 		"Ports with TCP": {
 			service: &v1.Service{
@@ -390,7 +390,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "SSL Ports are not supported with the TCP protocol",
+			status: "SSL Ports are not supported with the tcp protocol",
 		},
 		"valid-proxy-protocol": {
 			service: &v1.Service{
