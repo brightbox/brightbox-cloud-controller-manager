@@ -358,7 +358,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "SSL Domains are not supported with the tcp protocol",
+			status: "SSL Domains are not supported with the TCP protocol",
 		},
 		"Ports with TCP": {
 			service: &v1.Service{
@@ -390,7 +390,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "SSL Ports are not supported with the tcp protocol",
+			status: "SSL Ports are not supported with the TCP protocol",
 		},
 		"valid-proxy-protocol": {
 			service: &v1.Service{
@@ -3459,7 +3459,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			err := client.EnsureOldCloudIPsDeposed(tc.lb, tc.cip, tc.name)
+			err := client.EnsureOldCloudIPsDeposed(tc.lb.CloudIPs, tc.cip.Id, tc.name)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}

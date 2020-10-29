@@ -214,11 +214,11 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	err = c.EnsureOldCloudIPsDeposed(lb, cip, name)
-	if err != nil {
-		return nil, err
-	}
 	if apiservice.Spec.LoadBalancerIP != "" {
+		err = c.EnsureOldCloudIPsDeposed(lb.CloudIPs, cip.Id, name)
+		if err != nil {
+			return nil, err
+		}
 		if err := c.ensureCloudIPsDeleted(name); err != nil {
 			return nil, err
 		}
