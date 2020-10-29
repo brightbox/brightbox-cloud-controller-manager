@@ -25,7 +25,7 @@ import (
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
-var defaultRuleProtocol = loadBalancerTcpProtocol
+var defaultRuleProtocol = loadBalancerTCPProtocol
 
 // The approach is to create a separate server group, firewall policy
 // and firewall rule for each loadbalancer primarily to avoid any

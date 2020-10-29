@@ -33,10 +33,10 @@ import (
 
 const (
 	// Listening protocols
-	loadBalancerTcpProtocol     = "tcp"
-	loadBalancerHttpProtocol    = "http"
-	loadBalancerHttpWsProtocol  = "http+ws"
-	defaultLoadBalancerProtocol = loadBalancerHttpProtocol
+	loadBalancerTCPProtocol     = "TCP"
+	loadBalancerHTTPProtocol    = "http"
+	loadBalancerHTTPWSProtocol  = "http+ws"
+	defaultLoadBalancerProtocol = loadBalancerHTTPProtocol
 
 	// Proxy protocols
 	loadBalancerProxyV1      = "v1"
@@ -73,7 +73,7 @@ const (
 	// (pod) behind a listener.
 	// If `http` (default) or `http+ws`, an HTTP listener that terminates the
 	// connection and parses headers is created.
-	// If set to `tcp`, a "raw" listener is used.
+	// If set to `TCP`, a "raw" listener is used.
 	// The 'ws' extensions add support for Websockets to the listener.
 	serviceAnnotationLoadBalancerListenerProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol"
 
@@ -140,18 +140,18 @@ var (
 		"source-address":    true,
 	}
 	validListenerProtocols = map[string]bool{
-		loadBalancerHttpProtocol:   true,
-		loadBalancerTcpProtocol:    true,
-		loadBalancerHttpWsProtocol: true,
+		loadBalancerHTTPProtocol:   true,
+		loadBalancerTCPProtocol:    true,
+		loadBalancerHTTPWSProtocol: true,
 	}
 	validHealthCheckProtocols = map[string]bool{
-		loadBalancerHttpProtocol: true,
-		loadBalancerTcpProtocol:  true,
+		loadBalancerHTTPProtocol: true,
+		loadBalancerTCPProtocol:  true,
 	}
 	sslUpgradeProtocol = map[string]string{
-		loadBalancerTcpProtocol:    loadBalancerTcpProtocol,
-		loadBalancerHttpProtocol:   "https",
-		loadBalancerHttpWsProtocol: "https+wss",
+		loadBalancerTCPProtocol:    loadBalancerTCPProtocol,
+		loadBalancerHTTPProtocol:   "https",
+		loadBalancerHTTPWSProtocol: "https+wss",
 	}
 	validListenerProxyProtocols = map[string]bool{
 		loadBalancerProxyV1:      true,
@@ -374,14 +374,14 @@ func validateServiceSpec(apiservice *v1.Service) error {
 		return fmt.Errorf("requested load balancer with no ports")
 	}
 	protocol := getListenerProtocol(apiservice)
-	ssl_port_found := false
+	sslPortFound := false
 	for _, port := range apiservice.Spec.Ports {
 		if port.Protocol != v1.ProtocolTCP {
 			return fmt.Errorf("UDP nodeports are not supported")
 		}
-		ssl_port_found = ssl_port_found || port.Port == standardSSLPort
+		sslPortFound = sslPortFound || port.Port == standardSSLPort
 	}
-	if !ssl_port_found && protocol == loadBalancerHttpProtocol {
+	if !sslPortFound && protocol == loadBalancerHTTPProtocol {
 		_, ports := apiservice.Annotations[serviceAnnotationLoadBalancerSSLPorts]
 		_, domains := apiservice.Annotations[serviceAnnotationLoadBalancerSslDomains]
 		if ports || domains {
@@ -402,12 +402,12 @@ func validateAnnotations(annotationList map[string]string) error {
 			if !validListenerProtocols[value] {
 				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q", value)
 			}
-			if value == loadBalancerTcpProtocol {
+			if value == loadBalancerTCPProtocol {
 				if _, ok := annotationList[serviceAnnotationLoadBalancerSSLPorts]; ok {
-					return fmt.Errorf("SSL Ports are not supported with the %s protocol", loadBalancerTcpProtocol)
+					return fmt.Errorf("SSL Ports are not supported with the %s protocol", loadBalancerTCPProtocol)
 				}
 				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; ok {
-					return fmt.Errorf("SSL Domains are not supported with the %s protocol", loadBalancerTcpProtocol)
+					return fmt.Errorf("SSL Domains are not supported with the %s protocol", loadBalancerTCPProtocol)
 				}
 			}
 		case serviceAnnotationLoadBalancerListenerProxyProtocol:
@@ -443,8 +443,8 @@ func validateAnnotations(annotationList map[string]string) error {
 				return fmt.Errorf("%q needs to be no more than %d", annotation, validMaximumBufferSize)
 			}
 		case serviceAnnotationLoadBalancerHCRequest:
-			testUrl := "http://example.com:6443" + value
-			u, err := url.Parse(testUrl)
+			testURL := "http://example.com:6443" + value
+			u, err := url.Parse(testURL)
 			if err != nil || u.Path != value {
 				return fmt.Errorf("%q needs to be a valid Url request path", annotation)
 			}
@@ -453,30 +453,30 @@ func validateAnnotations(annotationList map[string]string) error {
 	return nil
 }
 
-func validateContextualAnnotations(annotationList map[string]string, cloudIp *brightbox.CloudIP) error {
+func validateContextualAnnotations(annotationList map[string]string, cloudIP *brightbox.CloudIP) error {
 	domains := buildLoadBalancerDomains(annotationList)
 	if domains != nil {
-		cloudIpList, err := toIpList(cloudIp)
+		cloudIPList, err := toIPList(cloudIP)
 		if err != nil {
 			return err
 		}
 		for _, domain := range domains {
 			resolvedAddresses, err := net.LookupIP(domain)
 			if err != nil {
-				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6, err.Error())
+				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6, err.Error())
 			}
-			if !anyAddressMatch(cloudIpList, resolvedAddresses) {
-				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIp.PublicIPv4, cloudIp.PublicIPv6)
+			if !anyAddressMatch(cloudIPList, resolvedAddresses) {
+				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6)
 			}
 		}
 	}
 	return nil
 }
 
-func toIpList(cloudIp *brightbox.CloudIP) ([]net.IP, error) {
-	result := append([]net.IP{}, net.ParseIP(cloudIp.PublicIPv4), net.ParseIP(cloudIp.PublicIPv6))
+func toIPList(cloudIP *brightbox.CloudIP) ([]net.IP, error) {
+	result := append([]net.IP{}, net.ParseIP(cloudIP.PublicIPv4), net.ParseIP(cloudIP.PublicIPv6))
 	if result[0] == nil || result[1] == nil {
-		return nil, fmt.Errorf("Cloud IP %q failed to parse IP addresses", cloudIp.Id)
+		return nil, fmt.Errorf("Cloud IP %q failed to parse IP addresses", cloudIP.Id)
 	}
 	return result, nil
 }
@@ -510,25 +510,24 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 			return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
 		}
 	}
-	cloudIpList, err := c.GetCloudIPs()
+	cloudIPList, err := c.GetCloudIPs()
 	if err != nil {
 		return nil, err
 	}
-	for i := range cloudIpList {
-		if compareFunc(&cloudIpList[i]) {
-			return &cloudIpList[i], nil
+	for i := range cloudIPList {
+		if compareFunc(&cloudIPList[i]) {
+			return &cloudIPList[i], nil
 		}
 	}
 	if ip == "" {
 		return c.AllocateCloudIP(name)
-	} else {
-		return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 	}
+	return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 }
 
 func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
-	current_lb, err := c.GetLoadBalancerByName(name)
+	currentLb, err := c.GetLoadBalancerByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -537,14 +536,14 @@ func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Servic
 		return nil, err
 	}
 	newLB := buildLoadBalancerOptions(name, apiservice, nodes)
-	if current_lb == nil {
+	if currentLb == nil {
 		return c.Cloud.CreateLoadBalancer(newLB)
-	} else if k8ssdk.IsUpdateLoadBalancerRequired(current_lb, *newLB) {
-		newLB.Id = current_lb.Id
+	} else if k8ssdk.IsUpdateLoadBalancerRequired(currentLb, *newLB) {
+		newLB.Id = currentLb.Id
 		return c.Cloud.UpdateLoadBalancer(newLB)
 	}
-	klog.V(4).Infof("No Load Balancer update required for %q, skipping", current_lb.Id)
-	return current_lb, nil
+	klog.V(4).Infof("No Load Balancer update required for %q, skipping", currentLb.Id)
+	return currentLb, nil
 }
 
 func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
@@ -595,7 +594,7 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	for i := range apiservice.Spec.Ports {
 		result[i].Protocol = getListenerProtocol(apiservice)
 		result[i].ProxyProtocol = getListenerProxyProtocol(apiservice)
-		if result[i].Protocol != loadBalancerTcpProtocol && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
+		if result[i].Protocol != loadBalancerTCPProtocol && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
 			result[i].Protocol = sslUpgradeProtocol[result[i].Protocol]
 		}
 		result[i].In = int(apiservice.Spec.Ports[i].Port)
@@ -615,9 +614,8 @@ func buildLoadBalancerDomains(annotations map[string]string) []string {
 func getListenerProtocol(apiservice *v1.Service) string {
 	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerListenerProtocol]; ok {
 		return protocol
-	} else {
-		return defaultLoadBalancerProtocol
 	}
+	return defaultLoadBalancerProtocol
 }
 
 func getListenerProxyProtocol(apiservice *v1.Service) string {
@@ -649,7 +647,7 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 }
 
 func getHealthCheckPath(apiservice *v1.Service, protocol string, path string) string {
-	if protocol == loadBalancerTcpProtocol {
+	if protocol == loadBalancerTCPProtocol {
 		return "/"
 	}
 	if request, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCRequest]; ok {
@@ -665,11 +663,10 @@ func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
 	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]; ok {
 		return protocol
 	}
-	if getListenerProtocol(apiservice) == loadBalancerTcpProtocol && path == "" {
-		return loadBalancerTcpProtocol
-	} else {
-		return loadBalancerHttpProtocol
+	if getListenerProtocol(apiservice) == loadBalancerTCPProtocol && path == "" {
+		return loadBalancerTCPProtocol
 	}
+	return loadBalancerHTTPProtocol
 }
 
 func getHealthCheckPort(apiservice *v1.Service, nodeport int) int {
