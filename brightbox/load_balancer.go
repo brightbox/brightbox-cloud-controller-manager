@@ -33,7 +33,7 @@ import (
 
 const (
 	// Listening protocols
-	loadBalancerTCPProtocol     = "TCP"
+	loadBalancerTCPProtocol     = "tcp"
 	loadBalancerHTTPProtocol    = "http"
 	loadBalancerHTTPWSProtocol  = "http+ws"
 	defaultLoadBalancerProtocol = loadBalancerHTTPProtocol
