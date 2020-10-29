@@ -65,8 +65,8 @@ github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx2
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/brightbox/gobrightbox v0.5.7 h1:Y9BrgDZWk+WiCW1crQdOxRK9l+y3/Kne8gPVozO7j5s=
 github.com/brightbox/gobrightbox v0.5.7/go.mod h1:nBw60QDTesbs4IQrLvus4cvR/VyIY6DP1beGJxjpd9Q=
-github.com/brightbox/k8ssdk v0.6.0 h1:1NO6TqtH081hjk4CwDiI6JYXEq69QmBxoA+3fa08Pwg=
-github.com/brightbox/k8ssdk v0.6.0/go.mod h1:8g4OftSn2tlAum9jOoK2XYMtyHRcluRxx+thCfmTW8U=
+github.com/brightbox/k8ssdk v0.6.1 h1:eb043eFHuGcuioI/Qutv233PuRfs9AplGkeeKOT8iX0=
+github.com/brightbox/k8ssdk v0.6.1/go.mod h1:8g4OftSn2tlAum9jOoK2XYMtyHRcluRxx+thCfmTW8U=
 github.com/caddyserver/caddy v1.0.3/go.mod h1:G+ouvOY32gENkJC+jhgl62TyhvqEsFaDiZ4uw0RzP1E=
 github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
