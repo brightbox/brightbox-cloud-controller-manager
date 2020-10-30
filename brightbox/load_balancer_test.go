@@ -877,7 +877,7 @@ func TestGetLoadBalancer(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			lbstatus: nil,
+			lbstatus: &v1.LoadBalancerStatus{},
 			exists:   false,
 		},
 		"found": {
