@@ -22,17 +22,25 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	brightbox "github.com/brightbox/gobrightbox"
 	"github.com/brightbox/k8ssdk"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/api/v1/service"
 )
 
 const (
+	// Delete Backoff settings
+	loadbalancerActiveInitDelay = 1 * time.Second
+	loadbalancerActiveFactor    = 1.2
+	loadbalancerActiveSteps     = 5
+
 	// Listening protocols
+
 	loadBalancerTCPProtocol     = "tcp"
 	loadBalancerHTTPProtocol    = "http"
 	loadBalancerHTTPWSProtocol  = "http+ws"
@@ -321,19 +329,32 @@ func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBal
 //Try to remove CloudIPs matching `name` from the list of cloudIPs
 func (c *cloud) ensureCloudIPsDeleted(name string) error {
 	klog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
-	cloudIPList, err := c.GetCloudIPs()
-	if err != nil {
-		klog.V(4).Infof("Error retrieving list of CloudIPs")
-		return err
+	backoff := wait.Backoff{
+		Duration: loadbalancerActiveInitDelay,
+		Factor:   loadbalancerActiveFactor,
+		Steps:    loadbalancerActiveSteps,
 	}
-	return c.DestroyCloudIPs(cloudIPList, name)
+
+	return wait.ExponentialBackoff(backoff, func() (bool, error) {
+		cloudIPList, err := c.GetCloudIPs()
+		if err != nil {
+			klog.V(4).Info("Error retrieving list of CloudIPs")
+			return false, err
+		}
+		if err := c.DestroyCloudIPs(cloudIPList, name); err != nil {
+			klog.V(4).Info(err)
+			return false, nil
+		}
+		return true, nil
+	},
+	)
 }
 
 func toLoadBalancerStatus(lb *brightbox.LoadBalancer) *v1.LoadBalancerStatus {
-	if lb == nil {
-		return nil
-	}
 	status := v1.LoadBalancerStatus{}
+	if lb == nil {
+		return &status
+	}
 	if len(lb.CloudIPs) > 0 {
 		status.Ingress = make([]v1.LoadBalancerIngress, 0, len(lb.CloudIPs)*4)
 		for _, v := range lb.CloudIPs {
