@@ -21,7 +21,7 @@ import (
 
 	"github.com/brightbox/k8ssdk"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/kubernetes/pkg/controller"
+	"k8s.io/controller-manager/pkg/clientbuilder"
 )
 
 const (
@@ -129,7 +129,7 @@ func TestInterfaceAdaption(t *testing.T) {
 	} else if cloud == nil {
 		t.Fatalf("Failed to initialise %s provider", provider)
 	}
-	cloud.Initialize(controller.SimpleControllerClientBuilder{}, make(chan struct{}))
+	cloud.Initialize(clientbuilder.SimpleControllerClientBuilder{}, make(chan struct{}))
 	for _, example := range interface_tests {
 		t.Run(example.name, example.fn(cloud))
 	}
