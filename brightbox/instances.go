@@ -43,22 +43,22 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
 	}
 	for _, iface := range srv.Interfaces {
-		ipv4_node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
+		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
 		if err != nil {
 			return nil, err
 		}
-		ipv6_node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
+		ipv6Node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
-		addresses = append(addresses, *ipv4_node, *ipv6_node)
+		addresses = append(addresses, *ipv4Node, *ipv6Node)
 	}
 	for _, cip := range srv.CloudIPs {
-		ipv4_node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
+		ipv4Node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
-		addresses = append(addresses, *ipv4_node, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn})
+		addresses = append(addresses, *ipv4Node, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn})
 	}
 	return addresses, nil
 }
@@ -178,11 +178,11 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 	}
 }
 
-func parseIPString(ipString string, ipType string, objectId string,
+func parseIPString(ipString string, ipType string, objectID string,
 	objectType string, nodeType v1.NodeAddressType) (*v1.NodeAddress, error) {
 	ip := net.ParseIP(ipString)
 	if ip == nil {
-		return nil, fmt.Errorf("%s has invalid %s address: %s (%q)", objectType, ipType, objectId, ipString)
+		return nil, fmt.Errorf("%s has invalid %s address: %s (%q)", objectType, ipType, objectID, ipString)
 	}
 	return &v1.NodeAddress{Type: nodeType, Address: ip.String()}, nil
 }
