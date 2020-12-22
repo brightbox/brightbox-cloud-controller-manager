@@ -38,29 +38,7 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 	if err != nil {
 		return nil, err
 	}
-	addresses := []v1.NodeAddress{
-		{Type: v1.NodeHostName, Address: srv.Hostname},
-		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
-	}
-	for _, iface := range srv.Interfaces {
-		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
-		if err != nil {
-			return nil, err
-		}
-		ipv6Node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
-		if err != nil {
-			return nil, err
-		}
-		addresses = append(addresses, *ipv4Node, *ipv6Node)
-	}
-	for _, cip := range srv.CloudIPs {
-		ipv4Node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
-		if err != nil {
-			return nil, err
-		}
-		addresses = append(addresses, *ipv4Node, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn})
-	}
-	return addresses, nil
+	return nodeAddressesFromServer(srv)
 }
 
 // NodeAddressesByProviderID returns the addresses of the specified instance.

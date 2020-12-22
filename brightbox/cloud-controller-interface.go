@@ -54,7 +54,7 @@ func (c *cloud) Instances() (cloudprovider.Instances, bool) {
 // WARNING: InstancesV2 is an experimental interface and is subject to change in v1.20.
 func (c *cloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
 	klog.V(4).Info("InstancesV2 called")
-	return nil, false
+	return c, true
 }
 
 // Zones returns a zones interface. Also returns true if the interface

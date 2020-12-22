@@ -32,8 +32,11 @@ const (
 	serverMissing              = "srv-missy"
 	serverShutdown             = "srv-downy"
 	serverBust                 = "srv-busty"
-	zoneHandle                 = "gb1s-a"
+	region                     = "gb1s"
+	zoneHandle                 = region + "-a"
+	zoneHandle2                = region + "-b"
 	typeHandle                 = "1gb.ssd"
+	typeHandle2                = "2gb.ssd"
 	regionRoot                 = ".brightbox.com"
 	serverExistIP              = "81.15.16.17"
 	serverExistIPv6            = "64:ff9b::510f:1011"
@@ -384,11 +387,11 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			Fqdn:     serverShutdown + "." + domain,
 			Zone: brightbox.Zone{
 				Id:     "zon-testy",
-				Handle: zoneHandle,
+				Handle: zoneHandle2,
 			},
 			ServerType: brightbox.ServerType{
 				Id:     "typ-wusvn",
-				Handle: "2gb.ssd",
+				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -419,7 +422,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			ServerType: brightbox.ServerType{
 				Id:     "typ-wusvn",
-				Handle: "2gb.ssd",
+				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -455,7 +458,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			ServerType: brightbox.ServerType{
 				Id:     "typ-wusvn",
-				Handle: "2gb.ssd",
+				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -479,7 +482,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			ServerType: brightbox.ServerType{
 				Id:     "typ-wusvn",
-				Handle: "2gb.ssd",
+				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
@@ -504,7 +507,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			ServerType: brightbox.ServerType{
 				Id:     "typ-wusvn",
-				Handle: "2gb.ssd",
+				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{

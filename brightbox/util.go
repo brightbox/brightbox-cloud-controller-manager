@@ -15,7 +15,9 @@
 package brightbox
 
 import (
+	brightbox "github.com/brightbox/gobrightbox"
 	"github.com/brightbox/k8ssdk"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -37,4 +39,56 @@ func mapProviderIDToNodeName(providerID string) types.NodeName {
 
 func mapNodeNameToProviderID(nodeName types.NodeName) string {
 	return k8ssdk.MapServerIDToProviderID(mapNodeNameToServerID(nodeName))
+}
+
+func mapNodeToProviderID(node *v1.Node) string {
+	if node.Spec.ProviderID == "" {
+		return k8ssdk.MapServerIDToProviderID(node.Name)
+	}
+	return node.Spec.ProviderID
+}
+
+func mapNodeToServerID(node *v1.Node) string {
+	if node.Spec.ProviderID == "" {
+		return node.Name
+	}
+	return k8ssdk.MapProviderIDToServerID(node.Spec.ProviderID)
+}
+
+func mapServerIDToNode(name string) *v1.Node {
+	result := &v1.Node{}
+	result.Name = name
+	return result
+}
+
+func mapServerIDToNodeProviderID(name string) *v1.Node {
+	result := &v1.Node{}
+	result.Spec.ProviderID = k8ssdk.MapServerIDToProviderID(name)
+	return result
+}
+
+func nodeAddressesFromServer(srv *brightbox.Server) ([]v1.NodeAddress, error) {
+	addresses := []v1.NodeAddress{
+		{Type: v1.NodeHostName, Address: srv.Hostname},
+		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
+	}
+	for _, iface := range srv.Interfaces {
+		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
+		if err != nil {
+			return nil, err
+		}
+		ipv6Node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
+		if err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, *ipv4Node, *ipv6Node)
+	}
+	for _, cip := range srv.CloudIPs {
+		ipv4Node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
+		if err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, *ipv4Node, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: cip.Fqdn})
+	}
+	return addresses, nil
 }

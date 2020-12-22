@@ -105,9 +105,23 @@ func interfaceInstances(impl cloudprovider.Interface) func(*testing.T) {
 	}
 }
 
+func interfaceInstancesV2(impl cloudprovider.Interface) func(*testing.T) {
+	return func(t *testing.T) {
+		client, supported := impl.InstancesV2()
+		if !supported {
+			t.Errorf("Instances should return true")
+		}
+		switch client.(type) {
+		case (*cloud):
+		default:
+			t.Errorf("Instances returned incorrect client interface")
+		}
+	}
+}
+
 func TestInterfaceAdaption(t *testing.T) {
 	var config io.Reader = strings.NewReader(config_const)
-	var interface_tests = []struct {
+	var interfaceTests = []struct {
 		name string
 		fn   func(cloudprovider.Interface) func(*testing.T)
 	}{
@@ -130,7 +144,7 @@ func TestInterfaceAdaption(t *testing.T) {
 		t.Fatalf("Failed to initialise %s provider", provider)
 	}
 	cloud.Initialize(clientbuilder.SimpleControllerClientBuilder{}, make(chan struct{}))
-	for _, example := range interface_tests {
+	for _, example := range interfaceTests {
 		t.Run(example.name, example.fn(cloud))
 	}
 }
