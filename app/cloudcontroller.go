@@ -40,8 +40,6 @@ func NewBrightboxCloudControllerManagerCommand() *cobra.Command {
 		klog.Fatalf("unable to initialize command options: %v", err)
 	}
 
-	var controllerInitializers map[string]app.InitFunc
-
 	cmd := &cobra.Command{
 		Use:  "brightbox-cloud-controller-manager",
 		Long: `brightbox-cloud-controller-manager manages Brightbox cloud resources for a Kubernetes cluster.`,
@@ -61,7 +59,7 @@ func NewBrightboxCloudControllerManagerCommand() *cobra.Command {
 			}
 
 			cloud := initializeCloudProvider(cloudProviderFlag.Value.String(), c)
-			controllerInitializers = app.DefaultControllerInitializers(c.Complete(), cloud)
+			controllerInitializers := app.DefaultControllerInitializers(c.Complete(), cloud)
 
 			if err := app.Run(c.Complete(), controllerInitializers, wait.NeverStop); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -77,7 +75,7 @@ func NewBrightboxCloudControllerManagerCommand() *cobra.Command {
 			return nil
 		},
 	}
-	namedFlagSets := s.Flags(app.KnownControllers(controllerInitializers), app.ControllersDisabledByDefault.List())
+	namedFlagSets := s.Flags(knownControllers(), app.ControllersDisabledByDefault.List())
 	setupAdditionalFlags(cmd, namedFlagSets)
 
 	return cmd
@@ -134,5 +132,5 @@ func initializeCloudProvider(name string, config *config.Config) cloudprovider.I
 }
 
 func knownControllers() []string {
-	return []string{"cloud-node", "cloud-node-lifecycle", "service", "route"}
+	return []string{"cloud-node", "cloud-node-lifecycle", "service"}
 }
