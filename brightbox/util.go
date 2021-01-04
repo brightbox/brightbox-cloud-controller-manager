@@ -70,10 +70,10 @@ func mapServerIDToNodeProviderID(name string) *v1.Node {
 func nodeAddressesFromServer(srv *brightbox.Server) ([]v1.NodeAddress, error) {
 	addresses := []v1.NodeAddress{
 		{Type: v1.NodeHostName, Address: srv.Hostname},
-		{Type: v1.NodeInternalDNS, Address: srv.Fqdn},
+		{Type: v1.NodeExternalDNS, Address: srv.Fqdn},
 	}
 	for _, iface := range srv.Interfaces {
-		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeInternalIP)
+		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}

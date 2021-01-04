@@ -25,6 +25,7 @@ import (
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
+var defaultIPv6RegionCidr = "2a02:1348:0140::/42"
 var defaultRuleProtocol = loadBalancerTCPProtocol
 
 // The approach is to create a separate server group, firewall policy

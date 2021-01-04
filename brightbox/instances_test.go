@@ -60,11 +60,11 @@ var (
 			Address: serverExist,
 		},
 		{
-			Type:    v1.NodeInternalDNS,
+			Type:    v1.NodeExternalDNS,
 			Address: serverExist + "." + domain,
 		},
 		{
-			Type:    v1.NodeInternalIP,
+			Type:    v1.NodeExternalIP,
 			Address: serverExistIP,
 		},
 		{
@@ -78,11 +78,11 @@ var (
 			Address: serverShutdown,
 		},
 		{
-			Type:    v1.NodeInternalDNS,
+			Type:    v1.NodeExternalDNS,
 			Address: serverShutdown + "." + domain,
 		},
 		{
-			Type:    v1.NodeInternalIP,
+			Type:    v1.NodeExternalIP,
 			Address: serverShutdownIP,
 		},
 		{
