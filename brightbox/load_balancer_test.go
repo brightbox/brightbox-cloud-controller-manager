@@ -367,6 +367,7 @@ func TestValidateService(t *testing.T) {
 					Annotations: map[string]string{
 						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTCPProtocol,
 						serviceAnnotationLoadBalancerSSLPorts:         "443",
+						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
 				Spec: v1.ServiceSpec{
