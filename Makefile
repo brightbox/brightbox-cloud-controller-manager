@@ -89,6 +89,3 @@ cloud-build:
 .PHONY: delete_k8s_build
 delete_k8s_build:
 	kubectl delete jobs -l build=cloud-controller-build
-
-main.go:
-	@./hack/create-main.sh

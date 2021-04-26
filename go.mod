@@ -7,6 +7,7 @@ require (
 	github.com/brightbox/k8ssdk v0.6.1
 	github.com/go-test/deep v1.0.7
 	github.com/spf13/cobra v1.1.1
+	github.com/spf13/pflag v1.0.5 // indirect
 	k8s.io/api v0.20.6
 	k8s.io/apimachinery v0.20.6
 	k8s.io/cloud-provider v0.20.6
