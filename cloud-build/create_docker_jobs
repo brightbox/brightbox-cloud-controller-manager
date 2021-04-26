@@ -19,7 +19,7 @@ def config
     requestsCpu: '1',
     requestsMemory: '1Gi',
     limitsCpu: '2',
-    limitsMemory: '1890Mi',
+    limitsMemory: '3Gi',
     gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
     dockerTarget: 'brightbox/brightbox-cloud-controller-manager',
     secretName: 'regcred',
