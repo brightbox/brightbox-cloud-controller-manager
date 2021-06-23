@@ -481,7 +481,7 @@ func validateContextualAnnotations(annotationList map[string]string, cloudIP *br
 		if err != nil {
 			return err
 		}
-		for _, domain := range domains {
+		for _, domain := range *domains {
 			resolvedAddresses, err := net.LookupIP(domain)
 			if err != nil {
 				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6, err.Error())
@@ -625,9 +625,10 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	return result
 }
 
-func buildLoadBalancerDomains(annotations map[string]string) []string {
+func buildLoadBalancerDomains(annotations map[string]string) *[]string {
 	if domains, ok := annotations[serviceAnnotationLoadBalancerSslDomains]; ok {
-		return strings.Split(domains, ",")
+		temp := strings.Split(domains, ",")
+		return &temp
 	}
 	return nil
 }

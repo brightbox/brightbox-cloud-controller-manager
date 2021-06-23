@@ -1011,7 +1011,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Out:      31348,
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn},
+				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHTTPProtocol,
 					Port:    31347,
@@ -1097,7 +1097,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						ProxyProtocol: loadBalancerProxyV2SslCn,
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn},
+				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHTTPProtocol,
 					Port:    31347,
@@ -1180,7 +1180,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Out:      31348,
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn},
+				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHTTPProtocol,
 					Port:    31347,
@@ -1290,7 +1290,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Out:      31348,
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn},
+				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    loadBalancerHTTPProtocol,
 					Port:    31347,
@@ -2011,7 +2011,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn},
+				Domains: &[]string{resolvedDomain, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
@@ -2080,7 +2080,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: []string{fqdn, resolvedDomain},
+				Domains: &[]string{fqdn, resolvedDomain},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
@@ -2149,7 +2149,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: []string{resolvedDomain, fqdn, reverseDNS},
+				Domains: &[]string{resolvedDomain, fqdn, reverseDNS},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
@@ -2218,7 +2218,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: []string{fqdn},
+				Domains: &[]string{fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
@@ -2287,7 +2287,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: []string{reverseDNS, fqdn},
+				Domains: &[]string{reverseDNS, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],

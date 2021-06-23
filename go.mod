@@ -3,14 +3,14 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 go 1.15
 
 require (
-	github.com/brightbox/gobrightbox v0.5.7
-	github.com/brightbox/k8ssdk v0.6.1
+	github.com/brightbox/gobrightbox v0.7.2
+	github.com/brightbox/k8ssdk v0.6.5
 	github.com/go-test/deep v1.0.7
 	k8s.io/api v0.19.12
 	k8s.io/apimachinery v0.19.12
 	k8s.io/cloud-provider v0.19.12
 	k8s.io/component-base v0.19.12
-	k8s.io/klog/v2 v2.3.0
+	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubernetes v1.19.12
 )
 
