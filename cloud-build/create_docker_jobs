@@ -17,7 +17,7 @@ def config
     prefix: 'cloud-controller-build',
     image: 'gcr.io/kaniko-project/executor:latest',
     requestsCpu: '1',
-    requestsMemory: '1Gi',
+    requestsMemory: '2Gi',
     limitsCpu: '2',
     limitsMemory: '3Gi',
     gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
