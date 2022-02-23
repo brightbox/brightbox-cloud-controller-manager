@@ -58,7 +58,7 @@ func (c *cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string
 	if err != nil {
 		return "", cloudprovider.InstanceNotFound
 	}
-	return srv.Id, nil
+	return srv.ID, nil
 }
 
 // DEPRECATED: ExternalID returns the cloud provider ID of the node with
@@ -118,14 +118,14 @@ func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		status.Deleting,
 		status.Creating,
 		status.Unavailable:
-		klog.V(4).Infof("the instance %s exists", srv.Id)
+		klog.V(4).Infof("the instance %s exists", srv.ID)
 		return true, nil
 	case status.Deleted,
 		status.Failed:
-		klog.V(4).Infof("the instance %s does not exist", srv.Id)
+		klog.V(4).Infof("the instance %s does not exist", srv.ID)
 		return false, nil
 	default:
-		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.ID, srv.Status)
 	}
 }
 
@@ -142,17 +142,17 @@ func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 	switch srv.Status {
 	case status.Inactive,
 		status.Unavailable:
-		klog.V(4).Infof("the instance %s is shutdown", srv.Id)
+		klog.V(4).Infof("the instance %s is shutdown", srv.ID)
 		return true, nil
 	case status.Active,
 		status.Creating,
 		status.Deleting,
 		status.Deleted,
 		status.Failed:
-		klog.V(4).Infof("the instance %s is not shutdown", srv.Id)
+		klog.V(4).Infof("the instance %s is not shutdown", srv.ID)
 		return false, nil
 	default:
-		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.Id, srv.Status)
+		return false, fmt.Errorf("Instance %s: Unrecognised status %q", srv.ID, srv.Status)
 	}
 }
 

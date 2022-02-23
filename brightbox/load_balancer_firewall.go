@@ -85,7 +85,7 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 	klog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
 	portListStr := createPortListString(apiservice)
 	newRule := brightbox.FirewallRuleOptions{
-		FirewallPolicy:  fp.Id,
+		FirewallPolicy:  fp.ID,
 		Protocol:        &defaultRuleProtocol,
 		Source:          &defaultRegionCidr,
 		DestinationPort: &portListStr,
@@ -95,11 +95,11 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 		_, err := c.CreateFirewallRule(&newRule)
 		return err
 	} else if isUpdateFirewallRuleRequired(fp.Rules[0], newRule) {
-		newRule.Id = fp.Rules[0].Id
+		newRule.ID = fp.Rules[0].ID
 		_, err := c.UpdateFirewallRule(&newRule)
 		return err
 	}
-	klog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].Id)
+	klog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].ID)
 	return nil
 }
 

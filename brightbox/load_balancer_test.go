@@ -65,12 +65,12 @@ var (
 	groknewlbname string            = newlbname
 	bufferSize    int               = 16384
 	resolvCip     brightbox.CloudIP = brightbox.CloudIP{
-		Id:         "cip-vsalc",
+		ID:         "cip-vsalc",
 		PublicIP:   "109.107.39.92",
 		PublicIPv4: "109.107.39.92",
 		PublicIPv6: "2a02:1348:ffff:ffff::6d6b:275c",
 		Fqdn:       resolvedDomain,
-		ReverseDns: "cip-109-107-39-92.gb1s.brightbox.com",
+		ReverseDNS: "cip-109-107-39-92.gb1s.brightbox.com",
 	}
 )
 
@@ -87,10 +87,10 @@ func TestLoadBalancerStatus(t *testing.T) {
 			lb: &brightbox.LoadBalancer{
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID,
+						ID:         publicCipID,
 						PublicIPv4: publicIP,
 						PublicIPv6: publicIPv6,
-						ReverseDns: reverseDNS,
+						ReverseDNS: reverseDNS,
 						Fqdn:       fqdn,
 					},
 				},
@@ -118,18 +118,18 @@ func TestLoadBalancerStatus(t *testing.T) {
 			lb: &brightbox.LoadBalancer{
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID2,
+						ID:         publicCipID2,
 						PublicIPv4: publicIP2,
 						PublicIPv6: publicIPv62,
-						ReverseDns: "",
+						ReverseDNS: "",
 						Fqdn:       fqdn2,
 						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
-						Id:         publicCipID,
+						ID:         publicCipID,
 						PublicIPv4: publicIP,
 						PublicIPv6: publicIPv6,
-						ReverseDns: reverseDNS,
+						ReverseDNS: reverseDNS,
 						Fqdn:       fqdn,
 					},
 				},
@@ -1020,7 +1020,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &trueVar,
+				HTTPSRedirect: &trueVar,
 			},
 		},
 		"standard_proxy_protocol": {
@@ -1106,7 +1106,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &trueVar,
+				HTTPSRedirect: &trueVar,
 			},
 		},
 		"websocket": {
@@ -1189,7 +1189,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &trueVar,
+				HTTPSRedirect: &trueVar,
 			},
 		},
 		"extraSSLports": {
@@ -1299,7 +1299,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &trueVar,
+				HTTPSRedirect: &trueVar,
 			},
 		},
 		"OverrideToTcpListener": {
@@ -1367,7 +1367,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				BufferSize:    &bufferSize,
 				Policy:        &testPolicy,
-				HttpsRedirect: &falseVar,
+				HTTPSRedirect: &falseVar,
 			},
 		},
 		"overrideToHttpHealthcheck": {
@@ -1450,7 +1450,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					ThresholdUp:   4,
 					ThresholdDown: 5,
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 		},
 		"httphealthcheck": {
@@ -1522,7 +1522,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 		},
 		"overrideToTcpHealthcheck": {
@@ -1597,7 +1597,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 		},
 		"empty": {
@@ -1622,7 +1622,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    80,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 		},
 	}
@@ -1775,15 +1775,15 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancer{
-				Id:     foundLba,
+				ID:     foundLba,
 				Name:   lbname,
 				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-gdqms",
+						ID: "srv-gdqms",
 					},
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -1850,15 +1850,15 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 			},
 			lbopts: &brightbox.LoadBalancer{
-				Id:     foundLba,
+				ID:     foundLba,
 				Name:   lbname,
 				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-gdqms",
+						ID: "srv-gdqms",
 					},
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -1926,7 +1926,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				Status: status.Active,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -1967,11 +1967,11 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 	}{
 		"No change domains": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Acme: &brightbox.LoadBalancerAcme{
@@ -2005,7 +2005,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2030,17 +2030,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: false,
 		},
 		"swap domains": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Acme: &brightbox.LoadBalancerAcme{
@@ -2074,7 +2074,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2099,17 +2099,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: false,
 		},
 		"add_domain": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Acme: &brightbox.LoadBalancerAcme{
@@ -2143,7 +2143,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2168,17 +2168,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"remove_domain": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Acme: &brightbox.LoadBalancerAcme{
@@ -2212,7 +2212,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2237,17 +2237,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"change domain": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Acme: &brightbox.LoadBalancerAcme{
@@ -2281,7 +2281,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2306,17 +2306,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"No change": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2338,7 +2338,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2362,17 +2362,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: false,
 		},
 		"add listener": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2394,7 +2394,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2423,17 +2423,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"remove listener": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2455,7 +2455,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2474,17 +2474,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"change_listener": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2506,7 +2506,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2530,17 +2530,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"add_proxy_protocol": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2562,7 +2562,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2588,17 +2588,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"remove_proxy_protocol": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2622,7 +2622,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2646,17 +2646,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"change_proxy_protocol": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2680,7 +2680,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2706,17 +2706,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"change node": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2738,7 +2738,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2762,17 +2762,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"remove node": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2794,7 +2794,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:    foundLba,
+				ID:    foundLba,
 				Name:  &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2814,17 +2814,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"name_change": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2846,7 +2846,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groknewlbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2870,17 +2870,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"add node": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2902,7 +2902,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2929,17 +2929,17 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
 		"Healthcheck change": {
 			lb: &brightbox.LoadBalancer{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: groklbname,
 				Nodes: []brightbox.Server{
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 				Listeners: []brightbox.LoadBalancerListener{
@@ -2961,7 +2961,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 			},
 			lbopts: brightbox.LoadBalancerOptions{
-				Id:   foundLba,
+				ID:   foundLba,
 				Name: &groklbname,
 				Nodes: []brightbox.LoadBalancerNode{
 					{
@@ -2985,7 +2985,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 					Port:    8080,
 					Request: "/check",
 				},
-				HttpsRedirect: &falsevar,
+				HTTPSRedirect: &falsevar,
 			},
 			expected: true,
 		},
@@ -3008,17 +3008,17 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 	}{
 		"mapped": {
 			lb: &brightbox.LoadBalancer{
-				Id: "lba-testy",
+				ID: "lba-testy",
 				CloudIPs: []brightbox.CloudIP{
 					{
-						Id: "cip-testy",
+						ID: "cip-testy",
 					},
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id: "cip-testy",
+				ID: "cip-testy",
 				LoadBalancer: &brightbox.LoadBalancer{
-					Id: "lba-testy",
+					ID: "lba-testy",
 				},
 				Status: "mapped",
 			},
@@ -3026,22 +3026,22 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 		},
 		"badmap": {
 			lb: &brightbox.LoadBalancer{
-				Id:       "lba-testy",
+				ID:       "lba-testy",
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id:     "cip-testy",
+				ID:     "cip-testy",
 				Status: "mapped",
 			},
 			err: true,
 		},
 		"unmapped": {
 			lb: &brightbox.LoadBalancer{
-				Id:       "lba-testy",
+				ID:       "lba-testy",
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id:     "cip-testy",
+				ID:     "cip-testy",
 				Status: "unmapped",
 			},
 			err: false,
@@ -3126,7 +3126,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         "cip-12345",
+				ID:         "cip-12345",
 				PublicIPv4: publicIP,
 				PublicIPv6: publicIPv6,
 			},
@@ -3191,7 +3191,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID,
+				ID:         publicCipID,
 				Name:       lbname,
 				PublicIPv4: "240.240.240.240",
 			},
@@ -3225,7 +3225,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         "cip-67890",
+				ID:         "cip-67890",
 				Name:       newlbname,
 				PublicIPv4: publicIP2,
 				PublicIPv6: publicIPv62,
@@ -3261,7 +3261,7 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         "cip-12345",
+				ID:         "cip-12345",
 				PublicIPv4: publicIP,
 				PublicIPv6: publicIPv6,
 			},
@@ -3321,23 +3321,23 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 	}{
 		"no_change": {
 			lb: &brightbox.LoadBalancer{
-				Id: "lba-oldip",
+				ID: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID,
+						ID:         publicCipID,
 						PublicIPv4: publicIP,
 						PublicIPv6: publicIPv6,
-						ReverseDns: reverseDNS,
+						ReverseDNS: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
 					},
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID,
+				ID:         publicCipID,
 				PublicIPv4: publicIP,
 				PublicIPv6: publicIPv6,
-				ReverseDns: reverseDNS,
+				ReverseDNS: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
 			},
@@ -3345,10 +3345,10 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		},
 		"no_change_manual": {
 			lb: &brightbox.LoadBalancer{
-				Id: "lba-oldip",
+				ID: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID2,
+						ID:         publicCipID2,
 						PublicIPv4: publicIP2,
 						PublicIPv6: publicIPv62,
 						Fqdn:       fqdn2,
@@ -3357,7 +3357,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID2,
+				ID:         publicCipID2,
 				PublicIPv4: publicIP2,
 				PublicIPv6: publicIPv62,
 				Fqdn:       fqdn2,
@@ -3367,27 +3367,27 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		},
 		"changed_delete": {
 			lb: &brightbox.LoadBalancer{
-				Id: "lba-oldip",
+				ID: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID2,
+						ID:         publicCipID2,
 						PublicIPv4: publicIP2,
 						PublicIPv6: publicIPv62,
 						Fqdn:       fqdn2,
 						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
-						Id:         publicCipID,
+						ID:         publicCipID,
 						PublicIPv4: publicIP,
 						PublicIPv6: publicIPv6,
-						ReverseDns: reverseDNS,
+						ReverseDNS: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
 					},
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID2,
+				ID:         publicCipID2,
 				PublicIPv4: publicIP2,
 				PublicIPv6: publicIPv62,
 				Fqdn:       fqdn2,
@@ -3397,30 +3397,30 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		},
 		"changed_unmap": {
 			lb: &brightbox.LoadBalancer{
-				Id: "lba-oldip",
+				ID: "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{
 					brightbox.CloudIP{
-						Id:         publicCipID2,
+						ID:         publicCipID2,
 						PublicIPv4: publicIP2,
 						PublicIPv6: publicIPv62,
 						Fqdn:       fqdn2,
 						Name:       "manually allocated",
 					},
 					brightbox.CloudIP{
-						Id:         publicCipID,
+						ID:         publicCipID,
 						PublicIPv4: publicIP,
 						PublicIPv6: publicIPv6,
-						ReverseDns: reverseDNS,
+						ReverseDNS: reverseDNS,
 						Fqdn:       fqdn,
 						Name:       "test",
 					},
 				},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID,
+				ID:         publicCipID,
 				PublicIPv4: publicIP,
 				PublicIPv6: publicIPv6,
-				ReverseDns: reverseDNS,
+				ReverseDNS: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
 			},
@@ -3428,14 +3428,14 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		},
 		"already unmapped": {
 			lb: &brightbox.LoadBalancer{
-				Id:       "lba-oldip",
+				ID:       "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID,
+				ID:         publicCipID,
 				PublicIPv4: publicIP,
 				PublicIPv6: publicIPv6,
-				ReverseDns: reverseDNS,
+				ReverseDNS: reverseDNS,
 				Fqdn:       fqdn,
 				Name:       "test",
 			},
@@ -3443,11 +3443,11 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		},
 		"already unmapped_manual": {
 			lb: &brightbox.LoadBalancer{
-				Id:       "lba-oldip",
+				ID:       "lba-oldip",
 				CloudIPs: []brightbox.CloudIP{},
 			},
 			cip: &brightbox.CloudIP{
-				Id:         publicCipID2,
+				ID:         publicCipID2,
 				PublicIPv4: publicIP2,
 				PublicIPv6: publicIPv62,
 				Fqdn:       fqdn2,
@@ -3460,7 +3460,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			err := client.EnsureOldCloudIPsDeposed(tc.lb.CloudIPs, tc.cip.Id, tc.name)
+			err := client.EnsureOldCloudIPsDeposed(tc.lb.CloudIPs, tc.cip.ID, tc.name)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -3481,7 +3481,7 @@ func TestDeletionByNameFunctions(t *testing.T) {
 			client.ensureServerGroupDeleted(name)
 			client.ensureLoadBalancerDeletedByName(name)
 			client.ensureFirewallClosed(name)
-			client.ensureCloudIPsDeleted(name)
+			client.ensureCloudIPsDeleted("", name)
 		})
 	}
 }
@@ -3619,17 +3619,17 @@ func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) er
 func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 	return []brightbox.CloudIP{
 		{
-			Id:         "cip-12345",
+			ID:         "cip-12345",
 			PublicIPv4: publicIP,
 			PublicIPv6: publicIPv6,
 		},
 		{
-			Id:         publicCipID,
+			ID:         publicCipID,
 			Name:       lbname,
 			PublicIPv4: "240.240.240.240",
 		},
 		{
-			Id:         errorCipID,
+			ID:         errorCipID,
 			Name:       lberror,
 			PublicIPv4: "255.255.255.255",
 		},
@@ -3638,7 +3638,7 @@ func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 
 func (f *fakeInstanceCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
 	cip := &brightbox.CloudIP{
-		Id:         "cip-67890",
+		ID:         "cip-67890",
 		PublicIPv4: publicIP2,
 		PublicIPv6: publicIPv62,
 	}
@@ -3655,10 +3655,10 @@ func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
 	server_list := make([]brightbox.Server, len(newLB.Nodes))
 	for i, v := range newLB.Nodes {
-		server_list[i].Id = v.Node
+		server_list[i].ID = v.Node
 	}
 	return &brightbox.LoadBalancer{
-		Id:          newLB.Id,
+		ID:          newLB.ID,
 		Name:        *newLB.Name,
 		Status:      status.Active,
 		Nodes:       server_list,
@@ -3670,7 +3670,7 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 func (f *fakeInstanceCloud) LoadBalancer(id string) (*brightbox.LoadBalancer, error) {
 	list, _ := f.LoadBalancers()
 	for _, balancer := range list {
-		if balancer.Id == id {
+		if balancer.ID == id {
 			return &balancer, nil
 		}
 	}
@@ -3680,40 +3680,40 @@ func (f *fakeInstanceCloud) LoadBalancer(id string) (*brightbox.LoadBalancer, er
 func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 	return []brightbox.LoadBalancer{
 		{
-			Id:       "lba-test1",
+			ID:       "lba-test1",
 			Name:     lbname,
 			Status:   "deleted",
 			CloudIPs: nil,
 		},
 		{
-			Id:     foundLba,
+			ID:     foundLba,
 			Name:   lbname,
 			Status: status.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
-					Id:         "cip-12345",
+					ID:         "cip-12345",
 					PublicIPv4: publicIP,
 					PublicIPv6: publicIPv6,
-					ReverseDns: reverseDNS,
+					ReverseDNS: reverseDNS,
 					Fqdn:       fqdn,
 				},
 			},
 		},
 		{
-			Id:     "lba-test3",
+			ID:     "lba-test3",
 			Name:   "abob",
 			Status: status.Active,
 		},
 		{
-			Id:     errorLba,
+			ID:     errorLba,
 			Name:   lberror,
 			Status: status.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
-					Id:         publicCipID,
+					ID:         publicCipID,
 					PublicIPv4: publicIP,
 					PublicIPv6: publicIPv6,
-					ReverseDns: reverseDNS,
+					ReverseDNS: reverseDNS,
 					Fqdn:       fqdn,
 				},
 			},
@@ -3728,7 +3728,7 @@ func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIDs
 		return &groups[0], nil
 	default:
 		result := &brightbox.ServerGroup{
-			Id:      identifier,
+			ID:      identifier,
 			Name:    "Fake Name After AddServers",
 			Servers: mapServerIDsToServers(serverIDs),
 		}
@@ -3743,7 +3743,7 @@ func (f *fakeInstanceCloud) RemoveServersFromServerGroup(identifier string, serv
 		return &groups[0], nil
 	default:
 		result := &brightbox.ServerGroup{
-			Id:      identifier,
+			ID:      identifier,
 			Name:    "Fake Name After RemoveServers",
 			Servers: mapServerIDsToServers(serverIDs),
 		}
@@ -3754,44 +3754,44 @@ func (f *fakeInstanceCloud) RemoveServersFromServerGroup(identifier string, serv
 func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
 	result := []brightbox.ServerGroup{
 		brightbox.ServerGroup{
-			Id:   "grp-found",
+			ID:   "grp-found",
 			Name: lbname,
 			Servers: []brightbox.Server{
 				{
-					Id: "srv-gdqms",
+					ID: "srv-gdqms",
 				},
 				{
-					Id: "srv-230b7",
+					ID: "srv-230b7",
 				},
 			},
 			FirewallPolicy: &brightbox.FirewallPolicy{
-				Id:   "fwp-found",
+				ID:   "fwp-found",
 				Name: lbname,
 				Rules: []brightbox.FirewallRule{
 					{
-						Id:          "fwr-found",
+						ID:          "fwr-found",
 						Description: lbname,
 					},
 				},
 			},
 		},
 		brightbox.ServerGroup{
-			Id:   "grp-error",
+			ID:   "grp-error",
 			Name: lberror,
 			Servers: []brightbox.Server{
 				{
-					Id: "srv-gdqms",
+					ID: "srv-gdqms",
 				},
 				{
-					Id: "srv-230b7",
+					ID: "srv-230b7",
 				},
 			},
 			FirewallPolicy: &brightbox.FirewallPolicy{
-				Id:   "fwp-error",
+				ID:   "fwp-error",
 				Name: lberror,
 				Rules: []brightbox.FirewallRule{
 					{
-						Id:          "fwr-found",
+						ID:          "fwr-found",
 						Description: lberror,
 					},
 				},
@@ -3803,7 +3803,7 @@ func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
 
 func (f *fakeInstanceCloud) CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
 	result := &brightbox.ServerGroup{
-		Id: "grp-testy",
+		ID: "grp-testy",
 	}
 	if newServerGroup.Name != nil {
 		result.Name = *newServerGroup.Name
@@ -3816,10 +3816,10 @@ func (f *fakeInstanceCloud) CreateServerGroup(newServerGroup *brightbox.ServerGr
 
 func (f *fakeInstanceCloud) CreateFirewallPolicy(policyOptions *brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error) {
 	result := &brightbox.FirewallPolicy{
-		Id:   "fwp-testy",
+		ID:   "fwp-testy",
 		Name: *policyOptions.Name,
 		ServerGroup: &brightbox.ServerGroup{
-			Id:   *policyOptions.ServerGroup,
+			ID:   *policyOptions.ServerGroup,
 			Name: *policyOptions.Name,
 		},
 	}
@@ -3828,10 +3828,10 @@ func (f *fakeInstanceCloud) CreateFirewallPolicy(policyOptions *brightbox.Firewa
 
 func (f *fakeInstanceCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
 	result := &brightbox.FirewallRule{
-		Id:          "fwr-testy",
+		ID:          "fwr-testy",
 		Description: "After Create Firewll Rule",
 		FirewallPolicy: brightbox.FirewallPolicy{
-			Id:   ruleOptions.FirewallPolicy,
+			ID:   ruleOptions.FirewallPolicy,
 			Name: "After Create Firewall Rule",
 		},
 	}
@@ -3840,10 +3840,10 @@ func (f *fakeInstanceCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRu
 
 func (f *fakeInstanceCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
 	result := &brightbox.FirewallRule{
-		Id:          ruleOptions.Id,
+		ID:          ruleOptions.ID,
 		Description: *ruleOptions.Description,
 		FirewallPolicy: brightbox.FirewallPolicy{
-			Id:   ruleOptions.FirewallPolicy,
+			ID:   ruleOptions.FirewallPolicy,
 			Name: *ruleOptions.Description,
 		},
 	}
@@ -3853,7 +3853,7 @@ func (f *fakeInstanceCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRu
 func mapServerIDsToServers(serverIDs []string) []brightbox.Server {
 	result := make([]brightbox.Server, len(serverIDs))
 	for i := range serverIDs {
-		result[i].Id = serverIDs[i]
+		result[i].ID = serverIDs[i]
 	}
 	return result
 }
@@ -3861,33 +3861,33 @@ func mapServerIDsToServers(serverIDs []string) []brightbox.Server {
 func (f *fakeInstanceCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, error) {
 	result := []brightbox.FirewallPolicy{
 		brightbox.FirewallPolicy{
-			Id:   "fwp-found",
+			ID:   "fwp-found",
 			Name: lbname,
 			Rules: []brightbox.FirewallRule{
 				{
-					Id:          "fwr-found",
+					ID:          "fwr-found",
 					Description: lbname,
 				},
 			},
 		},
 		brightbox.FirewallPolicy{
-			Id:   "fwp-error",
+			ID:   "fwp-error",
 			Name: lberror,
 			Rules: []brightbox.FirewallRule{
 				{
-					Id:          "fwr-error",
+					ID:          "fwr-error",
 					Description: lberror,
 				},
 			},
 			ServerGroup: &brightbox.ServerGroup{
-				Id:   "grp-error",
+				ID:   "grp-error",
 				Name: lberror,
 				Servers: []brightbox.Server{
 					{
-						Id: "srv-gdqms",
+						ID: "srv-gdqms",
 					},
 					{
-						Id: "srv-230b7",
+						ID: "srv-230b7",
 					},
 				},
 			},
@@ -3953,15 +3953,15 @@ func (f *fakeInstanceCloud) UnMapCloudIP(identifier string) error {
 
 func (f *fakeInstanceCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
 	result := &brightbox.CloudIP{
-		Id: identifier,
+		ID: identifier,
 	}
 	switch identifier {
 	case "cip-testy":
-		result.LoadBalancer = &brightbox.LoadBalancer{Id: "lba-testy"}
+		result.LoadBalancer = &brightbox.LoadBalancer{ID: "lba-testy"}
 	case "cip-12345":
 		result.PublicIPv4 = publicIP
 		result.PublicIPv6 = publicIPv6
-		result.LoadBalancer = &brightbox.LoadBalancer{Id: foundLba}
+		result.LoadBalancer = &brightbox.LoadBalancer{ID: foundLba}
 	}
 	return result, nil
 }
