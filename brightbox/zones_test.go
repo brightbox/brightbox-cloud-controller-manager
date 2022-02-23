@@ -187,15 +187,15 @@ func fakeZoneCloudClient(ctx context.Context) *fakeZoneCloud {
 func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
 	result := f.serverzone[identifier]
 	if result == "" {
-		return nil, brightbox.ApiError{
+		return nil, brightbox.APIError{
 			StatusCode: 404,
 			Status:     "404 Not Found",
 		}
 	} else {
 		return &brightbox.Server{
-			Id: identifier,
+			ID: identifier,
 			Zone: brightbox.Zone{
-				Id:     "typ-testy",
+				ID:     "typ-testy",
 				Handle: result,
 			},
 		}, nil

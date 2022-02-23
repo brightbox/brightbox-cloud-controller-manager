@@ -57,7 +57,7 @@ func (c *cloud) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprov
 		return nil, err
 	}
 	return &cloudprovider.InstanceMetadata{
-		ProviderID:    k8ssdk.MapServerIDToProviderID(srv.Id),
+		ProviderID:    k8ssdk.MapServerIDToProviderID(srv.ID),
 		InstanceType:  srv.ServerType.Handle,
 		NodeAddresses: addresses,
 		Zone:          srv.Zone.Handle,

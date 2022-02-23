@@ -357,21 +357,21 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	switch identifier {
 	case serverExist:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "active",
 			Hostname: serverExist,
 			Fqdn:     serverExist + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-8985i",
+				ID:     "typ-8985i",
 				Handle: typeHandle,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42k",
+					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
 					IPv4Address: serverExistIP,
 					IPv6Address: serverExistIPv6,
@@ -381,21 +381,21 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 		}, nil
 	case serverShutdown:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "inactive",
 			Hostname: serverShutdown,
 			Fqdn:     serverShutdown + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle2,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-wusvn",
+				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42l",
+					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",
 					IPv4Address: serverShutdownIP,
 					IPv6Address: serverShutdownIPv6,
@@ -403,30 +403,30 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			CloudIPs: []brightbox.CloudIP{
 				{
-					Id:         serverShutdownExternalName,
+					ID:         serverShutdownExternalName,
 					PublicIP:   serverShutdownExternalIP,
 					Fqdn:       serverShutdownExternalName + "." + domain,
-					ReverseDns: "",
+					ReverseDNS: "",
 				},
 			},
 		}, nil
 	case serverDeleted:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "deleted",
 			Hostname: serverDeleted,
 			Fqdn:     serverDeleted + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-wusvn",
+				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42l",
+					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",
 					IPv4Address: serverShutdownIP,
 					IPv6Address: serverShutdownIPv6,
@@ -434,35 +434,35 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			CloudIPs: []brightbox.CloudIP{
 				{
-					Id:         serverShutdownExternalName,
+					ID:         serverShutdownExternalName,
 					PublicIP:   serverShutdownExternalIP,
 					Fqdn:       serverShutdownExternalName + "." + domain,
-					ReverseDns: "",
+					ReverseDNS: "",
 				},
 			},
 		}, nil
 	case serverBust:
-		return nil, brightbox.ApiError{
+		return nil, brightbox.APIError{
 			StatusCode: 500,
 			Status:     "Internal Server Error",
 		}
 	case serverDodgy4:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "active",
 			Hostname: serverDodgy4,
 			Fqdn:     serverDodgy4 + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-wusvn",
+				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42k",
+					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
 					IPv4Address: serverDodgyIPv4,
 					IPv6Address: serverExistIPv6,
@@ -472,21 +472,21 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 		}, nil
 	case serverDodgy6:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "active",
 			Hostname: serverDodgy6,
 			Fqdn:     serverDodgy6 + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-wusvn",
+				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42k",
+					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
 					IPv4Address: serverExistIP,
 					IPv6Address: serverDodgyIPv6,
@@ -497,21 +497,21 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 
 	case serverDodgyCIP:
 		return &brightbox.Server{
-			Id:       identifier,
+			ID:       identifier,
 			Status:   "inactive",
 			Hostname: serverShutdown,
 			Fqdn:     serverShutdown + "." + domain,
 			Zone: brightbox.Zone{
-				Id:     "zon-testy",
+				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
 			ServerType: brightbox.ServerType{
-				Id:     "typ-wusvn",
+				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
 			Interfaces: []brightbox.ServerInterface{
 				{
-					Id:          "int-ds42l",
+					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",
 					IPv4Address: serverShutdownIP,
 					IPv6Address: serverShutdownIPv6,
@@ -519,15 +519,15 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 			CloudIPs: []brightbox.CloudIP{
 				{
-					Id:         serverShutdownExternalName,
+					ID:         serverShutdownExternalName,
 					PublicIP:   serverDodgyCIPv4,
 					Fqdn:       serverShutdownExternalName + "." + domain,
-					ReverseDns: "",
+					ReverseDNS: "",
 				},
 			},
 		}, nil
 	default:
-		return nil, brightbox.ApiError{
+		return nil, brightbox.APIError{
 			StatusCode: 404,
 			Status:     "404 Not Found",
 		}

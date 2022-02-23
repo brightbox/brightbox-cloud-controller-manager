@@ -73,18 +73,18 @@ func nodeAddressesFromServer(srv *brightbox.Server) ([]v1.NodeAddress, error) {
 		{Type: v1.NodeExternalDNS, Address: srv.Fqdn},
 	}
 	for _, iface := range srv.Interfaces {
-		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.Id, "Server", v1.NodeExternalIP)
+		ipv4Node, err := parseIPString(iface.IPv4Address, "IPv4", srv.ID, "Server", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
-		ipv6Node, err := parseIPString(iface.IPv6Address, "IPv6", srv.Id, "Server", v1.NodeExternalIP)
+		ipv6Node, err := parseIPString(iface.IPv6Address, "IPv6", srv.ID, "Server", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
 		addresses = append(addresses, *ipv4Node, *ipv6Node)
 	}
 	for _, cip := range srv.CloudIPs {
-		ipv4Node, err := parseIPString(cip.PublicIP, "IPv4", cip.Id, "Cloud IP", v1.NodeExternalIP)
+		ipv4Node, err := parseIPString(cip.PublicIP, "IPv4", cip.ID, "Cloud IP", v1.NodeExternalIP)
 		if err != nil {
 			return nil, err
 		}
