@@ -61,7 +61,7 @@ def create_job_manifest(release, config, version, name)
               ],
               volume_mounts: [
                 Kubernetes::IoK8sApiCoreV1VolumeMount.new(
-                  name: config[:secretName], mount_path: '/root'
+                  name: config[:secretName], mount_path: '/kaniko/.docker'
                 )
               ]
             )
@@ -73,7 +73,7 @@ def create_job_manifest(release, config, version, name)
                 secret_name: config[:secretName],
                 items: [
                   Kubernetes::IoK8sApiCoreV1KeyToPath.new(
-                    key: '.dockerconfigjson', path: '.docker/config.json'
+                    key: '.dockerconfigjson', path: 'config.json'
                   )
                 ]
               )
