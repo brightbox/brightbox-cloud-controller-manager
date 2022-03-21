@@ -10,7 +10,7 @@ require 'active_support/core_ext/string/inflections'
 require 'yaml'
 
 current_release = 23
-first_release = current_release - 3
+first_release = current_release - 2
 
 def config
   {
