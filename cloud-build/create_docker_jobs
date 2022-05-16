@@ -9,7 +9,7 @@ require 'active_support/core_ext/hash/keys'
 require 'active_support/core_ext/string/inflections'
 require 'yaml'
 
-current_release = 23
+current_release = 24
 first_release = current_release - 2
 
 def config
