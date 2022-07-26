@@ -13,7 +13,11 @@
 # limitations under the License.
 
 vendor: kubernetes-client
-	bundle install --clean --without development test --deployment
+	bundle config set --local clean 'true'
+	bundle config set --local without 'development test'
+	bundle config set --local deployment 'true'
+	bundle config set --local path 'vendor/bundle'
+	bundle install
 
 kubernetes-client: kubeapi.json
 	docker run --rm -v $(CURDIR):/local \
