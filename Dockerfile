@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.18 as builder
+FROM golang:alpine as builder
 
 WORKDIR /app
 
-COPY go.mod .
-COPY go.sum .
-
-RUN GOCACHE=/tmp go mod download
-
+RUN apk add git make bash
 COPY . .
 
 RUN GOCACHE=/tmp make brightbox-cloud-controller-manager
 
-FROM alpine:latest
-
-RUN apk add --no-cache ca-certificates
+FROM scratch
 
 COPY --from=builder /app/brightbox-cloud-controller-manager /bin/
+COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["/bin/brightbox-cloud-controller-manager"]
