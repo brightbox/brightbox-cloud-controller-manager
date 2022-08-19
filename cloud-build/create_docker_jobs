@@ -10,7 +10,7 @@ require 'active_support/core_ext/string/inflections'
 require 'yaml'
 
 current_release = 24
-first_release = current_release - 3
+first_release = current_release - 2
 
 def config
   {
@@ -18,8 +18,10 @@ def config
     image: 'gcr.io/kaniko-project/executor:latest',
     requestsCpu: '1',
     requestsMemory: '2Gi',
+    requestsEphemeral: '5Gi',
     limitsCpu: '2',
     limitsMemory: '3Gi',
+    limitsEphemeral: '7Gi',
     gitRepo: 'git://github.com/brightbox/brightbox-cloud-controller-manager.git',
     dockerTarget: 'brightbox/brightbox-cloud-controller-manager',
     secretName: 'regcred',
@@ -47,11 +49,13 @@ def create_job_manifest(release, config, version, name)
               resources: Kubernetes::IoK8sApiCoreV1ResourceRequirements.new(
                 requests: {
                   memory: config[:requestsMemory],
-                  cpu: config[:requestsCpu]
+                  cpu: config[:requestsCpu],
+                  'ephemeral-storage' => config[:requestsEphemeral]
                 },
                 limits: {
                   memory: config[:limitsMemory],
-                  cpu: config[:limitsCpu]
+                  cpu: config[:limitsCpu],
+                  'ephemeral-storage' => config[:limitsEphemeral]
                 }
               ),
               args: [
