@@ -650,7 +650,7 @@ func isSSLPort(port *v1.ServicePort, sslPorts *portSets) bool {
 }
 
 func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalancerHealthcheck {
-	path, healthCheckNodePort := service.GetServiceHealthCheckPathPort(apiservice)
+	path, healthCheckNodePort := getServiceHealthCheckPathPort(apiservice)
 	protocol := getHealthCheckProtocol(apiservice, path)
 	//Validate has already checked all these so there should be no errors!
 	interval, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCInterval)
@@ -679,6 +679,17 @@ func getHealthCheckPath(apiservice *v1.Service, protocol string, path string) st
 		return "/healthz"
 	}
 	return path
+}
+
+func getServiceHealthCheckPathPort(apiservice *v1.Service) (string, int32) {
+	if !service.NeedsHealthCheck(apiservice) {
+		return "", 0
+	}
+	port := apiservice.Spec.HealthCheckNodePort
+	if port == 0 {
+		return "", 0
+	}
+	return "/healthz", port
 }
 
 func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
