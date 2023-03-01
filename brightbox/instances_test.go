@@ -442,7 +442,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 		}, nil
 	case serverBust:
-		return nil, brightbox.APIError{
+		return nil, &brightbox.APIError{
 			StatusCode: 500,
 			Status:     "Internal Server Error",
 		}
@@ -527,7 +527,7 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 			},
 		}, nil
 	default:
-		return nil, brightbox.APIError{
+		return nil, &brightbox.APIError{
 			StatusCode: 404,
 			Status:     "404 Not Found",
 		}
