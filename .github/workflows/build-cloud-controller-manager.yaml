@@ -16,7 +16,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            cr.brightbox.com/${{ vars.CR_ACCOUNT }}/docker/brightbox-cloud-controller-manager
+            cr.brightbox.com/${{ vars.CR_ACCOUNT }}/${{ vars.CR_REPO }}/brightbox-cloud-controller-manager
           tags: |
             type=semver,pattern={{version}}
       - 
