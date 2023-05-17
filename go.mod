@@ -3,7 +3,7 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 go 1.19
 
 require (
-	github.com/brightbox/gobrightbox v0.8.3
+	github.com/brightbox/gobrightbox v0.8.4
 	github.com/brightbox/k8ssdk v0.7.4
 	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
@@ -13,7 +13,7 @@ require (
 	k8s.io/component-base v0.27.1
 	k8s.io/controller-manager v0.27.1
 	k8s.io/klog/v2 v2.90.1
-	k8s.io/kubernetes v1.27.1
+	k8s.io/kubernetes v1.15.0-alpha.0
 )
 
 require (
@@ -90,7 +90,7 @@ require (
 	go.uber.org/zap v1.19.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.5.0 // indirect
+	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
