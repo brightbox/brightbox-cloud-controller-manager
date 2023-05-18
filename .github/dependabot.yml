@@ -6,6 +6,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: 
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
 
   - package-ecosystem: gomod
     directory: "/"
@@ -13,6 +18,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: 
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
 
   - package-ecosystem: gomod
     directory: "/"
@@ -20,6 +30,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: 
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
 
   - package-ecosystem: gomod
     directory: "/"
