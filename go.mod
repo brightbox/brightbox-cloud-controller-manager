@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/brightbox/gobrightbox v0.8.5
-	github.com/brightbox/k8ssdk v0.7.4
-	github.com/go-test/deep v1.0.7
+	github.com/brightbox/k8ssdk v0.7.5
+	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
@@ -21,7 +21,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr v1.4.10 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
-	github.com/aws/aws-sdk-go v1.38.49 // indirect
+	github.com/aws/aws-sdk-go v1.44.214 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
