@@ -62,8 +62,8 @@ github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/brightbox/gobrightbox v0.8.5 h1:TGCXxCH84h6NEaC3BSXudPAAl+EEb/zpwagdn/QmNoc=
 github.com/brightbox/gobrightbox v0.8.5/go.mod h1:ah0BfmpXtfl6imyQCVA0LMjg3zrEeYOd3EDEbu2aGqg=
-github.com/brightbox/k8ssdk v0.8.0 h1:9QZ34SNN4c48Bg9wnEDJknFlyHK4grxmxkNNllQUrmo=
-github.com/brightbox/k8ssdk v0.8.0/go.mod h1:kZX4ZHxEyC4noaKvHPbqAZ7a88GgFHQMBD/TdsbCN2o=
+github.com/brightbox/k8ssdk v0.8.1 h1:mRCjWAMP2vZDo4+fpjZaXkXA0SXQjERaf1l5Lwg5GG0=
+github.com/brightbox/k8ssdk v0.8.1/go.mod h1:kZX4ZHxEyC4noaKvHPbqAZ7a88GgFHQMBD/TdsbCN2o=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.1.2 h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=
