@@ -9,9 +9,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.26.5
 	k8s.io/apimachinery v0.26.5
-	k8s.io/cloud-provider v0.26.4
+	k8s.io/cloud-provider v0.26.5
 	k8s.io/component-base v0.26.5
-	k8s.io/controller-manager v0.26.4
+	k8s.io/controller-manager v0.26.5
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubernetes v1.15.0-alpha.0
 )
@@ -89,7 +89,7 @@ require (
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
@@ -102,13 +102,13 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.26.4 // indirect
+	k8s.io/apiserver v0.26.5 // indirect
 	k8s.io/client-go v0.26.5 // indirect
-	k8s.io/component-helpers v0.26.4 // indirect
-	k8s.io/kms v0.26.4 // indirect
+	k8s.io/component-helpers v0.26.5 // indirect
+	k8s.io/kms v0.26.5 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
-	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.36 // indirect
+	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.37 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
