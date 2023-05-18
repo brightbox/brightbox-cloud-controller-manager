@@ -3,7 +3,7 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 go 1.19
 
 require (
-	github.com/brightbox/gobrightbox v0.8.4
+	github.com/brightbox/gobrightbox v0.8.5
 	github.com/brightbox/k8ssdk v0.8.0
 	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
