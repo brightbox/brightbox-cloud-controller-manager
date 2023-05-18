@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/brightbox/gobrightbox v0.8.3
 	github.com/brightbox/k8ssdk v0.7.4
-	github.com/go-test/deep v1.0.7
+	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
