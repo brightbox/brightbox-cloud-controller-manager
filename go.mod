@@ -7,13 +7,13 @@ require (
 	github.com/brightbox/k8ssdk v0.8.1
 	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
-	k8s.io/api v0.26.5
-	k8s.io/apimachinery v0.26.5
-	k8s.io/cloud-provider v0.26.5
-	k8s.io/component-base v0.26.5
-	k8s.io/controller-manager v0.26.5
+	k8s.io/api v0.26.6
+	k8s.io/apimachinery v0.26.6
+	k8s.io/cloud-provider v0.26.6
+	k8s.io/component-base v0.26.6
+	k8s.io/controller-manager v0.26.6
 	k8s.io/klog/v2 v2.80.1
-	k8s.io/kubernetes v1.26.5
+	k8s.io/kubernetes v1.26.6
 )
 
 require (
@@ -44,7 +44,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/google/uuid v1.1.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
@@ -102,10 +102,10 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.26.5 // indirect
-	k8s.io/client-go v0.26.5 // indirect
-	k8s.io/component-helpers v0.26.5 // indirect
-	k8s.io/kms v0.26.5 // indirect
+	k8s.io/apiserver v0.26.6 // indirect
+	k8s.io/client-go v0.26.6 // indirect
+	k8s.io/component-helpers v0.26.6 // indirect
+	k8s.io/kms v0.26.6 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.37 // indirect
