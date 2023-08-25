@@ -8,7 +8,7 @@ require (
 	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.25.12
-	k8s.io/apimachinery v0.25.12
+	k8s.io/apimachinery v0.25.13
 	k8s.io/cloud-provider v0.25.12
 	k8s.io/component-base v0.25.12
 	k8s.io/controller-manager v0.25.12
