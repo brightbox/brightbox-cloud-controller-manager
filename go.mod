@@ -7,13 +7,13 @@ require (
 	github.com/brightbox/k8ssdk v0.8.1
 	github.com/go-test/deep v1.1.0
 	github.com/spf13/pflag v1.0.5
-	k8s.io/api v0.26.8
-	k8s.io/apimachinery v0.26.8
-	k8s.io/cloud-provider v0.26.8
-	k8s.io/component-base v0.26.8
-	k8s.io/controller-manager v0.26.8
+	k8s.io/api v0.26.9
+	k8s.io/apimachinery v0.26.9
+	k8s.io/cloud-provider v0.26.9
+	k8s.io/component-base v0.26.9
+	k8s.io/controller-manager v0.26.9
 	k8s.io/klog/v2 v2.80.1
-	k8s.io/kubernetes v1.26.8
+	k8s.io/kubernetes v1.26.9
 )
 
 require (
@@ -41,7 +41,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/cel-go v0.12.6 // indirect
+	github.com/google/cel-go v0.12.7 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
@@ -75,7 +75,7 @@ require (
 	go.etcd.io/etcd/client/pkg/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.5 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.35.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.35.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.35.1 // indirect
 	go.opentelemetry.io/otel v1.10.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.10.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.10.0 // indirect
@@ -103,10 +103,10 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.26.8 // indirect
-	k8s.io/client-go v0.26.8 // indirect
-	k8s.io/component-helpers v0.26.8 // indirect
-	k8s.io/kms v0.26.8 // indirect
+	k8s.io/apiserver v0.26.9 // indirect
+	k8s.io/client-go v0.26.9 // indirect
+	k8s.io/component-helpers v0.26.9 // indirect
+	k8s.io/kms v0.26.9 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.37 // indirect
