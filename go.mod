@@ -11,8 +11,8 @@ require (
 	k8s.io/cloud-provider v0.28.3
 	k8s.io/component-base v0.28.3
 	k8s.io/controller-manager v0.28.3
-	k8s.io/klog/v2 v2.100.1
-	k8s.io/kubernetes v1.15.0-alpha.0
+	k8s.io/klog/v2 v2.110.1
+	k8s.io/kubernetes v1.28.3
 )
 
 require (
@@ -32,7 +32,7 @@ require (
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
