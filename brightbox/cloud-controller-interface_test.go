@@ -131,6 +131,7 @@ func TestInterfaceAdaption(t *testing.T) {
 		{"Clusters", interfaceClusters},
 		{"Zones", interfaceZones},
 		{"Instances", interfaceInstances},
+		{"InstancesV2", interfaceInstancesV2},
 		{"LoadBalancer", interfaceLoadBalancer},
 	}
 

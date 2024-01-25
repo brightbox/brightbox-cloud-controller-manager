@@ -37,9 +37,9 @@ func mapProviderIDToNodeName(providerID string) types.NodeName {
 	return mapServerIDToNodeName(k8ssdk.MapProviderIDToServerID(providerID))
 }
 
-func mapNodeNameToProviderID(nodeName types.NodeName) string {
-	return k8ssdk.MapServerIDToProviderID(mapNodeNameToServerID(nodeName))
-}
+// func mapNodeNameToProviderID(nodeName types.NodeName) string {
+// 	return k8ssdk.MapServerIDToProviderID(mapNodeNameToServerID(nodeName))
+// }
 
 func mapNodeToProviderID(node *v1.Node) string {
 	if node.Spec.ProviderID == "" {
