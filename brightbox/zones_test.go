@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/k8ssdk"
-	"github.com/brightbox/k8ssdk/mocks"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/k8ssdk/v2"
+	"github.com/brightbox/k8ssdk/v2/mocks"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -184,22 +184,21 @@ func fakeZoneCloudClient(ctx context.Context) *fakeZoneCloud {
 	}
 }
 
-func (f *fakeZoneCloud) Server(identifier string) (*brightbox.Server, error) {
+func (f *fakeZoneCloud) Server(_ context.Context, identifier string) (*brightbox.Server, error) {
 	result := f.serverzone[identifier]
 	if result == "" {
 		return nil, &brightbox.APIError{
 			StatusCode: 404,
 			Status:     "404 Not Found",
 		}
-	} else {
-		return &brightbox.Server{
-			ID: identifier,
-			Zone: brightbox.Zone{
-				ID:     "typ-testy",
-				Handle: result,
-			},
-		}, nil
 	}
+	return &brightbox.Server{
+		ID: identifier,
+		Zone: &brightbox.Zone{
+			ID:     "typ-testy",
+			Handle: result,
+		},
+	}, nil
 }
 
 func makeFakeMetadataClient(zoneName string) *cloud {

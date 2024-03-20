@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brightbox/k8ssdk"
+	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
 )

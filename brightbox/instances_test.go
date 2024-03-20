@@ -18,9 +18,10 @@ import (
 	"context"
 	"testing"
 
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/k8ssdk"
-	"github.com/brightbox/k8ssdk/mocks"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/gobrightbox/v2/enums/serverstatus"
+	"github.com/brightbox/k8ssdk/v2"
+	"github.com/brightbox/k8ssdk/v2/mocks"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
@@ -348,7 +349,7 @@ func fakeInstanceCloudClient(ctx context.Context) *fakeInstanceCloud {
 	return &fakeInstanceCloud{}
 }
 
-func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error) {
+func (f *fakeInstanceCloud) Server(_ context.Context, identifier string) (*brightbox.Server, error) {
 	region, err := k8ssdk.MapZoneHandleToRegion(zoneHandle)
 	if err != nil {
 		return nil, err
@@ -358,18 +359,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverExist:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "active",
+			Status:   serverstatus.Active,
 			Hostname: serverExist,
 			Fqdn:     serverExist + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-8985i",
 				Handle: typeHandle,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
@@ -382,18 +383,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverShutdown:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "inactive",
+			Status:   serverstatus.Inactive,
 			Hostname: serverShutdown,
 			Fqdn:     serverShutdown + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle2,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",
@@ -413,18 +414,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverDeleted:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "deleted",
+			Status:   serverstatus.Deleted,
 			Hostname: serverDeleted,
 			Fqdn:     serverDeleted + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",
@@ -449,18 +450,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverDodgy4:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "active",
+			Status:   serverstatus.Active,
 			Hostname: serverDodgy4,
 			Fqdn:     serverDodgy4 + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
@@ -473,18 +474,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverDodgy6:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "active",
+			Status:   serverstatus.Active,
 			Hostname: serverDodgy6,
 			Fqdn:     serverDodgy6 + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42k",
 					MacAddress:  "02:24:19:00:00:ee",
@@ -498,18 +499,18 @@ func (f *fakeInstanceCloud) Server(identifier string) (*brightbox.Server, error)
 	case serverDodgyCIP:
 		return &brightbox.Server{
 			ID:       identifier,
-			Status:   "inactive",
+			Status:   serverstatus.Inactive,
 			Hostname: serverShutdown,
 			Fqdn:     serverShutdown + "." + domain,
-			Zone: brightbox.Zone{
+			Zone: &brightbox.Zone{
 				ID:     "zon-testy",
 				Handle: zoneHandle,
 			},
-			ServerType: brightbox.ServerType{
+			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
 			},
-			Interfaces: []brightbox.ServerInterface{
+			Interfaces: []brightbox.Interface{
 				{
 					ID:          "int-ds42l",
 					MacAddress:  "02:24:19:00:00:ef",

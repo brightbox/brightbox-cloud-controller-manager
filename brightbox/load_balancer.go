@@ -24,8 +24,12 @@ import (
 	"strings"
 	"time"
 
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/gobrightbox/v2/enums/balancingpolicy"
+	"github.com/brightbox/gobrightbox/v2/enums/healthchecktype"
+	"github.com/brightbox/gobrightbox/v2/enums/listenerprotocol"
+	"github.com/brightbox/gobrightbox/v2/enums/proxyprotocol"
+	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	cloudprovider "k8s.io/cloud-provider"
@@ -40,17 +44,10 @@ const (
 	loadbalancerActiveSteps     = 5
 
 	// Listening protocols
+	defaultLoadBalancerProtocol = listenerprotocol.Http
 
-	loadBalancerTCPProtocol     = "tcp"
-	loadBalancerHTTPProtocol    = "http"
-	loadBalancerHTTPWSProtocol  = "http+ws"
-	defaultLoadBalancerProtocol = loadBalancerHTTPProtocol
-
-	// Proxy protocols
-	loadBalancerProxyV1      = "v1"
-	loadBalancerProxyV2      = "v2"
-	loadBalancerProxyV2Ssl   = "v2-ssl"
-	loadBalancerProxyV2SslCn = "v2-ssl-cn"
+	// Default Proxy Protocol is none
+	defaultProxyProtocol = 0
 
 	standardSSLPort = 443
 
@@ -60,21 +57,10 @@ const (
 	// Maximum number of bits in unsigned integers specified in annotations.
 	maxBits = 32
 
-	// The minimum size of the buffer in a load balancer
-	validMinimumBufferSize = 1024
-
-	// The maximum size of the buffer in a load balancer
-	validMaximumBufferSize = 16384
-
 	// serviceAnnotationLoadBalancerBufferSize is the annotation used
 	// on the server to specify the way balancing is done.
 	// One of "least-connections", "round-robin" or "source-address"
 	serviceAnnotationLoadBalancerPolicy = "service.beta.kubernetes.io/brightbox-load-balancer-policy"
-
-	// serviceAnnotationLoadBalancerBufferSize is the annotation used
-	// on the server to specify the size of the receive buffer for the service in bytes.
-	// This is subject to a minimum size of 1024 bytes.
-	serviceAnnotationLoadBalancerBufferSize = "service.beta.kubernetes.io/brightbox-load-balancer-buffer-size"
 
 	// ServiceAnnotationLoadBalancerListenerProtocol is the annotation used
 	// on the service to specify the protocol spoken by the backend
@@ -142,31 +128,6 @@ const (
 )
 
 var (
-	validLoadBalancerPolicies = map[string]bool{
-		"least-connections": true,
-		"round-robin":       true,
-		"source-address":    true,
-	}
-	validListenerProtocols = map[string]bool{
-		loadBalancerHTTPProtocol:   true,
-		loadBalancerTCPProtocol:    true,
-		loadBalancerHTTPWSProtocol: true,
-	}
-	validHealthCheckProtocols = map[string]bool{
-		loadBalancerHTTPProtocol: true,
-		loadBalancerTCPProtocol:  true,
-	}
-	sslUpgradeProtocol = map[string]string{
-		loadBalancerTCPProtocol:    loadBalancerTCPProtocol,
-		loadBalancerHTTPProtocol:   "https",
-		loadBalancerHTTPWSProtocol: "https+wss",
-	}
-	validListenerProxyProtocols = map[string]bool{
-		loadBalancerProxyV1:      true,
-		loadBalancerProxyV2:      true,
-		loadBalancerProxyV2Ssl:   true,
-		loadBalancerProxyV2SslCn: true,
-	}
 	truevar  = true
 	falsevar = false
 )
@@ -194,7 +155,7 @@ func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
 	klog.V(4).Infof("GetLoadBalancer(%v)", name)
-	lb, err := c.GetLoadBalancerByName(name)
+	lb, err := c.GetLoadBalancerByName(ctx, name)
 	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
 
@@ -207,31 +168,31 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
-	cip, err := c.ensureAllocatedCloudIP(name, apiservice)
+	cip, err := c.ensureAllocatedCloudIP(ctx, name, apiservice)
 	if err != nil {
 		return nil, err
 	}
 	if err := validateContextualAnnotations(apiservice.Annotations, cip); err != nil {
 		return nil, err
 	}
-	lb, err := c.ensureLoadBalancerFromService(name, apiservice, nodes)
+	lb, err := c.ensureLoadBalancerFromService(ctx, name, apiservice, nodes)
 	if err != nil {
 		return nil, err
 	}
-	err = c.EnsureMappedCloudIP(lb, cip)
+	err = c.EnsureMappedCloudIP(ctx, lb, cip)
 	if err != nil {
 		return nil, err
 	}
 	if apiservice.Spec.LoadBalancerIP != "" {
-		err = c.EnsureOldCloudIPsDeposed(lb.CloudIPs, cip.ID, name)
+		err = c.EnsureOldCloudIPsDeposed(ctx, lb.CloudIPs, cip.ID, name)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.ensureCloudIPsDeleted(cip.ID, name); err != nil {
+		if err := c.ensureCloudIPsDeleted(ctx, cip.ID, name); err != nil {
 			return nil, err
 		}
 	}
-	lb, err = c.GetLoadBalancerByID(lb.ID)
+	lb, err = c.GetLoadBalancerByID(ctx, lb.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -247,21 +208,21 @@ func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apis
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
 	klog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP)
-	if err := c.ensureServerGroupDeleted(name); err != nil {
+	if err := c.ensureServerGroupDeleted(ctx, name); err != nil {
 		return err
 	}
-	if err := c.ensureFirewallClosed(name); err != nil {
+	if err := c.ensureFirewallClosed(ctx, name); err != nil {
 		return err
 	}
-	lb, err := c.ensureLoadBalancerDeletedByName(name)
+	lb, err := c.ensureLoadBalancerDeletedByName(ctx, name)
 	if err != nil {
 		return err
 	}
-	if err := c.ensureCloudIPsDeleted("", name); err != nil {
+	if err := c.ensureCloudIPsDeleted(ctx, "", name); err != nil {
 		return err
 	}
 	if lb != nil {
-		lb, err = c.GetLoadBalancerByID(lb.ID)
+		lb, err = c.GetLoadBalancerByID(ctx, lb.ID)
 		if err != nil {
 			return err
 		}
@@ -269,10 +230,10 @@ func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 	return k8ssdk.ErrorIfNotErased(lb)
 }
 
-//Take all the servers out of the server group and remove it
-func (c *cloud) ensureServerGroupDeleted(name string) error {
+// Take all the servers out of the server group and remove it
+func (c *cloud) ensureServerGroupDeleted(ctx context.Context, name string) error {
 	klog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
-	group, err := c.GetServerGroupByName(name)
+	group, err := c.GetServerGroupByName(ctx, name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Server Group for %q", name)
 		return err
@@ -280,22 +241,22 @@ func (c *cloud) ensureServerGroupDeleted(name string) error {
 	if group == nil {
 		return nil
 	}
-	group, err = c.SyncServerGroup(group, nil)
+	group, err = c.SyncServerGroup(ctx, group, nil)
 	if err != nil {
 		klog.V(4).Infof("Error removing servers from %q", group.ID)
 		return err
 	}
-	if err := c.DestroyServerGroup(group.ID); err != nil {
+	if err := c.DestroyServerGroup(ctx, group.ID); err != nil {
 		klog.V(4).Infof("Error destroying Server Group %q", group.ID)
 		return err
 	}
 	return nil
 }
 
-//Remove the firewall policy
-func (c *cloud) ensureFirewallClosed(name string) error {
+// Remove the firewall policy
+func (c *cloud) ensureFirewallClosed(ctx context.Context, name string) error {
 	klog.V(4).Infof("ensureFirewallClosed (%q)", name)
-	fp, err := c.GetFirewallPolicyByName(name)
+	fp, err := c.GetFirewallPolicyByName(ctx, name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Firewall Policy %q", name)
 		return err
@@ -303,22 +264,22 @@ func (c *cloud) ensureFirewallClosed(name string) error {
 	if fp == nil {
 		return nil
 	}
-	if err := c.DestroyFirewallPolicy(fp.ID); err != nil {
+	if err := c.DestroyFirewallPolicy(ctx, fp.ID); err != nil {
 		klog.V(4).Infof("Error destroying Firewall Policy %q", fp.ID)
 		return err
 	}
 	return nil
 }
 
-//Remove load balancer by name
-func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBalancer, error) {
-	lb, err := c.GetLoadBalancerByName(name)
+// Remove load balancer by name
+func (c *cloud) ensureLoadBalancerDeletedByName(ctx context.Context, name string) (*brightbox.LoadBalancer, error) {
+	lb, err := c.GetLoadBalancerByName(ctx, name)
 	if err != nil {
 		klog.V(4).Infof("Error looking for Load Balancer %q", name)
 		return nil, err
 	}
 	if lb != nil {
-		if err = c.DestroyLoadBalancer(lb.ID); err != nil {
+		if err = c.DestroyLoadBalancer(ctx, lb.ID); err != nil {
 			klog.V(4).Infof("Error destroying Load Balancer %q", lb.ID)
 			return nil, err
 		}
@@ -326,8 +287,8 @@ func (c *cloud) ensureLoadBalancerDeletedByName(name string) (*brightbox.LoadBal
 	return lb, nil
 }
 
-//Try to remove CloudIPs matching `name` from the list of cloudIPs
-func (c *cloud) ensureCloudIPsDeleted(currentID string, name string) error {
+// Try to remove CloudIPs matching `name` from the list of cloudIPs
+func (c *cloud) ensureCloudIPsDeleted(ctx context.Context, currentID string, name string) error {
 	klog.V(4).Infof("ensureCloudIPsDeleted (%q)", name)
 	backoff := wait.Backoff{
 		Duration: loadbalancerActiveInitDelay,
@@ -336,12 +297,12 @@ func (c *cloud) ensureCloudIPsDeleted(currentID string, name string) error {
 	}
 
 	return wait.ExponentialBackoff(backoff, func() (bool, error) {
-		cloudIPList, err := c.GetCloudIPs()
+		cloudIPList, err := c.GetCloudIPs(ctx)
 		if err != nil {
 			klog.V(4).Info("Error retrieving list of CloudIPs")
 			return false, err
 		}
-		if err := c.DestroyCloudIPs(cloudIPList, currentID, name); err != nil {
+		if err := c.DestroyCloudIPs(ctx, cloudIPList, currentID, name); err != nil {
 			klog.V(4).Info(err)
 			return false, nil
 		}
@@ -402,7 +363,7 @@ func validateServiceSpec(apiservice *v1.Service) error {
 		}
 		sslPortFound = sslPortFound || port.Port == standardSSLPort
 	}
-	if !sslPortFound && protocol == loadBalancerHTTPProtocol {
+	if !sslPortFound && protocol == listenerprotocol.Http {
 		_, ports := apiservice.Annotations[serviceAnnotationLoadBalancerSSLPorts]
 		_, domains := apiservice.Annotations[serviceAnnotationLoadBalancerSslDomains]
 		if ports || domains {
@@ -416,32 +377,33 @@ func validateAnnotations(annotationList map[string]string) error {
 	for annotation, value := range annotationList {
 		switch annotation {
 		case serviceAnnotationLoadBalancerPolicy:
-			if !validLoadBalancerPolicies[value] {
-				return fmt.Errorf("Invalid Load Balancer Policy %q", value)
+			if _, err := balancingpolicy.ParseEnum(value); err != nil {
+				return fmt.Errorf("Invalid Load Balancer Policy %q: %w", value, err)
 			}
 		case serviceAnnotationLoadBalancerListenerProtocol:
-			if !validListenerProtocols[value] {
-				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q", value)
+			valueEnum, err := listenerprotocol.ParseEnum(value)
+			if err != nil {
+				return fmt.Errorf("Invalid Load Balancer Listener Protocol %q: %w", value, err)
 			}
-			if value == loadBalancerTCPProtocol {
+			if valueEnum == listenerprotocol.Tcp {
 				if _, ok := annotationList[serviceAnnotationLoadBalancerSSLPorts]; ok {
-					return fmt.Errorf("SSL Ports are not supported with the %s protocol", loadBalancerTCPProtocol)
+					return fmt.Errorf("SSL Ports are not supported with the %s protocol", valueEnum)
 				}
 				if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; ok {
-					return fmt.Errorf("SSL Domains are not supported with the %s protocol", loadBalancerTCPProtocol)
+					return fmt.Errorf("SSL Domains are not supported with the %s protocol", valueEnum)
 				}
 			}
 		case serviceAnnotationLoadBalancerListenerProxyProtocol:
-			if !validListenerProxyProtocols[value] {
-				return fmt.Errorf("Invalid Load Balancer Listener Proxy Protocol %q", value)
+			if _, err := proxyprotocol.ParseEnum(value); err != nil {
+				return fmt.Errorf("Invalid Load Balancer Listener Proxy Protocol %q: %w", value, err)
 			}
 		case serviceAnnotationLoadBalancerSSLPorts:
 			if _, ok := annotationList[serviceAnnotationLoadBalancerSslDomains]; !ok {
 				return fmt.Errorf("SSL needs a list of domains to certify. Add the %q annotation", serviceAnnotationLoadBalancerSslDomains)
 			}
 		case serviceAnnotationLoadBalancerHCProtocol:
-			if !validHealthCheckProtocols[value] {
-				return fmt.Errorf("Invalid Load Balancer Healthcheck Protocol %q", value)
+			if _, err := healthchecktype.ParseEnum(value); err != nil {
+				return fmt.Errorf("Invalid Load Balancer Healthcheck Protocol %q: %w", value, err)
 			}
 		case serviceAnnotationLoadBalancerHCInterval,
 			serviceAnnotationLoadBalancerHCTimeout,
@@ -451,17 +413,6 @@ func validateAnnotations(annotationList map[string]string) error {
 			_, err := parseUintAnnotation(annotationList, annotation)
 			if err != nil {
 				return fmt.Errorf("%q needs to be a positive number (%v)", annotation, err)
-			}
-		case serviceAnnotationLoadBalancerBufferSize:
-			val, err := parseUintAnnotation(annotationList, annotation)
-			if err != nil {
-				return fmt.Errorf("%q needs to be a positive number (%v)", annotation, err)
-			}
-			if val < validMinimumBufferSize {
-				return fmt.Errorf("%q needs to be no less than %d", annotation, validMinimumBufferSize)
-			}
-			if val > validMaximumBufferSize {
-				return fmt.Errorf("%q needs to be no more than %d", annotation, validMaximumBufferSize)
 			}
 		case serviceAnnotationLoadBalancerHCRequest:
 			testURL := "http://example.com:6443" + value
@@ -513,7 +464,7 @@ func anyAddressMatch(ipListA, ipListB []net.IP) bool {
 	return false
 }
 
-func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
+func (c *cloud) ensureAllocatedCloudIP(ctx context.Context, name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
 	ip := apiservice.Spec.LoadBalancerIP
 	klog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
 	var compareFunc func(cip *brightbox.CloudIP) bool
@@ -531,7 +482,7 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 			return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
 		}
 	}
-	cloudIPList, err := c.GetCloudIPs()
+	cloudIPList, err := c.GetCloudIPs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -541,27 +492,27 @@ func (c *cloud) ensureAllocatedCloudIP(name string, apiservice *v1.Service) (*br
 		}
 	}
 	if ip == "" {
-		return c.AllocateCloudIP(name)
+		return c.AllocateCloudIP(ctx, name)
 	}
 	return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 }
 
-func (c *cloud) ensureLoadBalancerFromService(name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
+func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
-	currentLb, err := c.GetLoadBalancerByName(name)
+	currentLb, err := c.GetLoadBalancerByName(ctx, name)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ensureFirewallOpenForService(name, apiservice, nodes)
+	err = c.ensureFirewallOpenForService(ctx, name, apiservice, nodes)
 	if err != nil {
 		return nil, err
 	}
 	newLB := buildLoadBalancerOptions(name, apiservice, nodes)
 	if currentLb == nil {
-		return c.Cloud.CreateLoadBalancer(newLB)
+		return c.Cloud.CreateLoadBalancer(ctx, *newLB)
 	} else if k8ssdk.IsUpdateLoadBalancerRequired(currentLb, *newLB) {
 		newLB.ID = currentLb.ID
-		return c.Cloud.UpdateLoadBalancer(newLB)
+		return c.Cloud.UpdateLoadBalancer(ctx, *newLB)
 	}
 	klog.V(4).Infof("No Load Balancer update required for %q, skipping", currentLb.ID)
 	return currentLb, nil
@@ -576,12 +527,13 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),
 		Domains:     buildLoadBalancerDomains(apiservice.Annotations),
 	}
-	bufferSize, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerBufferSize)
-	if bufferSize != 0 {
-		result.BufferSize = &bufferSize
-	}
 	if policy, ok := apiservice.Annotations[serviceAnnotationLoadBalancerPolicy]; ok {
-		result.Policy = &policy
+		policyEnum, err := balancingpolicy.ParseEnum(policy)
+		if err == nil {
+			result.Policy = policyEnum
+		} else {
+			klog.V(4).Infof("Unexpected balancing policy %q", policy)
+		}
 	}
 	if result.Domains != nil {
 		result.HTTPSRedirect = &truevar
@@ -615,11 +567,11 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	for i := range apiservice.Spec.Ports {
 		result[i].Protocol = getListenerProtocol(apiservice)
 		result[i].ProxyProtocol = getListenerProxyProtocol(apiservice)
-		if result[i].Protocol != loadBalancerTCPProtocol && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
-			result[i].Protocol = sslUpgradeProtocol[result[i].Protocol]
+		if result[i].Protocol != listenerprotocol.Tcp && isSSLPort(&apiservice.Spec.Ports[i], sslPortSet) {
+			result[i].Protocol = listenerprotocol.Https
 		}
-		result[i].In = int(apiservice.Spec.Ports[i].Port)
-		result[i].Out = int(apiservice.Spec.Ports[i].NodePort)
+		result[i].In = uint16(apiservice.Spec.Ports[i].Port)
+		result[i].Out = uint16(apiservice.Spec.Ports[i].NodePort)
 		result[i].Timeout, _ = parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerListenerIdleTimeout)
 	}
 	return result
@@ -633,15 +585,22 @@ func buildLoadBalancerDomains(annotations map[string]string) *[]string {
 	return nil
 }
 
-func getListenerProtocol(apiservice *v1.Service) string {
+func getListenerProtocol(apiservice *v1.Service) listenerprotocol.Enum {
 	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerListenerProtocol]; ok {
-		return protocol
+		if protocolEnum, err := listenerprotocol.ParseEnum(protocol); err == nil {
+			return protocolEnum
+		}
 	}
 	return defaultLoadBalancerProtocol
 }
 
-func getListenerProxyProtocol(apiservice *v1.Service) string {
-	return apiservice.Annotations[serviceAnnotationLoadBalancerListenerProxyProtocol]
+func getListenerProxyProtocol(apiservice *v1.Service) proxyprotocol.Enum {
+	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerListenerProxyProtocol]; ok {
+		if protocolEnum, err := proxyprotocol.ParseEnum(protocol); err == nil {
+			return protocolEnum
+		}
+	}
+	return defaultProxyProtocol
 }
 
 func isSSLPort(port *v1.ServicePort, sslPorts *portSets) bool {
@@ -659,7 +618,7 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 	thresholdDown, _ := parseUintAnnotation(apiservice.Annotations, serviceAnnotationLoadBalancerHCUnhealthyThreshold)
 	return &brightbox.LoadBalancerHealthcheck{
 		Type:          protocol,
-		Port:          getHealthCheckPort(apiservice, int(healthCheckNodePort)),
+		Port:          getHealthCheckPort(apiservice, uint16(healthCheckNodePort)),
 		Request:       getHealthCheckPath(apiservice, protocol, path),
 		Interval:      interval,
 		Timeout:       timeout,
@@ -668,8 +627,8 @@ func buildLoadBalancerHealthCheck(apiservice *v1.Service) *brightbox.LoadBalance
 	}
 }
 
-func getHealthCheckPath(apiservice *v1.Service, protocol string, path string) string {
-	if protocol == loadBalancerTCPProtocol {
+func getHealthCheckPath(apiservice *v1.Service, protocol healthchecktype.Enum, path string) string {
+	if protocol == healthchecktype.Tcp {
 		return "/"
 	}
 	if request, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCRequest]; ok {
@@ -692,28 +651,30 @@ func getServiceHealthCheckPathPort(apiservice *v1.Service) (string, int32) {
 	return "/healthz", port
 }
 
-func getHealthCheckProtocol(apiservice *v1.Service, path string) string {
+func getHealthCheckProtocol(apiservice *v1.Service, path string) healthchecktype.Enum {
 	if protocol, ok := apiservice.Annotations[serviceAnnotationLoadBalancerHCProtocol]; ok {
-		return protocol
+		if protocolEnum, err := healthchecktype.ParseEnum(protocol); err == nil {
+			return protocolEnum
+		}
 	}
-	if getListenerProtocol(apiservice) == loadBalancerTCPProtocol && path == "" {
-		return loadBalancerTCPProtocol
+	if getListenerProtocol(apiservice) == listenerprotocol.Tcp && path == "" {
+		return healthchecktype.Tcp
 	}
-	return loadBalancerHTTPProtocol
+	return healthchecktype.Http
 }
 
-func getHealthCheckPort(apiservice *v1.Service, nodeport int) int {
+func getHealthCheckPort(apiservice *v1.Service, nodeport uint16) uint16 {
 	if nodeport != 0 {
 		return nodeport
 	}
 	for i := range apiservice.Spec.Ports {
-		return int(apiservice.Spec.Ports[i].NodePort)
+		return uint16(apiservice.Spec.Ports[i].NodePort)
 	}
 	return defaultHealthCheckPort
 }
 
-//If annotation is missing returns zero value
-func parseUintAnnotation(annotationList map[string]string, annotation string) (int, error) {
+// If annotation is missing returns zero value
+func parseUintAnnotation(annotationList map[string]string, annotation string) (uint, error) {
 	klog.V(6).Infof("parseUintAnnotation(%+v, %+v)", annotationList, annotation)
 	strValue, ok := annotationList[annotation]
 	if !ok {
@@ -721,5 +682,5 @@ func parseUintAnnotation(annotationList map[string]string, annotation string) (i
 	}
 	val, err := strconv.ParseUint(strValue, 10, maxBits)
 	klog.V(6).Infof("Value Converted from %+v to %+v", strValue, val)
-	return int(val), err
+	return uint(val), err
 }

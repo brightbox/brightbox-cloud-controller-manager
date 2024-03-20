@@ -16,72 +16,74 @@ package brightbox
 
 import (
 	"bytes"
+	"context"
 	"strconv"
 
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/gobrightbox/v2/enums/listenerprotocol"
+	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
 var defaultIPv6RegionCidr = "2a02:1348:0140::/42"
-var defaultRuleProtocol = loadBalancerTCPProtocol
+var defaultRuleProtocol = listenerprotocol.Tcp.String()
 
 // The approach is to create a separate server group, firewall policy
 // and firewall rule for each loadbalancer primarily to avoid any
 // potential race conditions in the driver.
 // It also allows k8s to select subsets of nodes for each loadbalancer
 // created if it wants to.
-func (c *cloud) ensureFirewallOpenForService(name string, apiservice *v1.Service, nodes []*v1.Node) error {
+func (c *cloud) ensureFirewallOpenForService(ctx context.Context, name string, apiservice *v1.Service, nodes []*v1.Node) error {
 	klog.V(4).Infof("ensureFireWallOpen(%v)", name)
 	if len(apiservice.Spec.Ports) <= 0 {
 		klog.V(4).Infof("no ports to open")
 		return nil
 	}
-	serverGroup, err := c.ensureServerGroup(name, nodes)
+	serverGroup, err := c.ensureServerGroup(ctx, name, nodes)
 	if err != nil {
 		return err
 	}
-	firewallPolicy, err := c.ensureFirewallPolicy(serverGroup)
+	firewallPolicy, err := c.ensureFirewallPolicy(ctx, serverGroup)
 	if err != nil {
 		return err
 	}
-	return c.ensureFirewallRules(apiservice, firewallPolicy)
+	return c.ensureFirewallRules(ctx, apiservice, firewallPolicy)
 }
 
-func (c *cloud) ensureServerGroup(name string, nodes []*v1.Node) (*brightbox.ServerGroup, error) {
+func (c *cloud) ensureServerGroup(ctx context.Context, name string, nodes []*v1.Node) (*brightbox.ServerGroup, error) {
 	klog.V(4).Infof("ensureServerGroup(%v)", name)
-	group, err := c.GetServerGroupByName(name)
+	group, err := c.GetServerGroupByName(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 	if group == nil {
-		group, err = c.CreateServerGroup(name)
+		group, err = c.CreateServerGroup(ctx, name)
 	}
 	if err != nil {
 		return nil, err
 	}
-	group, err = c.SyncServerGroup(group, mapNodesToServerIDs(nodes))
+	group, err = c.SyncServerGroup(ctx, group, mapNodesToServerIDs(nodes))
 	if err == nil {
 		return group, nil
 	}
 	return nil, err
 }
 
-func (c *cloud) ensureFirewallPolicy(group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
+func (c *cloud) ensureFirewallPolicy(ctx context.Context, group *brightbox.ServerGroup) (*brightbox.FirewallPolicy, error) {
 	klog.V(4).Infof("ensureFireWallPolicy (%q)", group.Name)
-	fp, err := c.GetFirewallPolicyByName(group.Name)
+	fp, err := c.GetFirewallPolicyByName(ctx, group.Name)
 	if err != nil {
 		return nil, err
 	}
 	if fp == nil {
-		return c.CreateFirewallPolicy(group)
+		return c.CreateFirewallPolicy(ctx, *group)
 	}
 	return fp, nil
 }
 
-func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.FirewallPolicy) error {
+func (c *cloud) ensureFirewallRules(ctx context.Context, apiservice *v1.Service, fp *brightbox.FirewallPolicy) error {
 	klog.V(4).Infof("ensureFireWallRules (%q)", fp.Name)
 	portListStr := createPortListString(apiservice)
 	newRule := brightbox.FirewallRuleOptions{
@@ -92,11 +94,11 @@ func (c *cloud) ensureFirewallRules(apiservice *v1.Service, fp *brightbox.Firewa
 		Description:     &fp.Name,
 	}
 	if len(fp.Rules) == 0 {
-		_, err := c.CreateFirewallRule(&newRule)
+		_, err := c.CreateFirewallRule(ctx, newRule)
 		return err
 	} else if isUpdateFirewallRuleRequired(fp.Rules[0], newRule) {
 		newRule.ID = fp.Rules[0].ID
-		_, err := c.UpdateFirewallRule(&newRule)
+		_, err := c.UpdateFirewallRule(ctx, newRule)
 		return err
 	}
 	klog.V(4).Infof("No rule update required for %q, skipping", fp.Rules[0].ID)

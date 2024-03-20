@@ -21,9 +21,14 @@ import (
 	"strings"
 	"testing"
 
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/gobrightbox/status"
-	"github.com/brightbox/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/gobrightbox/v2/enums/balancingpolicy"
+	"github.com/brightbox/gobrightbox/v2/enums/cloudipstatus"
+	"github.com/brightbox/gobrightbox/v2/enums/healthchecktype"
+	"github.com/brightbox/gobrightbox/v2/enums/listenerprotocol"
+	"github.com/brightbox/gobrightbox/v2/enums/loadbalancerstatus"
+	"github.com/brightbox/gobrightbox/v2/enums/proxyprotocol"
+	"github.com/brightbox/k8ssdk/v2"
 	"github.com/go-test/deep"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,19 +57,18 @@ const (
 	testTimeout    = tooBigInt - 1
 )
 
-//Constant variables you can take the address of!
+// Constant variables you can take the address of!
 var (
-	newlbname     string            = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
-	lbuid         types.UID         = "9bde5f33-1379-4b8c-877a-777f5da4d766"
-	lbname        string            = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
-	lberror       string            = "888888f3313794b8c877a777f5da4d76.default." + clusterName
-	testPolicy    string            = "round-robin"
-	trueVar       bool              = true
-	falseVar      bool              = false
-	groklbname    string            = lbname
-	groknewlbname string            = newlbname
-	bufferSize    int               = 16384
-	resolvCip     brightbox.CloudIP = brightbox.CloudIP{
+	newlbname     string               = "a9d85099c227c46c0a373e954ec8eee2.default." + clusterName
+	lbuid         types.UID            = "9bde5f33-1379-4b8c-877a-777f5da4d766"
+	lbname        string               = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
+	lberror       string               = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	testPolicy    balancingpolicy.Enum = balancingpolicy.RoundRobin
+	trueVar       bool                 = true
+	falseVar      bool                 = false
+	groklbname    string               = lbname
+	groknewlbname string               = newlbname
+	resolvCip     brightbox.CloudIP    = brightbox.CloudIP{
 		ID:         "cip-vsalc",
 		PublicIP:   "109.107.39.92",
 		PublicIPv4: "109.107.39.92",
@@ -302,7 +306,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Policy \"magic-routing\"",
+			status: "Invalid Load Balancer Policy \"magic-routing\": magic-routing is not a valid balancingpolicy.Enum",
 		},
 		"invalid-proxy-protocol": {
 			service: &v1.Service{
@@ -326,14 +330,14 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Listener Proxy Protocol \"v1-ssl\"",
+			status: "Invalid Load Balancer Listener Proxy Protocol \"v1-ssl\": v1-ssl is not a valid proxyprotocol.Enum",
 		},
 		"Domains with TCP": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Tcp.String(),
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -365,7 +369,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Tcp.String(),
 						serviceAnnotationLoadBalancerSSLPorts:         "443",
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
@@ -398,8 +402,8 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2SslCn,
-						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerListenerProxyProtocol: proxyprotocol.V2SslCn.String(),
+						serviceAnnotationLoadBalancerListenerProtocol:      listenerprotocol.Tcp.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -423,8 +427,8 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2Ssl,
-						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProxyProtocol: proxyprotocol.V2Ssl.String(),
+						serviceAnnotationLoadBalancerListenerProtocol:      listenerprotocol.Http.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -448,7 +452,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Http.String(),
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -480,7 +484,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHTTPWSProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Https.String(),
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -512,7 +516,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Http.String(),
 						serviceAnnotationLoadBalancerSslDomains:       resolvedDomain,
 					},
 				},
@@ -537,7 +541,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Http.String(),
 						serviceAnnotationLoadBalancerSSLPorts:         "http",
 					},
 				},
@@ -579,7 +583,7 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Listener Protocol \"gopher\"",
+			status: "Invalid Load Balancer Listener Protocol \"gopher\": gopher is not a valid listenerprotocol.Enum",
 		},
 		"invalid-healthcheck-request": {
 			service: &v1.Service{
@@ -610,7 +614,7 @@ func TestValidateService(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCProtocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						serviceAnnotationLoadBalancerHCProtocol: listenerprotocol.Https.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -627,14 +631,15 @@ func TestValidateService(t *testing.T) {
 					SessionAffinity: v1.ServiceAffinityNone,
 				},
 			},
-			status: "Invalid Load Balancer Healthcheck Protocol \"" + sslUpgradeProtocol[loadBalancerHTTPProtocol] + "\"",
+			status: "Invalid Load Balancer Healthcheck Protocol \"" + listenerprotocol.Https.String() + "\": " +
+				listenerprotocol.Https.String() + " is not a valid healthchecktype.Enum",
 		},
 		"https without domains": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: newUID,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Http.String(),
 						serviceAnnotationLoadBalancerSSLPorts:         "443",
 					},
 				},
@@ -726,78 +731,6 @@ func TestValidateService(t *testing.T) {
 			},
 			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"" +
 				strconv.Itoa(tooBigInt) + "\": value out of range)",
-		},
-		"invalid-value-for-buffer-size": {
-			service: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					UID: newUID,
-					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize: "buffer",
-					},
-				},
-				Spec: v1.ServiceSpec{
-					Type: v1.ServiceTypeLoadBalancer,
-					Ports: []v1.ServicePort{
-						{
-							Name:       "http",
-							Protocol:   v1.ProtocolTCP,
-							Port:       80,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31347,
-						},
-					},
-					SessionAffinity: v1.ServiceAffinityNone,
-				},
-			},
-			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be a positive number (strconv.ParseUint: parsing \"buffer\": invalid syntax)",
-		},
-		"invalid-small-buffer-size": {
-			service: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					UID: newUID,
-					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize: "1023",
-					},
-				},
-				Spec: v1.ServiceSpec{
-					Type: v1.ServiceTypeLoadBalancer,
-					Ports: []v1.ServicePort{
-						{
-							Name:       "http",
-							Protocol:   v1.ProtocolTCP,
-							Port:       80,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31347,
-						},
-					},
-					SessionAffinity: v1.ServiceAffinityNone,
-				},
-			},
-			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be no less than 1024",
-		},
-		"invalid-big-buffer-size": {
-			service: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					UID: newUID,
-					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize: "16385",
-					},
-				},
-				Spec: v1.ServiceSpec{
-					Type: v1.ServiceTypeLoadBalancer,
-					Ports: []v1.ServicePort{
-						{
-							Name:       "http",
-							Protocol:   v1.ProtocolTCP,
-							Port:       80,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31347,
-						},
-					},
-					SessionAffinity: v1.ServiceAffinityNone,
-				},
-			},
-			status: "\"" + serviceAnnotationLoadBalancerBufferSize + "\" needs to be no more than 16384",
 		},
 	}
 	for name, tc := range testCases {
@@ -945,11 +878,10 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
 						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
-						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerPolicy:              testPolicy.String(),
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
-						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol:    listenerprotocol.Http.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1000,13 +932,13 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 						Timeout:  testTimeout,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
@@ -1014,12 +946,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize:    &bufferSize,
-				Policy:        &testPolicy,
+				Policy:        testPolicy,
 				HTTPSRedirect: &trueVar,
 			},
 		},
@@ -1028,12 +959,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:            strconv.Itoa(bufferSize),
 						serviceAnnotationLoadBalancerListenerIdleTimeout:   strconv.Itoa(testTimeout),
-						serviceAnnotationLoadBalancerPolicy:                testPolicy,
+						serviceAnnotationLoadBalancerPolicy:                testPolicy.String(),
 						serviceAnnotationLoadBalancerSslDomains:            resolvedDomain + "," + fqdn,
-						serviceAnnotationLoadBalancerListenerProtocol:      loadBalancerHTTPProtocol,
-						serviceAnnotationLoadBalancerListenerProxyProtocol: loadBalancerProxyV2SslCn,
+						serviceAnnotationLoadBalancerListenerProtocol:      listenerprotocol.Http.String(),
+						serviceAnnotationLoadBalancerListenerProxyProtocol: proxyprotocol.V2SslCn.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1084,111 +1014,27 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol:      sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol:      listenerprotocol.Https,
 						In:            443,
 						Out:           31347,
 						Timeout:       testTimeout,
-						ProxyProtocol: loadBalancerProxyV2SslCn,
+						ProxyProtocol: proxyprotocol.V2SslCn,
 					},
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						Timeout:       testTimeout,
 						In:            80,
 						Out:           31348,
-						ProxyProtocol: loadBalancerProxyV2SslCn,
+						ProxyProtocol: proxyprotocol.V2SslCn,
 					},
 				},
 				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize:    &bufferSize,
-				Policy:        &testPolicy,
-				HTTPSRedirect: &trueVar,
-			},
-		},
-		"websocket": {
-			service: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					UID: lbuid,
-					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
-						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
-						serviceAnnotationLoadBalancerPolicy:              testPolicy,
-						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
-						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHTTPWSProtocol,
-					},
-				},
-				Spec: v1.ServiceSpec{
-					Type: v1.ServiceTypeLoadBalancer,
-					Ports: []v1.ServicePort{
-						{
-							Name:       "https",
-							Protocol:   v1.ProtocolTCP,
-							Port:       443,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31347,
-						},
-						{
-							Name:       "http",
-							Protocol:   v1.ProtocolTCP,
-							Port:       80,
-							TargetPort: intstr.FromInt(8080),
-							NodePort:   31348,
-						},
-					},
-					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
-					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
-					HealthCheckNodePort:   8080,
-				},
-			},
-			nodes: []*v1.Node{
-				&v1.Node{
-					Spec: v1.NodeSpec{
-						ProviderID: "brightbox://srv-gdqms",
-					},
-				},
-				&v1.Node{
-					Spec: v1.NodeSpec{
-						ProviderID: "brightbox://srv-230b7",
-					},
-				},
-			},
-			lbopts: &brightbox.LoadBalancerOptions{
-				Name: &groklbname,
-				Nodes: []brightbox.LoadBalancerNode{
-					{
-						Node: "srv-gdqms",
-					},
-					{
-						Node: "srv-230b7",
-					},
-				},
-				Listeners: []brightbox.LoadBalancerListener{
-					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPWSProtocol],
-						In:       443,
-						Out:      31347,
-						Timeout:  testTimeout,
-					},
-					{
-						Protocol: loadBalancerHTTPWSProtocol,
-						Timeout:  testTimeout,
-						In:       80,
-						Out:      31348,
-					},
-				},
-				Domains: &[]string{resolvedDomain, fqdn},
-				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
-					Port:    31347,
-					Request: "/healthz",
-				},
-				BufferSize:    &bufferSize,
-				Policy:        &testPolicy,
+				Policy:        testPolicy,
 				HTTPSRedirect: &trueVar,
 			},
 		},
@@ -1197,12 +1043,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
 						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
-						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerPolicy:              testPolicy.String(),
 						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
 						serviceAnnotationLoadBalancerSSLPorts:            "fancy,3030",
-						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol:    listenerprotocol.Http.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1267,25 +1112,25 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 						Timeout:  testTimeout,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
 					},
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						Timeout:  testTimeout,
 						In:       5050,
 						Out:      31348,
 					},
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						Timeout:  testTimeout,
 						In:       3030,
 						Out:      31348,
@@ -1293,12 +1138,11 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Domains: &[]string{resolvedDomain, fqdn},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    31347,
 					Request: "/healthz",
 				},
-				BufferSize:    &bufferSize,
-				Policy:        &testPolicy,
+				Policy:        testPolicy,
 				HTTPSRedirect: &trueVar,
 			},
 		},
@@ -1307,10 +1151,9 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol:    loadBalancerTCPProtocol,
-						serviceAnnotationLoadBalancerBufferSize:          strconv.Itoa(bufferSize),
+						serviceAnnotationLoadBalancerListenerProtocol:    listenerprotocol.Tcp.String(),
 						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
-						serviceAnnotationLoadBalancerPolicy:              testPolicy,
+						serviceAnnotationLoadBalancerPolicy:              testPolicy.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1354,19 +1197,18 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						Timeout:  testTimeout,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerTCPProtocol,
+					Type:    healthchecktype.Tcp,
 					Port:    31348,
 					Request: "/",
 				},
-				BufferSize:    &bufferSize,
-				Policy:        &testPolicy,
+				Policy:        testPolicy,
 				HTTPSRedirect: &falseVar,
 			},
 		},
@@ -1375,8 +1217,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol:     loadBalancerTCPProtocol,
-						serviceAnnotationLoadBalancerHCProtocol:           loadBalancerHTTPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol:     listenerprotocol.Tcp.String(),
+						serviceAnnotationLoadBalancerHCProtocol:           healthchecktype.Http.String(),
 						serviceAnnotationLoadBalancerHCInterval:           "4000",
 						serviceAnnotationLoadBalancerHCTimeout:            "6000",
 						serviceAnnotationLoadBalancerHCHealthyThreshold:   "4",
@@ -1431,18 +1273,18 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:          loadBalancerHTTPProtocol,
+					Type:          healthchecktype.Http,
 					Port:          31347,
 					Request:       "/healthz",
 					Timeout:       6000,
@@ -1507,18 +1349,18 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -1530,7 +1372,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerHCProtocol: loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerHCProtocol: healthchecktype.Tcp.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1582,18 +1424,18 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerTCPProtocol,
+					Type:    healthchecktype.Tcp,
 					Port:    8080,
 					Request: "/",
 				},
@@ -1618,7 +1460,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 			lbopts: &brightbox.LoadBalancerOptions{
 				Name: &groklbname,
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    80,
 					Request: "/healthz",
 				},
@@ -1735,7 +1577,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Tcp.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1777,7 +1619,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			lbopts: &brightbox.LoadBalancer{
 				ID:     foundLba,
 				Name:   lbname,
-				Status: status.Active,
+				Status: loadbalancerstatus.Active,
 				Nodes: []brightbox.Server{
 					{
 						ID: "srv-gdqms",
@@ -1788,18 +1630,18 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerTCPProtocol,
+					Type:    healthchecktype.Tcp,
 					Port:    31347,
 					Request: "/",
 				},
@@ -1810,7 +1652,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					UID: lbuid,
 					Annotations: map[string]string{
-						serviceAnnotationLoadBalancerListenerProtocol: loadBalancerTCPProtocol,
+						serviceAnnotationLoadBalancerListenerProtocol: listenerprotocol.Tcp.String(),
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1852,7 +1694,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			lbopts: &brightbox.LoadBalancer{
 				ID:     foundLba,
 				Name:   lbname,
-				Status: status.Active,
+				Status: loadbalancerstatus.Active,
 				Nodes: []brightbox.Server{
 					{
 						ID: "srv-gdqms",
@@ -1863,18 +1705,18 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerTCPProtocol,
+					Type:    healthchecktype.Tcp,
 					Port:    31347,
 					Request: "/",
 				},
@@ -1923,7 +1765,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 			},
 			lbopts: &brightbox.LoadBalancer{
 				Name:   newlbname,
-				Status: status.Active,
+				Status: loadbalancerstatus.Active,
 				Nodes: []brightbox.Server{
 					{
 						ID: "srv-230b7",
@@ -1931,13 +1773,13 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/different/path",
 				},
@@ -1948,8 +1790,9 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
-			lbopts, err := client.ensureLoadBalancerFromService(desc, tc.service, tc.nodes)
+			ctx := context.Background()
+			desc := client.GetLoadBalancerName(ctx, clusterName, tc.service)
+			lbopts, err := client.ensureLoadBalancerFromService(ctx, desc, tc.service, tc.nodes)
 			if err != nil {
 				t.Errorf("Error when not expected")
 			} else if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
@@ -1988,18 +1831,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2015,18 +1858,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: &[]string{resolvedDomain, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2057,18 +1900,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2084,18 +1927,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: &[]string{fqdn, resolvedDomain},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2126,18 +1969,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2153,18 +1996,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: &[]string{resolvedDomain, fqdn, reverseDNS},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2195,18 +2038,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2222,18 +2065,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: &[]string{fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2264,18 +2107,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2291,18 +2134,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Domains: &[]string{reverseDNS, fqdn},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: sslUpgradeProtocol[loadBalancerHTTPProtocol],
+						Protocol: listenerprotocol.Https,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2321,18 +2164,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2347,18 +2190,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2377,18 +2220,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2403,23 +2246,23 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 					{
-						Protocol: loadBalancerTCPProtocol,
+						Protocol: listenerprotocol.Tcp,
 						In:       25,
 						Out:      32456,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2438,18 +2281,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2464,13 +2307,13 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2489,18 +2332,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2515,18 +2358,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31350,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2545,18 +2388,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2571,20 +2414,20 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            443,
 						Out:           31347,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            80,
 						Out:           31348,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2603,20 +2446,20 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            443,
 						Out:           31347,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            80,
 						Out:           31348,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2631,18 +2474,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2661,20 +2504,20 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            443,
 						Out:           31347,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            80,
 						Out:           31348,
-						ProxyProtocol: "v2",
+						ProxyProtocol: proxyprotocol.V2,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2689,20 +2532,20 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            443,
 						Out:           31347,
-						ProxyProtocol: "v2-ssl",
+						ProxyProtocol: proxyprotocol.V2Ssl,
 					},
 					{
-						Protocol:      loadBalancerHTTPProtocol,
+						Protocol:      listenerprotocol.Http,
 						In:            80,
 						Out:           31348,
-						ProxyProtocol: "v2-ssl",
+						ProxyProtocol: proxyprotocol.V2Ssl,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2721,18 +2564,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2747,18 +2590,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2777,18 +2620,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2799,18 +2642,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				Nodes: []brightbox.LoadBalancerNode{},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2829,18 +2672,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2855,18 +2698,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2885,18 +2728,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2914,18 +2757,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2944,18 +2787,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/healthz",
 				},
@@ -2970,18 +2813,18 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 				},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       443,
 						Out:      31347,
 					},
 					{
-						Protocol: loadBalancerHTTPProtocol,
+						Protocol: listenerprotocol.Http,
 						In:       80,
 						Out:      31348,
 					},
 				},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
-					Type:    loadBalancerHTTPProtocol,
+					Type:    healthchecktype.Http,
 					Port:    8080,
 					Request: "/check",
 				},
@@ -3020,7 +2863,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 				LoadBalancer: &brightbox.LoadBalancer{
 					ID: "lba-testy",
 				},
-				Status: "mapped",
+				Status: cloudipstatus.Mapped,
 			},
 			err: false,
 		},
@@ -3031,7 +2874,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				ID:     "cip-testy",
-				Status: "mapped",
+				Status: cloudipstatus.Mapped,
 			},
 			err: true,
 		},
@@ -3042,7 +2885,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 			},
 			cip: &brightbox.CloudIP{
 				ID:     "cip-testy",
-				Status: "unmapped",
+				Status: cloudipstatus.Unmapped,
 			},
 			err: false,
 		},
@@ -3052,7 +2895,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			err := client.EnsureMappedCloudIP(tc.lb, tc.cip)
+			err := client.EnsureMappedCloudIP(context.Background(), tc.lb, tc.cip)
 			if err != nil && !tc.err {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -3301,9 +3144,10 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
+			ctx := context.Background()
 
-			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
-			cip, err := client.ensureAllocatedCloudIP(desc, tc.service)
+			desc := client.GetLoadBalancerName(ctx, clusterName, tc.service)
+			cip, err := client.ensureAllocatedCloudIP(ctx, desc, tc.service)
 			if err != nil && tc.cip != nil {
 				t.Errorf("Error when not expected %q", err.Error())
 			} else if diff := deep.Equal(cip, tc.cip); diff != nil {
@@ -3460,7 +3304,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			err := client.EnsureOldCloudIPsDeposed(tc.lb.CloudIPs, tc.cip.ID, tc.name)
+			err := client.EnsureOldCloudIPsDeposed(context.Background(), tc.lb.CloudIPs, tc.cip.ID, tc.name)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
@@ -3477,11 +3321,12 @@ func TestDeletionByNameFunctions(t *testing.T) {
 	for _, name := range testCases {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
+			ctx := context.Background()
 
-			client.ensureServerGroupDeleted(name)
-			client.ensureLoadBalancerDeletedByName(name)
-			client.ensureFirewallClosed(name)
-			client.ensureCloudIPsDeleted("", name)
+			client.ensureServerGroupDeleted(ctx, name)
+			client.ensureLoadBalancerDeletedByName(ctx, name)
+			client.ensureFirewallClosed(ctx, name)
+			client.ensureCloudIPsDeleted(ctx, "", name)
 		})
 	}
 }
@@ -3612,11 +3457,11 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 	}
 }
 
-func (f *fakeInstanceCloud) MapCloudIP(identifier string, destination string) error {
-	return nil
+func (f *fakeInstanceCloud) MapCloudIP(_ context.Context, identifier string, destination brightbox.CloudIPAttachment) (*brightbox.CloudIP, error) {
+	return nil, nil
 }
 
-func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
+func (f *fakeInstanceCloud) CloudIPs(context.Context) ([]brightbox.CloudIP, error) {
 	return []brightbox.CloudIP{
 		{
 			ID:         "cip-12345",
@@ -3636,7 +3481,7 @@ func (f *fakeInstanceCloud) CloudIPs() ([]brightbox.CloudIP, error) {
 	}, nil
 }
 
-func (f *fakeInstanceCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
+func (f *fakeInstanceCloud) CreateCloudIP(_ context.Context, newCloudIP brightbox.CloudIPOptions) (*brightbox.CloudIP, error) {
 	cip := &brightbox.CloudIP{
 		ID:         "cip-67890",
 		PublicIPv4: publicIP2,
@@ -3648,11 +3493,11 @@ func (f *fakeInstanceCloud) CreateCloudIP(newCloudIP *brightbox.CloudIPOptions) 
 	return cip, nil
 }
 
-func (f *fakeInstanceCloud) CreateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
-	return f.UpdateLoadBalancer(newLB)
+func (f *fakeInstanceCloud) CreateLoadBalancer(ctx context.Context, newLB brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+	return f.UpdateLoadBalancer(ctx, newLB)
 }
 
-func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
+func (f *fakeInstanceCloud) UpdateLoadBalancer(_ context.Context, newLB brightbox.LoadBalancerOptions) (*brightbox.LoadBalancer, error) {
 	server_list := make([]brightbox.Server, len(newLB.Nodes))
 	for i, v := range newLB.Nodes {
 		server_list[i].ID = v.Node
@@ -3660,15 +3505,15 @@ func (f *fakeInstanceCloud) UpdateLoadBalancer(newLB *brightbox.LoadBalancerOpti
 	return &brightbox.LoadBalancer{
 		ID:          newLB.ID,
 		Name:        *newLB.Name,
-		Status:      status.Active,
+		Status:      loadbalancerstatus.Active,
 		Nodes:       server_list,
 		Listeners:   newLB.Listeners,
 		Healthcheck: *newLB.Healthcheck,
 	}, nil
 }
 
-func (f *fakeInstanceCloud) LoadBalancer(id string) (*brightbox.LoadBalancer, error) {
-	list, _ := f.LoadBalancers()
+func (f *fakeInstanceCloud) LoadBalancer(ctx context.Context, id string) (*brightbox.LoadBalancer, error) {
+	list, _ := f.LoadBalancers(ctx)
 	for _, balancer := range list {
 		if balancer.ID == id {
 			return &balancer, nil
@@ -3677,18 +3522,18 @@ func (f *fakeInstanceCloud) LoadBalancer(id string) (*brightbox.LoadBalancer, er
 	return nil, fmt.Errorf("unexpected identifier %q sent to LoadBalancer", id)
 }
 
-func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
+func (f *fakeInstanceCloud) LoadBalancers(context.Context) ([]brightbox.LoadBalancer, error) {
 	return []brightbox.LoadBalancer{
 		{
 			ID:       "lba-test1",
 			Name:     lbname,
-			Status:   "deleted",
+			Status:   loadbalancerstatus.Deleted,
 			CloudIPs: nil,
 		},
 		{
 			ID:     foundLba,
 			Name:   lbname,
-			Status: status.Active,
+			Status: loadbalancerstatus.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					ID:         "cip-12345",
@@ -3702,12 +3547,12 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 		{
 			ID:     "lba-test3",
 			Name:   "abob",
-			Status: status.Active,
+			Status: loadbalancerstatus.Active,
 		},
 		{
 			ID:     errorLba,
 			Name:   lberror,
-			Status: status.Active,
+			Status: loadbalancerstatus.Active,
 			CloudIPs: []brightbox.CloudIP{
 				brightbox.CloudIP{
 					ID:         publicCipID,
@@ -3721,10 +3566,10 @@ func (f *fakeInstanceCloud) LoadBalancers() ([]brightbox.LoadBalancer, error) {
 	}, nil
 }
 
-func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIDs []string) (*brightbox.ServerGroup, error) {
+func (f *fakeInstanceCloud) AddServersToServerGroup(ctx context.Context, identifier string, serverIDs brightbox.ServerGroupMemberList) (*brightbox.ServerGroup, error) {
 	switch identifier {
 	case "grp-found":
-		groups, _ := f.ServerGroups()
+		groups, _ := f.ServerGroups(ctx)
 		return &groups[0], nil
 	default:
 		result := &brightbox.ServerGroup{
@@ -3736,10 +3581,10 @@ func (f *fakeInstanceCloud) AddServersToServerGroup(identifier string, serverIDs
 	}
 }
 
-func (f *fakeInstanceCloud) RemoveServersFromServerGroup(identifier string, serverIDs []string) (*brightbox.ServerGroup, error) {
+func (f *fakeInstanceCloud) RemoveServersFromServerGroup(ctx context.Context, identifier string, serverIDs brightbox.ServerGroupMemberList) (*brightbox.ServerGroup, error) {
 	switch identifier {
 	case "grp-found":
-		groups, _ := f.ServerGroups()
+		groups, _ := f.ServerGroups(ctx)
 		return &groups[0], nil
 	default:
 		result := &brightbox.ServerGroup{
@@ -3751,7 +3596,7 @@ func (f *fakeInstanceCloud) RemoveServersFromServerGroup(identifier string, serv
 	}
 }
 
-func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
+func (f *fakeInstanceCloud) ServerGroups(context.Context) ([]brightbox.ServerGroup, error) {
 	result := []brightbox.ServerGroup{
 		brightbox.ServerGroup{
 			ID:   "grp-found",
@@ -3801,7 +3646,7 @@ func (f *fakeInstanceCloud) ServerGroups() ([]brightbox.ServerGroup, error) {
 	return result, nil
 }
 
-func (f *fakeInstanceCloud) CreateServerGroup(newServerGroup *brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
+func (f *fakeInstanceCloud) CreateServerGroup(_ context.Context, newServerGroup brightbox.ServerGroupOptions) (*brightbox.ServerGroup, error) {
 	result := &brightbox.ServerGroup{
 		ID: "grp-testy",
 	}
@@ -3814,23 +3659,23 @@ func (f *fakeInstanceCloud) CreateServerGroup(newServerGroup *brightbox.ServerGr
 	return result, nil
 }
 
-func (f *fakeInstanceCloud) CreateFirewallPolicy(policyOptions *brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error) {
+func (f *fakeInstanceCloud) CreateFirewallPolicy(_ context.Context, policyOptions brightbox.FirewallPolicyOptions) (*brightbox.FirewallPolicy, error) {
 	result := &brightbox.FirewallPolicy{
 		ID:   "fwp-testy",
 		Name: *policyOptions.Name,
 		ServerGroup: &brightbox.ServerGroup{
-			ID:   *policyOptions.ServerGroup,
+			ID:   policyOptions.ServerGroup,
 			Name: *policyOptions.Name,
 		},
 	}
 	return result, nil
 }
 
-func (f *fakeInstanceCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+func (f *fakeInstanceCloud) CreateFirewallRule(_ context.Context, ruleOptions brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
 	result := &brightbox.FirewallRule{
 		ID:          "fwr-testy",
 		Description: "After Create Firewll Rule",
-		FirewallPolicy: brightbox.FirewallPolicy{
+		FirewallPolicy: &brightbox.FirewallPolicy{
 			ID:   ruleOptions.FirewallPolicy,
 			Name: "After Create Firewall Rule",
 		},
@@ -3838,11 +3683,11 @@ func (f *fakeInstanceCloud) CreateFirewallRule(ruleOptions *brightbox.FirewallRu
 	return result, nil
 }
 
-func (f *fakeInstanceCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
+func (f *fakeInstanceCloud) UpdateFirewallRule(_ context.Context, ruleOptions brightbox.FirewallRuleOptions) (*brightbox.FirewallRule, error) {
 	result := &brightbox.FirewallRule{
 		ID:          ruleOptions.ID,
 		Description: *ruleOptions.Description,
-		FirewallPolicy: brightbox.FirewallPolicy{
+		FirewallPolicy: &brightbox.FirewallPolicy{
 			ID:   ruleOptions.FirewallPolicy,
 			Name: *ruleOptions.Description,
 		},
@@ -3850,15 +3695,15 @@ func (f *fakeInstanceCloud) UpdateFirewallRule(ruleOptions *brightbox.FirewallRu
 	return result, nil
 }
 
-func mapServerIDsToServers(serverIDs []string) []brightbox.Server {
-	result := make([]brightbox.Server, len(serverIDs))
-	for i := range serverIDs {
-		result[i].ID = serverIDs[i]
+func mapServerIDsToServers(serverIDs brightbox.ServerGroupMemberList) []brightbox.Server {
+	result := make([]brightbox.Server, len(serverIDs.Servers))
+	for i, server := range serverIDs.Servers {
+		result[i].ID = server.Server
 	}
 	return result
 }
 
-func (f *fakeInstanceCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, error) {
+func (f *fakeInstanceCloud) FirewallPolicies(context.Context) ([]brightbox.FirewallPolicy, error) {
 	result := []brightbox.FirewallPolicy{
 		brightbox.FirewallPolicy{
 			ID:   "fwp-found",
@@ -3896,62 +3741,62 @@ func (f *fakeInstanceCloud) FirewallPolicies() ([]brightbox.FirewallPolicy, erro
 	return result, nil
 }
 
-func (f *fakeInstanceCloud) DestroyServerGroup(identifier string) error {
+func (f *fakeInstanceCloud) DestroyServerGroup(_ context.Context, identifier string) (*brightbox.ServerGroup, error) {
 	switch identifier {
 	case "grp-found":
-		return nil
+		return nil, nil
 	case "grp-error":
-		return fmt.Errorf("Raising error in DestroyServerGroup")
+		return nil, fmt.Errorf("Raising error in DestroyServerGroup")
 	default:
-		return fmt.Errorf("unexpected identifier %q sent to DestroyServerGroup", identifier)
+		return nil, fmt.Errorf("unexpected identifier %q sent to DestroyServerGroup", identifier)
 	}
 }
 
-func (f *fakeInstanceCloud) DestroyFirewallPolicy(identifier string) error {
+func (f *fakeInstanceCloud) DestroyFirewallPolicy(_ context.Context, identifier string) (*brightbox.FirewallPolicy, error) {
 	switch identifier {
 	case "fwp-found":
-		return nil
+		return nil, nil
 	case "fwp-error":
-		return fmt.Errorf("Raising error in DestroyFirewallPolicy")
+		return nil, fmt.Errorf("Raising error in DestroyFirewallPolicy")
 	default:
-		return fmt.Errorf("unexpected identifier %q sent to DestroyFirewallPolicy", identifier)
+		return nil, fmt.Errorf("unexpected identifier %q sent to DestroyFirewallPolicy", identifier)
 	}
 }
 
-func (f *fakeInstanceCloud) DestroyLoadBalancer(identifier string) error {
+func (f *fakeInstanceCloud) DestroyLoadBalancer(_ context.Context, identifier string) (*brightbox.LoadBalancer, error) {
 	switch identifier {
 	case foundLba:
-		return nil
+		return nil, nil
 	case errorLba:
-		return fmt.Errorf("Raising error in DestroyLoadBalancer")
+		return nil, fmt.Errorf("Raising error in DestroyLoadBalancer")
 	default:
-		return fmt.Errorf("unexpected identifier %q sent to DestroyLoadBalancer", identifier)
+		return nil, fmt.Errorf("unexpected identifier %q sent to DestroyLoadBalancer", identifier)
 	}
 }
 
-func (f *fakeInstanceCloud) DestroyCloudIP(identifier string) error {
+func (f *fakeInstanceCloud) DestroyCloudIP(_ context.Context, identifier string) (*brightbox.CloudIP, error) {
 	switch identifier {
 	case publicCipID:
-		return nil
+		return nil, nil
 	case errorCipID:
-		return fmt.Errorf("Raising error in DestroyCloudIP")
+		return nil, fmt.Errorf("Raising error in DestroyCloudIP")
 	default:
-		return fmt.Errorf("unexpected identifier %q sent to DestroyCloudIP", identifier)
+		return nil, fmt.Errorf("unexpected identifier %q sent to DestroyCloudIP", identifier)
 	}
 }
 
-func (f *fakeInstanceCloud) UnMapCloudIP(identifier string) error {
+func (f *fakeInstanceCloud) UnMapCloudIP(_ context.Context, identifier string) (*brightbox.CloudIP, error) {
 	switch identifier {
 	case publicCipID, publicCipID2:
-		return nil
+		return nil, nil
 	case errorCipID:
-		return fmt.Errorf("Raising error in UnMapCloudIP")
+		return nil, fmt.Errorf("Raising error in UnMapCloudIP")
 	default:
-		return fmt.Errorf("unexpected identifier %q sent to UnMapCloudIP", identifier)
+		return nil, fmt.Errorf("unexpected identifier %q sent to UnMapCloudIP", identifier)
 	}
 }
 
-func (f *fakeInstanceCloud) CloudIP(identifier string) (*brightbox.CloudIP, error) {
+func (f *fakeInstanceCloud) CloudIP(_ context.Context, identifier string) (*brightbox.CloudIP, error) {
 	result := &brightbox.CloudIP{
 		ID: identifier,
 	}

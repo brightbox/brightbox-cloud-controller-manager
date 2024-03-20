@@ -17,7 +17,7 @@ package brightbox
 import (
 	"context"
 
-	"github.com/brightbox/k8ssdk"
+	"github.com/brightbox/k8ssdk/v2"
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
 )
@@ -44,7 +44,7 @@ func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 	return createZone(resp)
 }
 
-//Create a Zone object from a zone name string
+// Create a Zone object from a zone name string
 func createZone(zoneName string) (cloudprovider.Zone, error) {
 	respRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 	if err != nil {
@@ -81,7 +81,7 @@ func (c *cloud) getZoneByServerID(ctx context.Context, identifier string) (cloud
 	if err != nil {
 		return emptyZone, err
 	}
-	server, err := client.Server(identifier)
+	server, err := client.Server(ctx, identifier)
 	if err != nil {
 		return emptyZone, err
 	}

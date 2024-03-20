@@ -15,8 +15,8 @@
 package brightbox
 
 import (
-	brightbox "github.com/brightbox/gobrightbox"
-	"github.com/brightbox/k8ssdk"
+	brightbox "github.com/brightbox/gobrightbox/v2"
+	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
