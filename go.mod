@@ -2,6 +2,8 @@ module github.com/brightbox/brightbox-cloud-controller-manager
 
 go 1.21
 
+toolchain go1.21.9
+
 require (
 	github.com/brightbox/gobrightbox v0.8.8
 	github.com/brightbox/k8ssdk v0.9.0
