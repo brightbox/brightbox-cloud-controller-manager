@@ -16,7 +16,7 @@ the Brightbox credentials. You can get a
 [suitable api client from the Brightbox Manager](https://www.brightbox.com/docs/guides/manager/api-clients/)
 
 ```
-$ kubectl -n kube-system create secret generic brightbox-cloud-controller \
+$ kubectl -n kube-system create secret generic brightbox-credentials \
     '--from-literal=controller-client=cli-xxxxx' \
     '--from-literal=controller-client-secret=my_secret' \
     '--from-literal=apiurl=https://api.gb1.brightbox.com'
