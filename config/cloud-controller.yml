@@ -5,25 +5,189 @@ metadata:
   name: cloud-controller-manager
   namespace: kube-system
 ---
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: system:cloud-controller-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
+apiVersion: v1
+items:
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: cloud-controller-manager
-  namespace: kube-system
+  metadata:
+    name: system:cloud-controller-manager
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - create
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - '*'
+  - apiGroups:
+    - ""
+    resources:
+    - nodes/status
+    verbs:
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    verbs:
+    - list
+    - patch
+    - update
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - serviceaccounts
+    verbs:
+    - create
+    - get
+  - apiGroups:
+    - ""
+    resources:
+    - serviceaccounts/token
+    verbs:
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    verbs:
+    - '*'
+  - apiGroups:
+    - ""
+    resources:
+    - endpoints
+    verbs:
+    - create
+    - get
+    - list
+    - watch
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - list
+    - get
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: system:cloud-node-controller
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - '*'
+  - apiGroups:
+    - ""
+    resources:
+    - nodes/status
+    verbs:
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+    - update
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: system:pvl-controller
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    verbs:
+    - '*'
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+    - update
+kind: List
+metadata: {}
+---
+apiVersion: v1
+items:
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: system:cloud-node-controller
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:cloud-node-controller
+  subjects:
+  - kind: ServiceAccount
+    name: cloud-node-controller
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: system:pvl-controller
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:pvl-controller
+  subjects:
+  - kind: ServiceAccount
+    name: pvl-controller
+    namespace: kube-system
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: system:cloud-controller-manager
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: system:cloud-controller-manager
+  subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: kube-system
+kind: List
+metadata: {}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app: cloud-controller-manager
-  name: cloud-controller-manager
+    app: brightbox-cloud-controller-manager
+  name: brightbox-cloud-controller-manager
   namespace: kube-system
 data:
   cloud-controller.conf: |-
@@ -50,68 +214,75 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    k8s-app: cloud-controller-manager
-  name: cloud-controller-manager
+    k8s-app: brightbox-cloud-controller-manager
+  name: brightbox-cloud-controller-manager
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      k8s-app: cloud-controller-manager
+      k8s-app: brightbox-cloud-controller-manager
   template:
     metadata:
       labels:
-        k8s-app: cloud-controller-manager
+        k8s-app: brightbox-cloud-controller-manager
     spec:
-      dnsPolicy: Default
-      serviceAccountName: cloud-controller-manager
       nodeSelector:
-        node-role.kubernetes.io/master: ""
+        node-role.kubernetes.io/control-plane: ""
+      securityContext:
+        runAsUser: 1001
+      dnsPolicy: Default
       tolerations:
         # this taint is set by all kubelets running '--cloud-provider=external'
         # so we should tolerate it to schedule the brightbox ccm
         - key: "node.cloudprovider.kubernetes.io/uninitialized"
           value: "true"
           effect: "NoSchedule"
-        - key: "CriticalAddonsOnly"
-          operator: "Exists"
-        # cloud controller manages should be able to run on masters
+        - key: "node-role.kubernetes.io/control-plane"
+          effect: NoSchedule
         - key: "node-role.kubernetes.io/master"
           effect: NoSchedule
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 300
+      serviceAccountName: cloud-controller-manager
       containers:
-      - name: cloud-controller-manager
-        # for in-tree providers we use k8s.gcr.io/cloud-controller-manager
-        # this can be replaced with any other image for out-of-tree providers
-        image: brightbox/brightbox-cloud-controller-manager:0.0.5
-        command:
-          - "/bin/brightbox-cloud-controller-manager"
+      - name: brightbox-cloud-controller-manager
+        # brightbox-cloud-controller-manager image version should match k8s version
+        image: cr.brightbox.com/acc-juq13/public/brightbox-cloud-controller-manager:1.30.2
+        imagePullPolicy: Always
+        args:
           - "--cloud-provider=brightbox"
           - "--bind-address=::1"
-          - "--port=0"
           - "--secure-port=10253"
           - "--configure-cloud-routes=false"
           - "--kubeconfig=/etc/kubernetes/cloud-controller.conf"
           - "--cluster-name=brightbox-k8s"
-          - "--leader-elect=true"
-          - --use-service-account-credentials=false
+          - "--use-service-account-credentials=true"
         resources:
           requests:
-            cpu: 100m
-            memory: 50Mi
+            cpu: 200m
         env:
           - name: BRIGHTBOX_CLIENT
             valueFrom:
               secretKeyRef:
-                name: brightbox-cloud-controller
+                name: brightbox-credentials
                 key: controller-client
           - name: BRIGHTBOX_CLIENT_SECRET
             valueFrom:
               secretKeyRef:
-                name: brightbox-cloud-controller
+                name: brightbox-credentials
                 key: controller-client-secret
           - name: BRIGHTBOX_API_URL
             valueFrom:
               secretKeyRef:
-                name: brightbox-cloud-controller
+                name: brightbox-credentials
                 key: apiurl
         volumeMounts:
         - mountPath: /etc/kubernetes/cloud-controller.conf
@@ -122,5 +293,5 @@ spec:
       volumes:
       - configMap:
           defaultMode: 420
-          name: cloud-controller-manager
+          name: brightbox-cloud-controller-manager
         name: cloud-controller-conf
