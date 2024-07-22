@@ -15,7 +15,7 @@ require (
 	k8s.io/component-base v0.27.15
 	k8s.io/controller-manager v0.27.15
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubernetes v1.27.15
+	k8s.io/kubernetes v1.27.16
 )
 
 require (
