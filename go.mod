@@ -8,8 +8,8 @@ require (
 	github.com/brightbox/gobrightbox/v2 v2.2.2
 	github.com/brightbox/k8ssdk/v2 v2.0.0
 	github.com/go-test/deep v1.1.0
-	k8s.io/api v0.30.2
-	k8s.io/apimachinery v0.30.2
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
 	k8s.io/cloud-provider v0.30.2
 	k8s.io/component-base v0.30.2
 	k8s.io/controller-manager v0.30.2
