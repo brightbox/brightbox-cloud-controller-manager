@@ -8,10 +8,10 @@ require (
 	github.com/brightbox/gobrightbox/v2 v2.2.2
 	github.com/brightbox/k8ssdk/v2 v2.0.0
 	github.com/go-test/deep v1.1.0
-	k8s.io/api v0.30.2
-	k8s.io/apimachinery v0.30.2
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
 	k8s.io/cloud-provider v0.30.2
-	k8s.io/component-base v0.30.2
+	k8s.io/component-base v0.30.3
 	k8s.io/controller-manager v0.30.2
 	k8s.io/klog/v2 v2.130.0
 	k8s.io/kubernetes v1.30.2
@@ -107,7 +107,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiserver v0.30.2 // indirect
-	k8s.io/client-go v0.30.2 // indirect
+	k8s.io/client-go v0.30.3 // indirect
 	k8s.io/component-helpers v0.30.2 // indirect
 	k8s.io/kms v0.30.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
