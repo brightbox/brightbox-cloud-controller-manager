@@ -8,13 +8,13 @@ require (
 	github.com/brightbox/gobrightbox/v2 v2.2.2
 	github.com/brightbox/k8ssdk/v2 v2.0.0
 	github.com/go-test/deep v1.1.0
-	k8s.io/api v0.30.4
-	k8s.io/apimachinery v0.30.4
-	k8s.io/cloud-provider v0.30.4
-	k8s.io/component-base v0.30.4
-	k8s.io/controller-manager v0.30.4
+	k8s.io/api v0.30.5
+	k8s.io/apimachinery v0.30.5
+	k8s.io/cloud-provider v0.30.5
+	k8s.io/component-base v0.30.5
+	k8s.io/controller-manager v0.30.5
 	k8s.io/klog/v2 v2.130.0
-	k8s.io/kubernetes v1.30.4
+	k8s.io/kubernetes v1.30.5
 )
 
 require (
@@ -106,10 +106,10 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.30.4 // indirect
-	k8s.io/client-go v0.30.4 // indirect
-	k8s.io/component-helpers v0.30.4 // indirect
-	k8s.io/kms v0.30.4 // indirect
+	k8s.io/apiserver v0.30.5 // indirect
+	k8s.io/client-go v0.30.5 // indirect
+	k8s.io/component-helpers v0.30.5 // indirect
+	k8s.io/kms v0.30.5 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 // indirect
