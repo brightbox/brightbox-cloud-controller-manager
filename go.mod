@@ -7,7 +7,7 @@ toolchain go1.21.11
 require (
 	github.com/brightbox/gobrightbox v0.8.8
 	github.com/brightbox/k8ssdk v0.9.0
-	github.com/go-test/deep v1.1.0
+	github.com/go-test/deep v1.1.1
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.27.16
 	k8s.io/apimachinery v0.27.16
