@@ -16,10 +16,6 @@ Is [described here](config/README.md)
 `main.go` is a copy of the [controller manager](https://github.com/kubernetes/kubernetes/blob/master/cmd/cloud-controller-manager/controller-manager.go)
 with alterations made to accommodate this implementation.
 
-You can regenerate `main.go` from the latest version of the upstream
-controller by removing the file and running `make main.go`. This will
-apply the Brightbox Cloud patch to the upstream controller file.
-
 ## versioning
 The controller uses the Kubernetes versioning system with magic strings
 injected into the binary via Loader flags given to the Go compiler.
