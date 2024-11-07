@@ -33,6 +33,9 @@ var (
 // providers, use GetZoneByProviderID or GetZoneByNodeName since
 // GetZone can no longer be called from the kubelets.
 func (c *cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
+	if err := logAction(ctx, "GetZone"); err != nil {
+		return emptyZone, err
+	}
 	client, err := c.MetadataClient()
 	if err != nil {
 		return emptyZone, err
@@ -62,6 +65,9 @@ func createZone(zoneName string) (cloudprovider.Zone, error) {
 // particularly used in the context of external cloud providers where node
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
+	if err := logAction(ctx, "GetZoneByProviderID %s", providerID); err != nil {
+		return emptyZone, err
+	}
 	serverID := k8ssdk.MapProviderIDToServerID(providerID)
 	return c.getZoneByServerID(ctx, serverID)
 }
@@ -72,6 +78,9 @@ func (c *cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // initialization must be down outside the kubelets.
 func (c *cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
 	serverID := mapNodeNameToServerID(nodeName)
+	if err := logAction(ctx, "GetZoneByNodeName %s", serverID); err != nil {
+		return emptyZone, err
+	}
 	return c.getZoneByServerID(ctx, serverID)
 }
 

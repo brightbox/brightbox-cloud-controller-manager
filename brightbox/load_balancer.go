@@ -154,7 +154,9 @@ func (c *cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 
 func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	klog.V(4).Infof("GetLoadBalancer(%v)", name)
+	if err := logAction(ctx, "GetLoadBalancer(%v)", name); err != nil {
+		return nil, false, err
+	}
 	lb, err := c.GetLoadBalancerByName(ctx, name)
 	return toLoadBalancerStatus(lb), err == nil && lb != nil, err
 }
@@ -164,7 +166,9 @@ func (c *cloud) GetLoadBalancer(ctx context.Context, clusterName string, apiserv
 // if that isn't in the cloudip list.
 func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	klog.V(4).Infof("EnsureLoadBalancer(%v, %v, %v, %v)", name, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations)
+	if err := logAction(ctx, "EnsureLoadBalancer(%v, %v, %v, %v)", name, apiservice.Spec.LoadBalancerIP, apiservice.Spec.Ports, apiservice.Annotations); err != nil {
+		return nil, err
+	}
 	if err := validateServiceSpec(apiservice); err != nil {
 		return nil, err
 	}
@@ -200,14 +204,18 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 }
 
 func (c *cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, apiservice *v1.Service, nodes []*v1.Node) error {
-	klog.V(4).Infof("UpdateLoadBalancer called - delegating")
+	if err := logAction(ctx, "UpdateLoadBalancer called - delegating"); err != nil {
+		return err
+	}
 	_, err := c.EnsureLoadBalancer(ctx, clusterName, apiservice, nodes)
 	return err
 }
 
 func (c *cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, apiservice *v1.Service) error {
 	name := c.GetLoadBalancerName(ctx, clusterName, apiservice)
-	klog.V(4).Infof("EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP)
+	if err := logAction(ctx, "EnsureLoadBalancerDeleted(%v, %v)", name, apiservice.Spec.LoadBalancerIP); err != nil {
+		return err
+	}
 	if err := c.ensureServerGroupDeleted(ctx, name); err != nil {
 		return err
 	}
