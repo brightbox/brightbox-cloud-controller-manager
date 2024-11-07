@@ -1,6 +1,6 @@
 module github.com/brightbox/brightbox-cloud-controller-manager
 
-go 1.23.0
+go 1.23
 
 require (
 	github.com/brightbox/gobrightbox/v2 v2.2.2
