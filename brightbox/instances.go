@@ -33,7 +33,9 @@ import (
 // returns the address of the calling instance. We should do a rename to
 // make this clearer.
 func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
-	klog.V(4).Infof("NodeAddresses (%q)", name)
+	if err := logAction(ctx, "NodeAddresses (%q)", name); err != nil {
+		return nil, err
+	}
 	srv, err := c.GetServer(ctx, mapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return nil, err
@@ -47,13 +49,17 @@ func (c *cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 // from the node whose nodeaddresses are being queried. i.e. local metadata
 // services cannot be used in this method to obtain nodeaddresses
 func (c *cloud) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
-	klog.V(4).Infof("NodeAddressesByProviderID (%q)", providerID)
+	if err := logAction(ctx, "NodeAddressesByProviderID (%q)", providerID); err != nil {
+		return nil, err
+	}
 	return c.NodeAddresses(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // InstanceID returns the cloud provider ID of the node with the specified NodeName.
 func (c *cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
-	klog.V(4).Infof("InstanceID (%q)", nodeName)
+	if err := logAction(ctx, "InstanceID (%q)", nodeName); err != nil {
+		return "", err
+	}
 	srv, err := c.GetServer(ctx, mapNodeNameToServerID(nodeName), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", cloudprovider.InstanceNotFound
@@ -66,13 +72,17 @@ func (c *cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string
 // Note that if the instance does not exist or is no longer running,
 // we must return ("", cloudprovider.InstanceNotFound)
 func (c *cloud) ExternalID(ctx context.Context, nodeName types.NodeName) (string, error) {
-	klog.V(4).Infof("ExternalID (%q)", nodeName)
+	if err := logAction(ctx, "ExternalID (%q)", nodeName); err != nil {
+		return "", err
+	}
 	return c.InstanceID(ctx, nodeName)
 }
 
 // InstanceType returns the type of the specified instance.
 func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, error) {
-	klog.V(4).Infof("InstanceType (%q)", name)
+	if err := logAction(ctx, "InstanceType (%q)", name); err != nil {
+		return "", err
+	}
 	srv, err := c.GetServer(ctx, mapNodeNameToServerID(name), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return "", err
@@ -82,21 +92,27 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 
 // InstanceTypeByProviderID returns the type of the specified instance.
 func (c *cloud) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
-	klog.V(4).Infof("InstanceTypeByProviderID (%q)", providerID)
+	if err := logAction(ctx, "InstanceTypeByProviderID (%q)", providerID); err != nil {
+		return "", err
+	}
 	return c.InstanceType(ctx, mapProviderIDToNodeName(providerID))
 }
 
 // AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
 // expected format for the key is standard ssh-keygen format: <protocol> <blob>
 func (c *cloud) AddSSHKeyToAllInstances(ctx context.Context, user string, keyData []byte) error {
-	klog.V(4).Infof("AddSSHKey (%q)", user)
+	if err := logAction(ctx, "AddSSHKey (%q)", user); err != nil {
+		return err
+	}
 	return cloudprovider.NotImplemented
 }
 
 // CurrentNodeName returns the name of the node we are currently running on
 // On most clouds (e.g. GCE) this is the hostname, so we provide the hostname
 func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
-	klog.V(4).Infof("CurrentNodeName (%q)", hostname)
+	if err := logAction(ctx, "CurrentNodeName (%q)", hostname); err != nil {
+		return types.NodeName(""), err
+	}
 	return mapServerIDToNodeName(hostname), nil
 }
 
@@ -104,7 +120,9 @@ func (c *cloud) CurrentNodeName(ctx context.Context, hostname string) (types.Nod
 // If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
 // This method should still return true for instances that exist but are stopped/sleeping.
 func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
-	klog.V(4).Infof("InstanceExistsByProviderID (%q)", providerID)
+	if err := logAction(ctx, "InstanceExistsByProviderID (%q)", providerID); err != nil {
+		return false, err
+	}
 	srv, err := c.GetServer(ctx, k8ssdk.MapProviderIDToServerID(providerID), cloudprovider.InstanceNotFound)
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {
@@ -131,7 +149,9 @@ func (c *cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 
 // InstanceShutdownByProviderID returns true if the instance still exists and is shutdown in cloudprovider
 func (c *cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
-	klog.V(4).Infof("InstanceShutdownByProviderID (%q)", providerID)
+	if err := logAction(ctx, "InstanceShutdownByProviderID (%q)", providerID); err != nil {
+		return false, err
+	}
 	srv, err := c.GetServer(ctx, k8ssdk.MapProviderIDToServerID(providerID), cloudprovider.InstanceNotFound)
 	if err != nil {
 		if err == cloudprovider.InstanceNotFound {

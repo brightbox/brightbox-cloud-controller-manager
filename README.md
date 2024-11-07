@@ -95,13 +95,12 @@ sudo BRIGHTBOX_CLIENT=cli-xxxxx \
      ./brightbox-cloud-controller-manager \
         --cloud-provider=brightbox \
         --bind-address=::1 \
-        --port=0 \
-        --secure-port=10253 \
+        --secure-port=10258 \
         --configure-cloud-routes=false \
         --kubeconfig=/etc/kubernetes/admin.conf \
         --cluster-name=My_Cluster_Name \
         --leader-elect=false \
-	-v=4 \
+	    -v=4 \
         --use-service-account-credentials=false 
 ```
 

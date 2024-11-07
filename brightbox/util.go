@@ -15,11 +15,28 @@
 package brightbox
 
 import (
+	"context"
+	"fmt"
+
 	brightbox "github.com/brightbox/gobrightbox/v2"
 	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 )
+
+func logAction(ctx context.Context, action string, args ...interface{}) error {
+	// Log the action with the provided arguments
+	klog.V(4).Infof(action, args...)
+
+	// Check if context is canceled and log the cause if it exists
+	if cause := context.Cause(ctx); cause != nil {
+		klog.Warningf("unexpected context - %q abandoned due to: %v", fmt.Sprintf(action, args...), cause)
+		return cause
+	}
+
+	return nil
+}
 
 // mapNodeNameToServerID maps a k8s NodeName to a Brightbox Server ID
 // This is a simple string cast.
