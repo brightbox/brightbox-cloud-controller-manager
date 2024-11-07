@@ -2867,7 +2867,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 			},
 			err: false,
 		},
-		"badmap": {
+		"mapped_elsewhere": {
 			lb: &brightbox.LoadBalancer{
 				ID:       "lba-testy",
 				CloudIPs: []brightbox.CloudIP{},
@@ -2876,7 +2876,7 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 				ID:     "cip-testy",
 				Status: cloudipstatus.Mapped,
 			},
-			err: true,
+			err: false,
 		},
 		"unmapped": {
 			lb: &brightbox.LoadBalancer{
@@ -2896,8 +2896,10 @@ func TestEnsureMappedCloudIP(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
 			err := client.EnsureMappedCloudIP(context.Background(), tc.lb, tc.cip)
-			if err != nil && !tc.err {
-				t.Errorf("Error when not expected: %q", err.Error())
+			if tc.err && err == nil {
+				t.Errorf("Expected error and none returned")
+			} else if !tc.err && err != nil {
+				t.Errorf("Error return when not expected: %q", err.Error())
 			}
 		})
 	}
