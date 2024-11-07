@@ -20,20 +20,23 @@ import (
 	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/klog/v2"
 )
 
 // InstanceExists returns true if the instance for the given node exists according to the cloud provider.
 // Use the node.name or node.spec.providerID field to find the node in the cloud provider.
 func (c *cloud) InstanceExists(ctx context.Context, node *v1.Node) (bool, error) {
-	klog.V(4).Infof("InstanceExists (%q)", node.Spec.ProviderID)
+	if err := logAction(ctx, "InstanceExists (%s)", node.Spec.ProviderID); err != nil {
+		return false, err
+	}
 	return c.InstanceExistsByProviderID(ctx, mapNodeToProviderID(node))
 }
 
 // InstanceShutdown returns true if the instance is shutdown according to the cloud provider.
 // Use the node.name or node.spec.providerID field to find the node in the cloud provider.
 func (c *cloud) InstanceShutdown(ctx context.Context, node *v1.Node) (bool, error) {
-	klog.V(4).Infof("InstanceShutdown (%q)", node.Spec.ProviderID)
+	if err := logAction(ctx, "InstanceShutdown (%s)", node.Spec.ProviderID); err != nil {
+		return false, err
+	}
 	return c.InstanceShutdownByProviderID(ctx, mapNodeToProviderID(node))
 }
 
@@ -43,7 +46,9 @@ func (c *cloud) InstanceShutdown(ctx context.Context, node *v1.Node) (bool, erro
 // for a given node. In cases where node.spec.providerID is empty, implementations can use other
 // properties of the node like its name, labels and annotations.
 func (c *cloud) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprovider.InstanceMetadata, error) {
-	klog.V(4).Infof("InstanceMetadata (%q)", node.Spec.ProviderID)
+	if err := logAction(ctx, "InstanceMetadata (%s)", node.Spec.ProviderID); err != nil {
+		return nil, err
+	}
 	srv, err := c.GetServer(ctx, mapNodeToServerID(node), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return nil, err
