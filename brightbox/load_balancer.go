@@ -479,7 +479,8 @@ func (c *cloud) ensureAllocatedCloudIP(ctx context.Context, name string, apiserv
 	switch ip {
 	case "":
 		compareFunc = func(cip *brightbox.CloudIP) bool {
-			return cip.Name == name
+			return cip.Name == name ||
+				(cip.LoadBalancer != nil && cip.LoadBalancer.Name == name)
 		}
 	default:
 		ipval := net.ParseIP(ip)
