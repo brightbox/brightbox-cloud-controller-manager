@@ -50,6 +50,9 @@ const (
 	foundLba       = "lba-found"
 	errorLba       = "lba-error"
 	newUID         = "9d85099c-227c-46c0-a373-e954ec8eee2e"
+	premappedUID   = "8ace676f-adc0-4dde-a1f2-3cd5da97f6f0"
+	premappedCipID = "cip-premp"
+	premappedIP    = "185.185.185.185"
 	clusterName    = "test-cluster-name"
 	missingDomain  = "probablynotthere.co"
 	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
@@ -63,6 +66,7 @@ var (
 	lbuid         types.UID            = "9bde5f33-1379-4b8c-877a-777f5da4d766"
 	lbname        string               = "a9bde5f3313794b8c877a777f5da4d76.default." + clusterName
 	lberror       string               = "888888f3313794b8c877a777f5da4d76.default." + clusterName
+	premappedName string               = "a8ace676fadc04ddea1f23cd5da97f6f.default." + clusterName
 	testPolicy    balancingpolicy.Enum = balancingpolicy.RoundRobin
 	trueVar       bool                 = true
 	falseVar      bool                 = false
@@ -3142,6 +3146,36 @@ func TestEnsureAllocatedCloudIP(t *testing.T) {
 			},
 			cip: nil,
 		},
+		"No LBIP, no name, but ip mapped": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: premappedUID,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31348,
+						},
+					},
+					SessionAffinity:       v1.ServiceAffinityNone,
+					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
+					HealthCheckNodePort:   8080,
+				},
+			},
+			cip: &brightbox.CloudIP{
+				ID:         premappedCipID,
+				PublicIPv4: premappedIP,
+				LoadBalancer: &brightbox.LoadBalancer{
+					ID:   "lba-12345",
+					Name: premappedName,
+				},
+			},
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -3479,6 +3513,14 @@ func (f *fakeInstanceCloud) CloudIPs(context.Context) ([]brightbox.CloudIP, erro
 			ID:         errorCipID,
 			Name:       lberror,
 			PublicIPv4: "255.255.255.255",
+		},
+		{
+			ID:         premappedCipID,
+			PublicIPv4: premappedIP,
+			LoadBalancer: &brightbox.LoadBalancer{
+				ID:   "lba-12345",
+				Name: premappedName,
+			},
 		},
 	}, nil
 }
