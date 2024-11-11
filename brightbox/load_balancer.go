@@ -200,6 +200,9 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
+	if err := c.ensureCloudIPsDeleted(ctx, cip.ID, name); err != nil {
+		return nil, err
+	}
 	lb, err = c.GetLoadBalancerByID(ctx, lb.ID)
 	if err != nil {
 		return nil, err
