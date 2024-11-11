@@ -196,14 +196,9 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	if apiservice.Spec.LoadBalancerIP != "" {
-		err = c.EnsureOldCloudIPsDeposed(ctx, lb.CloudIPs, cip.ID, name)
-		if err != nil {
-			return nil, err
-		}
-		if err := c.ensureCloudIPsDeleted(ctx, cip.ID, name); err != nil {
-			return nil, err
-		}
+	err = c.EnsureOldCloudIPsDeposed(ctx, lb.CloudIPs, cip.ID)
+	if err != nil {
+		return nil, err
 	}
 	lb, err = c.GetLoadBalancerByID(ctx, lb.ID)
 	if err != nil {
