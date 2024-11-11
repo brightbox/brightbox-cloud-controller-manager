@@ -3365,7 +3365,7 @@ func TestDeposeCloudIPFunctions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 
-			err := client.EnsureOldCloudIPsDeposed(context.Background(), tc.lb.CloudIPs, tc.cip.ID, tc.name)
+			err := client.EnsureOldCloudIPsDeposed(context.Background(), tc.lb.CloudIPs, tc.cip.ID)
 			if err != nil {
 				t.Errorf("Error when not expected: %q", err.Error())
 			}
