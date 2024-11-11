@@ -58,6 +58,7 @@ const (
 	resolvedDomain = "cip-vsalc.gb1s.brightbox.com"
 	tooBigInt      = 1 << maxBits
 	testTimeout    = tooBigInt - 1
+	badCipID       = "cip-123-45"
 )
 
 // Constant variables you can take the address of!
@@ -736,6 +737,30 @@ func TestValidateService(t *testing.T) {
 			status: "\"" + serviceAnnotationLoadBalancerHCTimeout + "\" needs to be a positive number (strconv.ParseUint: parsing \"" +
 				strconv.Itoa(tooBigInt) + "\": value out of range)",
 		},
+		"invalid-cloudip-allocations-format": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerCloudipAllocations: badCipID,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			status: fmt.Sprintf("%q needs to match the pattern %q", serviceAnnotationLoadBalancerCloudipAllocations, cloudIPPattern),
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -788,7 +813,7 @@ func TestValidateDomains(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			err := validateContextualAnnotations(tc.annotations, tc.cloudIp)
+			err := validateLoadBalancerDomainResolution(tc.annotations, tc.cloudIp)
 			if err == nil {
 				t.Errorf("Expected error %q got nil", tc.status)
 			} else if !strings.HasPrefix(err.Error(), tc.status) {
