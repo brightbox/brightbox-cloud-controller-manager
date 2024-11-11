@@ -761,6 +761,31 @@ func TestValidateService(t *testing.T) {
 			},
 			status: fmt.Sprintf("%q needs to match the pattern %q", serviceAnnotationLoadBalancerCloudipAllocations, cloudIPPattern),
 		},
+		"cloudip-allocation-conflict-spec-loadbalancerip": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: newUID,
+					Annotations: map[string]string{
+						serviceAnnotationLoadBalancerCloudipAllocations: publicCipID,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Name:       "http",
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+							NodePort:   31347,
+						},
+					},
+					SessionAffinity: v1.ServiceAffinityNone,
+					LoadBalancerIP:  publicIP,
+				},
+			},
+			status: "Remove obsolete field: spec.loadBalancerIP",
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {

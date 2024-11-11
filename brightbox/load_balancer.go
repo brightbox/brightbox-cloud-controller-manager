@@ -385,6 +385,12 @@ func validateServiceSpec(apiservice *v1.Service) error {
 			return fmt.Errorf("SSL support requires a Port definition for %d", standardSSLPort)
 		}
 	}
+	// CloudIP allocation annotation and spec.loadBalancerIP conflict
+	if apiservice.Spec.LoadBalancerIP != "" {
+		if _, ok := apiservice.Annotations[serviceAnnotationLoadBalancerCloudipAllocations]; ok {
+			return fmt.Errorf("Remove obsolete field: spec.loadBalancerIP")
+		}
+	}
 	return validateAnnotations(apiservice.Annotations)
 }
 
