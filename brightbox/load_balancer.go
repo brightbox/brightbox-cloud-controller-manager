@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -71,11 +72,6 @@ const (
 	// The 'ws' extensions add support for Websockets to the listener.
 	serviceAnnotationLoadBalancerListenerProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-protocol"
 
-	// ServiceAnnotationLoadBalancerSSLPorts is the annotation used on the service
-	// to specify a comma-separated list of ports that will use SSL/HTTPS
-	// listeners rather than plain 'http' listeners. Defaults to '443'.
-	serviceAnnotationLoadBalancerSSLPorts = "service.beta.kubernetes.io/brightbox-load-balancer-ssl-ports"
-
 	// ServiceAnnotationLoadBalancerConnectionIdleTimeout is the
 	// annotation used on the service to specify the idle connection
 	// timeout.
@@ -86,6 +82,11 @@ const (
 	// and specify the type of information that should be contained within it
 	serviceAnnotationLoadBalancerListenerProxyProtocol = "service.beta.kubernetes.io/brightbox-load-balancer-listener-proxy-protocol"
 
+	// ServiceAnnotationLoadBalancerSSLPorts is the annotation used on the service
+	// to specify a comma-separated list of ports that will use SSL/HTTPS
+	// listeners rather than plain 'http' listeners. Defaults to '443'.
+	serviceAnnotationLoadBalancerSSLPorts = "service.beta.kubernetes.io/brightbox-load-balancer-ssl-ports"
+
 	// ServiceAnnotationLoadBalancerSslDomains is the annotation used
 	// on the service to specify the list of additional domains to add to the
 	// Let's Encrypt SSL certificate used by the https listener.
@@ -94,6 +95,13 @@ const (
 	// mapped externally onto the `Load Balancer Ingress` address
 	// of the service, or via a CNAME onto the ingress address hostname
 	serviceAnnotationLoadBalancerSslDomains = "service.beta.kubernetes.io/brightbox-load-balancer-ssl-domains"
+
+	// ServiceAnnotationLoadBalancerCloudipAllocations is the
+	// annotation used to specify the ID of the CloudIP that should
+	// be mapped to the load balancer. It replaces the deprecated
+	// `spec.loadBalancerIP` entry and should be in the form
+	// `cip-xxxxx`. Only one cloudip can be specified.
+	serviceAnnotationLoadBalancerCloudipAllocations = "service.beta.kubernetes.io/brightbox-load-balancer-cloudip-allocations"
 
 	// ServiceAnnotationLoadBalancerHCHealthyThreshold is the
 	// annotation used on the service to specify the number of successive
@@ -128,8 +136,9 @@ const (
 )
 
 var (
-	truevar  = true
-	falsevar = false
+	truevar        = true
+	falsevar       = false
+	cloudIPPattern = regexp.MustCompile(`^cip-[0-9a-z]{5,}$`)
 )
 
 // Return a name that is 'name'.'namespace'.'clusterName'
@@ -176,7 +185,7 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	if err := validateContextualAnnotations(apiservice.Annotations, cip); err != nil {
+	if err := validateLoadBalancerDomainResolution(apiservice.Annotations, cip); err != nil {
 		return nil, err
 	}
 	lb, err := c.ensureLoadBalancerFromService(ctx, name, apiservice, nodes)
@@ -428,12 +437,16 @@ func validateAnnotations(annotationList map[string]string) error {
 			if err != nil || u.Path != value {
 				return fmt.Errorf("%q needs to be a valid Url request path", annotation)
 			}
+		case serviceAnnotationLoadBalancerCloudipAllocations:
+			if !cloudIPPattern.MatchString(value) {
+				return fmt.Errorf("%q needs to match the pattern %q", annotation, cloudIPPattern)
+			}
 		}
 	}
 	return nil
 }
 
-func validateContextualAnnotations(annotationList map[string]string, cloudIP *brightbox.CloudIP) error {
+func validateLoadBalancerDomainResolution(annotationList map[string]string, cloudIP *brightbox.CloudIP) error {
 	domains := buildLoadBalancerDomains(annotationList)
 	if domains != nil {
 		cloudIPList, err := toIPList(cloudIP)
@@ -473,37 +486,60 @@ func anyAddressMatch(ipListA, ipListB []net.IP) bool {
 }
 
 func (c *cloud) ensureAllocatedCloudIP(ctx context.Context, name string, apiservice *v1.Service) (*brightbox.CloudIP, error) {
-	ip := apiservice.Spec.LoadBalancerIP
-	klog.V(4).Infof("ensureAllocatedCloudIP (%q, %q)", name, ip)
-	var compareFunc func(cip *brightbox.CloudIP) bool
-	switch ip {
-	case "":
-		compareFunc = func(cip *brightbox.CloudIP) bool {
-			return cip.Name == name ||
-				(cip.LoadBalancer != nil && cip.LoadBalancer.Name == name)
-		}
-	default:
-		ipval := net.ParseIP(ip)
-		if ipval == nil {
-			return nil, fmt.Errorf("Invalid LoadBalancerIP: %q", ip)
-		}
-		compareFunc = func(cip *brightbox.CloudIP) bool {
-			return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
-		}
+	klog.V(4).Info("ensureAllocatedCloudIP")
+	if cipID, ok := apiservice.Annotations[serviceAnnotationLoadBalancerCloudipAllocations]; ok {
+		return c.GetCloudIP(ctx, cipID)
 	}
+	if ip := apiservice.Spec.LoadBalancerIP; ip != "" {
+		return lookupCloudIPByIP(ctx, c, ip)
+	}
+	return lookupCloudIPByName(ctx, c, name)
+}
+
+func lookupCloudIPByIP(ctx context.Context, c *cloud, ip string) (*brightbox.CloudIP, error) {
+	ipval := net.ParseIP(ip)
+	if ipval == nil {
+		return nil, fmt.Errorf("Invalid LoadBalancerIP: %q", ip)
+	}
+
 	cloudIPList, err := c.GetCloudIPs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i := range cloudIPList {
-		if compareFunc(&cloudIPList[i]) {
-			return &cloudIPList[i], nil
-		}
+
+	cip := findMatchingCloudIP(cloudIPList, func(cip *brightbox.CloudIP) bool {
+		return ipval.Equal(net.ParseIP(cip.PublicIPv4)) || ipval.Equal(net.ParseIP(cip.PublicIPv6))
+	})
+	if cip == nil {
+		return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
 	}
-	if ip == "" {
+	klog.Warningf("spec.loadBalancerIP is deprecated. Remove the entry and add the annotation: %s=%s", serviceAnnotationLoadBalancerCloudipAllocations, cip.ID)
+	return cip, nil
+}
+
+func lookupCloudIPByName(ctx context.Context, c *cloud, name string) (*brightbox.CloudIP, error) {
+	cloudIPList, err := c.GetCloudIPs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cip := findMatchingCloudIP(cloudIPList, func(cip *brightbox.CloudIP) bool {
+		return cip.Name == name || (cip.LoadBalancer != nil && cip.LoadBalancer.Name == name)
+	})
+
+	if cip == nil {
 		return c.AllocateCloudIP(ctx, name)
 	}
-	return nil, fmt.Errorf("Could not find allocated Cloud IP with address %q", ip)
+	return cip, nil
+}
+
+func findMatchingCloudIP(cloudIPList []brightbox.CloudIP, matches func(*brightbox.CloudIP) bool) *brightbox.CloudIP {
+	for i := range cloudIPList {
+		if matches(&cloudIPList[i]) {
+			return &cloudIPList[i]
+		}
+	}
+	return nil
 }
 
 func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
