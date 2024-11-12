@@ -138,3 +138,44 @@ func mapNodesToServerIDs(nodes []*v1.Node) []string {
 	}
 	return result
 }
+
+// Take all the servers out of the server group and remove it
+func (c *cloud) ensureServerGroupDeleted(ctx context.Context, name string) error {
+	klog.V(4).Infof("ensureServerGroupDeleted (%q)", name)
+	group, err := c.GetServerGroupByName(ctx, name)
+	if err != nil {
+		klog.V(4).Infof("Error looking for Server Group for %q", name)
+		return err
+	}
+	if group == nil {
+		return nil
+	}
+	group, err = c.SyncServerGroup(ctx, group, nil)
+	if err != nil {
+		klog.V(4).Infof("Error removing servers from %q", group.ID)
+		return err
+	}
+	if err := c.DestroyServerGroup(ctx, group.ID); err != nil {
+		klog.V(4).Infof("Error destroying Server Group %q", group.ID)
+		return err
+	}
+	return nil
+}
+
+// Remove the firewall policy
+func (c *cloud) ensureFirewallClosed(ctx context.Context, name string) error {
+	klog.V(4).Infof("ensureFirewallClosed (%q)", name)
+	fp, err := c.GetFirewallPolicyByName(ctx, name)
+	if err != nil {
+		klog.V(4).Infof("Error looking for Firewall Policy %q", name)
+		return err
+	}
+	if fp == nil {
+		return nil
+	}
+	if err := c.DestroyFirewallPolicy(ctx, fp.ID); err != nil {
+		klog.V(4).Infof("Error destroying Firewall Policy %q", fp.ID)
+		return err
+	}
+	return nil
+}
