@@ -14,8 +14,8 @@ github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/brightbox/gobrightbox/v2 v2.2.2 h1:2MfOeJ/v+uJA4DVtQiLmWFAn1/8VsIAdMlYfb/8X0u0=
 github.com/brightbox/gobrightbox/v2 v2.2.2/go.mod h1:apk5We4Uk4vEda30PMkBh0ETmW1kPnfIlYuaft+mtng=
-github.com/brightbox/k8ssdk/v2 v2.0.0 h1:RRewRxbnCyPc4rtq3m7k5P2VjVySI2+wBCwgqIPhrFo=
-github.com/brightbox/k8ssdk/v2 v2.0.0/go.mod h1:CClLYhtF2ZkVzwrFU9UZs4F4/ZbRvMlMdV0xuwwpBtc=
+github.com/brightbox/k8ssdk/v2 v2.1.0 h1:Fc7z52LD4Uq7TVISsZNdvgd8FJhZ3V4fj6c+BahsmUE=
+github.com/brightbox/k8ssdk/v2 v2.1.0/go.mod h1:2QvYi4jxc4jRQNScJDgdw4rzZTydbnuUyXWPEQ4uxFU=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
