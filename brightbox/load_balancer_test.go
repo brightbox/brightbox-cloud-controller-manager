@@ -42,7 +42,7 @@ const (
 	publicIP       = "180.180.180.180"
 	publicIPv6     = "2a02:1348:ffff:ffff::6d6b:275c"
 	publicIPv62    = "2a02:1348:ffff:ffff::6d6b:375c"
-	fqdn           = "cip-180-180-180-180.gb1.brightbox.com"
+	fqdn           = "cip-109-107-39-92.gb1s.brightbox.com"
 	publicCipID2   = "cip-manul"
 	publicIP2      = "190.190.190.190"
 	fqdn2          = "cip-190-190-190-190.gb1.brightbox.com"
@@ -79,7 +79,7 @@ var (
 		PublicIPv4: "109.107.39.92",
 		PublicIPv6: "2a02:1348:ffff:ffff::6d6b:275c",
 		Fqdn:       resolvedDomain,
-		ReverseDNS: "cip-109-107-39-92.gb1s.brightbox.com",
+		ReverseDNS: fqdn,
 	}
 )
 
@@ -801,44 +801,44 @@ func TestValidateService(t *testing.T) {
 	}
 }
 
-func TestValidateDomains(t *testing.T) {
+func TestEnsureDomainResolution(t *testing.T) {
 	testCases := map[string]struct {
 		annotations map[string]string
-		cloudIp     *brightbox.CloudIP
+		cloudIP     *brightbox.CloudIP
 		status      string
 	}{
 		"missing domain": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: missingDomain,
 			},
-			cloudIp: &resolvCip,
+			cloudIP: &resolvCip,
 			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "):",
 		},
 		"missing domain in list": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + "," + missingDomain,
 			},
-			cloudIp: &resolvCip,
+			cloudIP: &resolvCip,
 			status:  "Failed to resolve \"" + missingDomain + "\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + "):",
 		},
 		"other addresses": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: resolvedDomain + ",archive.ubuntu.com",
 			},
-			cloudIp: &resolvCip,
+			cloudIP: &resolvCip,
 			status:  "Failed to resolve \"archive.ubuntu.com\" to load balancer address (" + resolvCip.PublicIPv4 + "," + resolvCip.PublicIPv6 + ")",
 		},
 		"dodgy cloudip": {
 			annotations: map[string]string{
 				serviceAnnotationLoadBalancerSslDomains: resolvedDomain,
 			},
-			cloudIp: &brightbox.CloudIP{},
+			cloudIP: &brightbox.CloudIP{},
 			status:  "Cloud IP \"\" failed to parse IP addresses",
 		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			err := validateLoadBalancerDomainResolution(tc.annotations, tc.cloudIp)
+			_, err := ensureLoadBalancerDomainResolution(tc.annotations, tc.cloudIP)
 			if err == nil {
 				t.Errorf("Expected error %q got nil", tc.status)
 			} else if !strings.HasPrefix(err.Error(), tc.status) {
@@ -880,19 +880,11 @@ func TestGetLoadBalancer(t *testing.T) {
 			},
 			lbstatus: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					/*
-						v1.LoadBalancerIngress{
-							IP: publicIP,
-						},
-						v1.LoadBalancerIngress{
-							IP: publicIPv6,
-						},
-					*/
-					v1.LoadBalancerIngress{
-						Hostname: reverseDNS,
-					},
 					v1.LoadBalancerIngress{
 						Hostname: fqdn,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: resolvedDomain,
 					},
 				},
 			},
@@ -934,8 +926,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Annotations: map[string]string{
 						serviceAnnotationLoadBalancerListenerIdleTimeout: strconv.Itoa(testTimeout),
 						serviceAnnotationLoadBalancerPolicy:              testPolicy.String(),
-						serviceAnnotationLoadBalancerSslDomains:          resolvedDomain + "," + fqdn,
-						serviceAnnotationLoadBalancerListenerProtocol:    listenerprotocol.Http.String(),
+						serviceAnnotationLoadBalancerCloudipAllocations:  resolvCip.PublicIP,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -957,7 +948,6 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -998,7 +988,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Out:      31348,
 					},
 				},
-				Domains: &[]string{resolvedDomain, fqdn},
+				Domains: &[]string{fqdn, resolvedDomain},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    healthchecktype.Http,
 					Port:    31347,
@@ -1039,7 +1029,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1082,7 +1072,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						ProxyProtocol: proxyprotocol.V2SslCn,
 					},
 				},
-				Domains: &[]string{resolvedDomain, fqdn},
+				Domains: &[]string{fqdn, resolvedDomain},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    healthchecktype.Http,
 					Port:    31347,
@@ -1137,7 +1127,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1190,7 +1180,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						Out:      31348,
 					},
 				},
-				Domains: &[]string{resolvedDomain, fqdn},
+				Domains: &[]string{fqdn, resolvedDomain},
 				Healthcheck: &brightbox.LoadBalancerHealthcheck{
 					Type:    healthchecktype.Http,
 					Port:    31347,
@@ -1222,7 +1212,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1298,7 +1288,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1373,7 +1363,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeLocal,
 					HealthCheckNodePort:   8080,
 				},
@@ -1418,7 +1408,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/healthz",
 				},
-				HTTPSRedirect: &falsevar,
+				Domains:       &[]string{fqdn, resolvedDomain},
+				HTTPSRedirect: &truevar,
 			},
 		},
 		"overrideToTcpHealthcheck": {
@@ -1448,7 +1439,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeLocal,
 					HealthCheckNodePort:   8080,
 				},
@@ -1493,7 +1484,8 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Port:    8080,
 					Request: "/",
 				},
-				HTTPSRedirect: &falsevar,
+				Domains:       &[]string{fqdn, resolvedDomain},
+				HTTPSRedirect: &truevar,
 			},
 		},
 		"empty": {
@@ -1505,7 +1497,7 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 					Type:                  v1.ServiceTypeLoadBalancer,
 					Ports:                 []v1.ServicePort{},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1526,8 +1518,12 @@ func TestBuildLoadBalancerOptions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := makeFakeInstanceCloudClient()
 			desc := client.GetLoadBalancerName(context.TODO(), clusterName, tc.service)
+			domains, err := ensureLoadBalancerDomainResolution(tc.service.Annotations, &resolvCip)
+			if err != nil {
+				t.Errorf("Error when not expected: %q", err.Error())
+			}
 
-			lbopts := buildLoadBalancerOptions(desc, tc.service, tc.nodes)
+			lbopts := buildLoadBalancerOptions(desc, domains, tc.service, tc.nodes)
 			if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
 				t.Error(diff)
 			}
@@ -1565,7 +1561,7 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 						},
 					},
 					SessionAffinity:       v1.ServiceAffinityNone,
-					LoadBalancerIP:        publicIP,
+					LoadBalancerIP:        resolvCip.PublicIP,
 					ExternalTrafficPolicy: v1.ServiceExternalTrafficPolicyTypeCluster,
 					HealthCheckNodePort:   8080,
 				},
@@ -1584,19 +1580,11 @@ func TestEnsureAndUpdateLoadBalancer(t *testing.T) {
 			},
 			status: &v1.LoadBalancerStatus{
 				Ingress: []v1.LoadBalancerIngress{
-					/*
-						v1.LoadBalancerIngress{
-							IP: publicIP,
-						},
-						v1.LoadBalancerIngress{
-							IP: publicIPv6,
-						},
-					*/
-					v1.LoadBalancerIngress{
-						Hostname: reverseDNS,
-					},
 					v1.LoadBalancerIngress{
 						Hostname: fqdn,
+					},
+					v1.LoadBalancerIngress{
+						Hostname: resolvedDomain,
 					},
 				},
 			},
@@ -1846,7 +1834,7 @@ func TestBuildEnsureLoadBalancer(t *testing.T) {
 
 			ctx := context.Background()
 			desc := client.GetLoadBalancerName(ctx, clusterName, tc.service)
-			lbopts, err := client.ensureLoadBalancerFromService(ctx, desc, tc.service, tc.nodes)
+			lbopts, err := client.ensureLoadBalancerFromService(ctx, desc, nil, tc.service, tc.nodes)
 			if err != nil {
 				t.Errorf("Error when not expected")
 			} else if diff := deep.Equal(lbopts, tc.lbopts); diff != nil {
@@ -1909,7 +1897,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: &[]string{resolvedDomain, fqdn},
+				Domains: &[]string{fqdn, resolvedDomain},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: listenerprotocol.Https,
@@ -2047,7 +2035,7 @@ func TestUpdateLoadBalancerCheck(t *testing.T) {
 						Node: "srv-230b7",
 					},
 				},
-				Domains: &[]string{resolvedDomain, fqdn, reverseDNS},
+				Domains: &[]string{fqdn, resolvedDomain, reverseDNS},
 				Listeners: []brightbox.LoadBalancerListener{
 					{
 						Protocol: listenerprotocol.Https,
@@ -3572,6 +3560,7 @@ func (f *fakeInstanceCloud) CloudIPs(context.Context) ([]brightbox.CloudIP, erro
 				Name: premappedName,
 			},
 		},
+		resolvCip,
 	}, nil
 }
 
@@ -3629,13 +3618,7 @@ func (f *fakeInstanceCloud) LoadBalancers(context.Context) ([]brightbox.LoadBala
 			Name:   lbname,
 			Status: loadbalancerstatus.Active,
 			CloudIPs: []brightbox.CloudIP{
-				brightbox.CloudIP{
-					ID:         "cip-12345",
-					PublicIPv4: publicIP,
-					PublicIPv6: publicIPv6,
-					ReverseDNS: reverseDNS,
-					Fqdn:       fqdn,
-				},
+				resolvCip,
 			},
 		},
 		{
@@ -3900,6 +3883,10 @@ func (f *fakeInstanceCloud) CloudIP(_ context.Context, identifier string) (*brig
 	case "cip-12345":
 		result.PublicIPv4 = publicIP
 		result.PublicIPv6 = publicIPv6
+		result.LoadBalancer = &brightbox.LoadBalancer{ID: foundLba}
+	case resolvCip.ID:
+		result.PublicIPv4 = resolvCip.PublicIPv4
+		result.PublicIPv6 = resolvCip.PublicIPv6
 		result.LoadBalancer = &brightbox.LoadBalancer{ID: foundLba}
 	}
 	return result, nil

@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -185,10 +186,11 @@ func (c *cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apis
 	if err != nil {
 		return nil, err
 	}
-	if err := validateLoadBalancerDomainResolution(apiservice.Annotations, cip); err != nil {
+	domains, err := ensureLoadBalancerDomainResolution(apiservice.Annotations, cip)
+	if err != nil {
 		return nil, err
 	}
-	lb, err := c.ensureLoadBalancerFromService(ctx, name, apiservice, nodes)
+	lb, err := c.ensureLoadBalancerFromService(ctx, name, domains, apiservice, nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -450,24 +452,24 @@ func validateAnnotations(annotationList map[string]string) error {
 	return nil
 }
 
-func validateLoadBalancerDomainResolution(annotationList map[string]string, cloudIP *brightbox.CloudIP) error {
-	domains := buildLoadBalancerDomains(annotationList)
-	if domains != nil {
-		cloudIPList, err := toIPList(cloudIP)
+func ensureLoadBalancerDomainResolution(annotationList map[string]string, cloudIP *brightbox.CloudIP) ([]string, error) {
+	domains := append(extraLoadBalancerDomains(annotationList), cloudIP.Fqdn, cloudIP.ReverseDNS)
+	slices.Sort(domains)
+	domains = slices.Compact(domains)
+	cloudIPList, err := toIPList(cloudIP)
+	if err != nil {
+		return nil, err
+	}
+	for _, domain := range domains {
+		resolvedAddresses, err := net.LookupIP(domain)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6, err.Error())
 		}
-		for _, domain := range *domains {
-			resolvedAddresses, err := net.LookupIP(domain)
-			if err != nil {
-				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s): %v", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6, err.Error())
-			}
-			if !anyAddressMatch(cloudIPList, resolvedAddresses) {
-				return fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6)
-			}
+		if !anyAddressMatch(cloudIPList, resolvedAddresses) {
+			return nil, fmt.Errorf("Failed to resolve %q to load balancer address (%s,%s)", domain, cloudIP.PublicIPv4, cloudIP.PublicIPv6)
 		}
 	}
-	return nil
+	return domains, nil
 }
 
 func toIPList(cloudIP *brightbox.CloudIP) ([]net.IP, error) {
@@ -546,7 +548,7 @@ func findMatchingCloudIP(cloudIPList []brightbox.CloudIP, matches func(*brightbo
 	return nil
 }
 
-func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
+func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, domains []string, apiservice *v1.Service, nodes []*v1.Node) (*brightbox.LoadBalancer, error) {
 	klog.V(4).Infof("ensureLoadBalancerFromService(%v)", name)
 	currentLb, err := c.GetLoadBalancerByName(ctx, name)
 	if err != nil {
@@ -556,7 +558,7 @@ func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, 
 	if err != nil {
 		return nil, err
 	}
-	newLB := buildLoadBalancerOptions(name, apiservice, nodes)
+	newLB := buildLoadBalancerOptions(name, domains, apiservice, nodes)
 	if currentLb == nil {
 		return c.Cloud.CreateLoadBalancer(ctx, *newLB)
 	} else if k8ssdk.IsUpdateLoadBalancerRequired(currentLb, *newLB) {
@@ -567,14 +569,13 @@ func (c *cloud) ensureLoadBalancerFromService(ctx context.Context, name string, 
 	return currentLb, nil
 }
 
-func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
+func buildLoadBalancerOptions(name string, domains []string, apiservice *v1.Service, nodes []*v1.Node) *brightbox.LoadBalancerOptions {
 	klog.V(4).Infof("buildLoadBalancerOptions(%v)", name)
 	result := &brightbox.LoadBalancerOptions{
 		Name:        &name,
 		Nodes:       buildLoadBalancerNodes(nodes),
 		Listeners:   buildLoadBalancerListeners(apiservice),
 		Healthcheck: buildLoadBalancerHealthCheck(apiservice),
-		Domains:     buildLoadBalancerDomains(apiservice.Annotations),
 	}
 	if policy, ok := apiservice.Annotations[serviceAnnotationLoadBalancerPolicy]; ok {
 		policyEnum, err := balancingpolicy.ParseEnum(policy)
@@ -584,11 +585,14 @@ func buildLoadBalancerOptions(name string, apiservice *v1.Service, nodes []*v1.N
 			klog.V(4).Infof("Unexpected balancing policy %q", policy)
 		}
 	}
-	if result.Domains != nil {
-		result.HTTPSRedirect = &truevar
-	} else {
-		result.HTTPSRedirect = &falsevar
+	for _, listener := range result.Listeners {
+		if listener.Protocol == listenerprotocol.Https {
+			result.Domains = &domains
+			result.HTTPSRedirect = &truevar
+			return result
+		}
 	}
+	result.HTTPSRedirect = &falsevar
 	return result
 }
 
@@ -626,10 +630,9 @@ func buildLoadBalancerListeners(apiservice *v1.Service) []brightbox.LoadBalancer
 	return result
 }
 
-func buildLoadBalancerDomains(annotations map[string]string) *[]string {
+func extraLoadBalancerDomains(annotations map[string]string) []string {
 	if domains, ok := annotations[serviceAnnotationLoadBalancerSslDomains]; ok {
-		temp := strings.Split(domains, ",")
-		return &temp
+		return strings.Split(domains, ",")
 	}
 	return nil
 }
