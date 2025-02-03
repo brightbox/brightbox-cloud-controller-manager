@@ -6,7 +6,7 @@ require (
 	github.com/brightbox/gobrightbox v0.8.8
 	github.com/brightbox/k8ssdk v0.9.0
 	github.com/go-test/deep v1.1.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	k8s.io/api v0.26.15
 	k8s.io/apimachinery v0.26.15
 	k8s.io/cloud-provider v0.26.15
