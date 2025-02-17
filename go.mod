@@ -9,7 +9,7 @@ require (
 	github.com/brightbox/k8ssdk/v2 v2.1.0
 	github.com/go-test/deep v1.1.1
 	k8s.io/api v0.31.5
-	k8s.io/apimachinery v0.31.5
+	k8s.io/apimachinery v0.31.6
 	k8s.io/cloud-provider v0.31.5
 	k8s.io/component-base v0.31.5
 	k8s.io/controller-manager v0.31.5
