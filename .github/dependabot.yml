@@ -2,7 +2,7 @@ version: 2
 updates:
   - package-ecosystem: gomod
     directory: "/"
-    target-branch: release-1.27
+    target-branch: release-1.32
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
@@ -14,7 +14,7 @@ updates:
 
   - package-ecosystem: gomod
     directory: "/"
-    target-branch: release-1.26
+    target-branch: release-1.31
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
@@ -26,7 +26,7 @@ updates:
 
   - package-ecosystem: gomod
     directory: "/"
-    target-branch: release-1.25
+    target-branch: release-1.30
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
