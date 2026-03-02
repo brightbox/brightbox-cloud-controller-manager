@@ -28,49 +28,57 @@ func TestInstanceExists(t *testing.T) {
 
 	exists, err := client.InstanceExists(context.TODO(), mapServerIDToNode(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Active: expected Instance to exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNodeProviderID(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Active: expected Instance to exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNode(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Deleted: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNodeProviderID(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Deleted: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNode(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Missing: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNodeProviderID(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Missing: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNode(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Inactive: expected Instance to exist")
 	}
 	exists, err = client.InstanceExists(context.TODO(), mapServerIDToNodeProviderID(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Inactive: expected Instance to exist")
 	}
@@ -93,49 +101,57 @@ func TestInstanceShutdown(t *testing.T) {
 
 	down, err := client.InstanceShutdown(context.TODO(), mapServerIDToNode(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Active: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNodeProviderID(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Active: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNode(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Deleted: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNodeProviderID(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Deleted: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNode(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Missing: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNodeProviderID(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Missing: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNode(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !down {
 		t.Errorf("Inactive: expected Instance to be shutdown")
 	}
 	down, err = client.InstanceShutdown(context.TODO(), mapServerIDToNodeProviderID(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !down {
 		t.Errorf("Inactive: expected Instance to be shutdown")
 	}
@@ -182,7 +198,8 @@ func TestInstanceMetadata(t *testing.T) {
 				metadata, err := client.InstanceMetadata(context.TODO(),
 					mapServerIDToNodeProviderID(example.server))
 				if err != nil {
-					t.Fatalf(err.Error())
+					t.Errorf("unexpected error: %v", err)
+					return
 				}
 				providerID := k8ssdk.MapServerIDToProviderID(example.server)
 				if metadata.ProviderID != providerID {

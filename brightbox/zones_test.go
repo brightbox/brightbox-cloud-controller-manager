@@ -48,7 +48,8 @@ func interfaceGetZone(zoneName string) func(*testing.T) {
 			}
 			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("unexpected error: %v", err)
+				return
 			}
 			if zone.Region != testRegion {
 				t.Errorf("Expected %v, got %v", testRegion, zone.Region)
@@ -73,7 +74,8 @@ func interfaceGetZoneByProviderID(ProviderName string, zoneName string) func(*te
 			}
 			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("unexpected error: %v", err)
+				return
 			}
 			if zone.Region != testRegion {
 				t.Errorf("Expected %v, got %v", testRegion, zone.Region)
@@ -97,7 +99,8 @@ func interfaceGetZoneByNodeName(NodeName types.NodeName, zoneName string) func(*
 			}
 			testRegion, err := k8ssdk.MapZoneHandleToRegion(zoneName)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("unexpected error: %v", err)
+				return
 			}
 			if zone.Region != testRegion {
 				t.Errorf("Expected %v, got %v", testRegion, zone.Region)
@@ -142,7 +145,7 @@ func TestGetZoneCloudClientFailure(t *testing.T) {
 	client := makeFakeCloudClient()
 	zone, err := client.GetZoneByNodeName(context.TODO(), types.NodeName("srv-duffy"))
 	if err == nil {
-		t.Errorf("Expected error")
+		t.Errorf("Expected an error")
 	} else if zone != emptyZone {
 		t.Errorf("Expected empty zone, got %+v", zone)
 	}

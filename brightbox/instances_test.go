@@ -106,10 +106,11 @@ func TestCurrentNodeName(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 	nodeName, err := client.CurrentNodeName(context.TODO(), server)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	}
 	if nodeName != types.NodeName(server) {
-		t.Errorf("Nodename does not match %q", server)
+		t.Errorf("nodeName = %q, want %q", nodeName, server)
 	}
 }
 
@@ -118,7 +119,7 @@ func TestAddSSHKey(t *testing.T) {
 
 	err := client.AddSSHKeyToAllInstances(context.TODO(), "fred", []byte("hello"))
 	if err == nil {
-		t.Errorf("Add SSH should be unimplemented")
+		t.Error("AddSSHKeyToAllInstances should return an error (unimplemented)")
 	}
 }
 
@@ -152,7 +153,7 @@ func TestNodeNameChecks(t *testing.T) {
 		},
 		{
 			"InstanceTypeByProviderID",
-			providerIdTestFactory(client.InstanceTypeByProviderID,
+			providerIDTestFactory(client.InstanceTypeByProviderID,
 				k8ssdk.MapServerIDToProviderID(serverExist),
 				k8ssdk.MapServerIDToProviderID(serverMissing),
 				typeHandle),
@@ -185,7 +186,8 @@ func TestNodeAddresses(t *testing.T) {
 			func(t *testing.T) {
 				addresses, err := client.NodeAddresses(context.TODO(), example.server)
 				if err != nil {
-					t.Fatalf(err.Error())
+					t.Errorf("unexpected error: %v", err)
+					return
 				}
 				lenExpected := len(example.expectedNodeAddresses)
 				lenAddresses := len(addresses)
@@ -228,25 +230,29 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 
 	exists, err := client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Active: expected Instance to exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Deleted: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if exists {
 		t.Errorf("Missing: expected Instance to not exist")
 	}
 	exists, err = client.InstanceExistsByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !exists {
 		t.Errorf("Inactive: expected Instance to exist")
 	}
@@ -263,25 +269,29 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 
 	down, err := client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverExist))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Active: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDeleted))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Deleted: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverMissing))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if down {
 		t.Errorf("Missing: expected Instance to be not shutdown")
 	}
 	down, err = client.InstanceShutdownByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverShutdown))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unexpected error: %v", err)
+		return
 	} else if !down {
 		t.Errorf("Inactive: expected Instance to be shutdown")
 	}
@@ -289,7 +299,7 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 
 func TestGetInstanceCloudClientFailure(t *testing.T) {
 	k8ssdk.ResetAuthEnvironment()
-	defer k8ssdk.ResetAuthEnvironment()
+	t.Cleanup(k8ssdk.ResetAuthEnvironment)
 	client := makeFakeCloudClient()
 	instance, err := client.InstanceID(context.TODO(), types.NodeName("srv-duffy"))
 	if err == nil {
@@ -303,7 +313,8 @@ func nodeNameTestFactory(testFunction func(context.Context, types.NodeName) (str
 	return func(t *testing.T) {
 		id, err := testFunction(context.TODO(), sourceExist)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("unexpected error: %v", err)
+			return
 		} else if id != expected {
 			t.Errorf("expected %q, got %q", expected, id)
 		}
@@ -316,11 +327,12 @@ func nodeNameTestFactory(testFunction func(context.Context, types.NodeName) (str
 	}
 }
 
-func providerIdTestFactory(testFunction func(context.Context, string) (string, error), sourceExist string, sourceMissing string, expected string) func(*testing.T) {
+func providerIDTestFactory(testFunction func(context.Context, string) (string, error), sourceExist string, sourceMissing string, expected string) func(*testing.T) {
 	return func(t *testing.T) {
 		id, err := testFunction(context.TODO(), sourceExist)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("unexpected error: %v", err)
+			return
 		} else if id != expected {
 			t.Errorf("expected %q, got %q", expected, id)
 		}
