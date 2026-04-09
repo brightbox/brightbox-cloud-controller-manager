@@ -91,6 +91,19 @@ func TestMapNodeToServerID(t *testing.T) {
 	if serverID != expected {
 		t.Errorf("Expected ServerID to be '%s', got '%s'", expected, serverID)
 	}
+	node = &v1.Node{Spec: v1.NodeSpec{ProviderID: "k3s://server789"}}
+	serverID = mapNodeToServerID(node)
+	expected = "server789"
+	if serverID != expected {
+		t.Errorf("Expected ServerID to be '%s', got '%s'", expected, serverID)
+	}
+	node = &v1.Node{Spec: v1.NodeSpec{ProviderID: ""}}
+	node.Name = "server789"
+	serverID = mapNodeToServerID(node)
+	expected = "server789"
+	if serverID != expected {
+		t.Errorf("Expected ServerID to be '%s', got '%s'", expected, serverID)
+	}
 }
 
 // TestMapServerIDToNode verifies that a ServerID is correctly mapped to a Node with that ID as name
