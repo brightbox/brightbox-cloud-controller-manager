@@ -23,6 +23,7 @@ import (
 	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
+	"strings"
 )
 
 var (
@@ -79,8 +80,8 @@ func buildLoadBalancerNodes(nodes []*v1.Node) []brightbox.LoadBalancerNode {
 	}
 	result := make([]brightbox.LoadBalancerNode, 0, len(nodes))
 	for i := range nodes {
-		if nodes[i].Spec.ProviderID == "" {
-			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
+		if !strings.HasPrefix(nodes[i].Spec.ProviderID, "brightbox") {
+			klog.Warningf("ignoring node %q with providerID %q", nodes[i].Name, nodes[i].Spec.ProviderID)
 			continue
 		}
 		result = append(result, brightbox.LoadBalancerNode{Node: k8ssdk.MapProviderIDToServerID(nodes[i].Spec.ProviderID)})

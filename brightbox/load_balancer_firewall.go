@@ -24,6 +24,7 @@ import (
 	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
+	"strings"
 )
 
 var defaultRegionCidr = "10.0.0.0/8"
@@ -130,8 +131,8 @@ func createPortListString(apiservice *v1.Service) string {
 func mapNodesToServerIDs(nodes []*v1.Node) []string {
 	result := make([]string, 0, len(nodes))
 	for i := range nodes {
-		if nodes[i].Spec.ProviderID == "" {
-			klog.Warningf("node %q did not have providerID set", nodes[i].Name)
+		if !strings.HasPrefix(nodes[i].Spec.ProviderID, "brightbox") {
+			klog.Warningf("ignoring node %q with providerID %q", nodes[i].Name, nodes[i].Spec.ProviderID)
 			continue
 		}
 		result = append(result, k8ssdk.MapProviderIDToServerID(nodes[i].Spec.ProviderID))
