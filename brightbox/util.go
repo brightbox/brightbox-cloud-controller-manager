@@ -87,7 +87,15 @@ func mapNodeToServerID(node *v1.Node) string {
 	if node.Spec.ProviderID == "" {
 		return node.Name
 	}
-	return k8ssdk.MapProviderIDToServerID(node.Spec.ProviderID)
+
+	parts := strings.SplitN(node.Spec.ProviderID, "://", 2)
+
+	if len(parts) == 2 {
+		// some providers have 3 forward slashes so handle that
+		return strings.TrimPrefix(parts[1], "/")
+	}
+
+	return parts[0]
 }
 
 func mapServerIDToNode(name string) *v1.Node {
