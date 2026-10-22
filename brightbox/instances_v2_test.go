@@ -166,6 +166,15 @@ func TestInstanceMetadataFailures(t *testing.T) {
 	}
 }
 
+func TestInstanceMetadataDeletedServer(t *testing.T) {
+	client := makeFakeInstanceCloudClient()
+
+	metadata, err := client.InstanceMetadata(context.TODO(), mapServerIDToNodeProviderID(serverDeleted))
+	if err == nil {
+		t.Errorf("Expected error, got %+v", metadata)
+	}
+}
+
 func TestInstanceMetadata(t *testing.T) {
 	client := makeFakeInstanceCloudClient()
 

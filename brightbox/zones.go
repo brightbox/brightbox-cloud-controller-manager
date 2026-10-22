@@ -16,6 +16,7 @@ package brightbox
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brightbox/k8ssdk/v2"
 	"k8s.io/apimachinery/pkg/types"
@@ -93,6 +94,9 @@ func (c *cloud) getZoneByServerID(ctx context.Context, identifier string) (cloud
 	server, err := client.Server(ctx, identifier)
 	if err != nil {
 		return emptyZone, err
+	}
+	if server.Zone == nil {
+		return emptyZone, fmt.Errorf("Server %s: no zone", server.ID)
 	}
 	zoneName := server.Zone.Handle
 	return createZone(zoneName)

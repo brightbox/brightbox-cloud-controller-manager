@@ -139,6 +139,17 @@ func TestGetZoneByNodeName(t *testing.T) {
 	}
 }
 
+func TestGetZoneByProviderIDDeletedServer(t *testing.T) {
+	client := makeFakeInstanceCloudClient()
+
+	zone, err := client.GetZoneByProviderID(context.TODO(), k8ssdk.MapServerIDToProviderID(serverDeleted))
+	if err == nil {
+		t.Errorf("Expected an error")
+	} else if zone != emptyZone {
+		t.Errorf("Expected empty zone, got %+v", zone)
+	}
+}
+
 func TestGetZoneCloudClientFailure(t *testing.T) {
 	k8ssdk.ResetAuthEnvironment()
 	defer k8ssdk.ResetAuthEnvironment()

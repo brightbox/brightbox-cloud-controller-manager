@@ -16,6 +16,7 @@ package brightbox
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/brightbox/k8ssdk/v2"
 	v1 "k8s.io/api/core/v1"
@@ -52,6 +53,12 @@ func (c *cloud) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprov
 	srv, err := c.GetServer(ctx, mapNodeToServerID(node), cloudprovider.InstanceNotFound)
 	if err != nil {
 		return nil, err
+	}
+	if srv.Zone == nil {
+		return nil, fmt.Errorf("Instance %s: no zone", srv.ID)
+	}
+	if srv.ServerType == nil {
+		return nil, fmt.Errorf("Instance %s: no server type", srv.ID)
 	}
 	addresses, err := nodeAddressesFromServer(srv)
 	if err != nil {
