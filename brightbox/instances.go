@@ -87,6 +87,9 @@ func (c *cloud) InstanceType(ctx context.Context, name types.NodeName) (string, 
 	if err != nil {
 		return "", err
 	}
+	if srv.ServerType == nil {
+		return "", fmt.Errorf("Instance %s: no server type", srv.ID)
+	}
 	return srv.ServerType.Handle, nil
 }
 

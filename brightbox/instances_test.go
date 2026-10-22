@@ -429,10 +429,8 @@ func (f *fakeInstanceCloud) Server(_ context.Context, identifier string) (*brigh
 			Status:   serverstatus.Deleted,
 			Hostname: serverDeleted,
 			Fqdn:     serverDeleted + "." + domain,
-			Zone: &brightbox.Zone{
-				ID:     "zon-testy",
-				Handle: zoneHandle,
-			},
+			// The API returns a null zone once a server is no longer hosted
+			Zone: nil,
 			ServerType: &brightbox.ServerType{
 				ID:     "typ-wusvn",
 				Handle: typeHandle2,
