@@ -14,7 +14,11 @@
 # limitations under the License.
 
 
+set -e
+
 [ $# -eq 1 ] || { echo "Supply new version number" >&2; exit 1; }
 
-go get k8s.io/kubernetes@v$1
+m=v0.${1#1.}
+go get k8s.io/kubernetes@v$1 k8s.io/api@$m k8s.io/apimachinery@$m k8s.io/cloud-provider@$m \
+  k8s.io/component-base@$m k8s.io/controller-manager@$m
 go mod tidy
